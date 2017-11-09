@@ -1,0 +1,35 @@
+[package]
+name = "me-tv"
+version = "3.0.0"
+authors = ["Russel Winder <russel@winder.org.uk>"]
+
+[dependencies.gtk]
+version = "*"
+features = ["v3_10"]
+
+[dependencies.gio]
+version = "*"
+
+[dependencies.glib]
+version = "*"
+features = ["v2_40"]
+
+[dependencies.gdk]
+version = "*"
+
+[dependencies.gdk-pixbuf]
+version = "*"
+
+[dependencies.gstreamer]
+version = "*"
+features = ["v1_10"]
+
+[dependencies.inotify]
+version = "*"
+
+[dependencies.xdg]
+version = "*"
+
+[dev-dependencies]
+quickcheck = "*"
+
