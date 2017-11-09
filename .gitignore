@@ -1,4 +1,6 @@
+*~
 /Cargo.lock
 Me-TV_Rust.iml
 /.idea/
 /notes.txt
+/target/
