@@ -20,7 +20,11 @@
  */
 
 use gtk;
-use gtk::prelude::*;
+
+use gtk::AboutDialogExt;
+use gtk::DialogExt;
+use gtk::WidgetExt;
+use gtk::GtkWindowExt;
 
 use gdk_pixbuf::PixbufLoader;
 

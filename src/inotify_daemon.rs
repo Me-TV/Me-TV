@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017  Russel Winder
+ *  Copyright © 2017, 2018  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ fn set_watch_on_dvb(inotify: &mut Inotify, to_fem: &Sender<Message>) {
                 }
             } else if event.mask.contains(EventMask::DELETE_SELF) {
                 // If this directory is going, it is fairly certain all the adapters
-                // have been removed already.
+                // have already been removed.
                 return;
             }
         }
@@ -114,7 +114,7 @@ pub fn run(to_fem: Sender<Message>) {
     match fs::metadata(DVB_BASE_PATH) {
         Ok(_)  => set_watch_on_dvb(&mut inotify, &to_fem),
         Err(_) => set_watch_on_dev(&mut inotify, &to_fem)
-    }
+    };
 }
 
 #[cfg(test)]

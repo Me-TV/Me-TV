@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017  Russel Winder
+ *  Copyright © 2017, 2018  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ extern crate inotify;
 #[macro_use]
 extern crate quickcheck;
 
-use std::env;
+//use std::env;
 use std::thread;
 use std::sync::mpsc::channel;
 
@@ -42,29 +42,32 @@ use gtk::prelude::*;
 
 mod about;
 mod channel_names;
+mod comboboxtext_extras;
 mod control_window;
 mod frontend_manager;
 mod frontend_window;
+mod gstreamer_engine;
 mod inotify_daemon;
 
 #[cfg(not(test))]
 fn main() {
     gstreamer::init().unwrap();
-    let application = gtk::Application::new("uk.org.russel.me-tv", gio::ApplicationFlags::empty()).expect("Application creation failed.");
+    let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed.");
     glib::set_application_name("Me TV");
     application.connect_startup(|app|{
+    });
+    application.connect_activate(|app|{
+        // It seems that the application menu must be added before creating the control window.
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(&application_menu);
         let about_action = gio::SimpleAction::new("about", None);
-        about_action.connect_activate(move |_, _| about::present(None));
         app.add_action(&about_action);
         let quit_action = gio::SimpleAction::new("quit", None);
-        quit_action.connect_activate({let a = app.clone(); move |_, _| a.quit()});
         app.add_action(&quit_action);
-    });
-    application.connect_activate(|app|{
-        control_window::create_and_attach(&app);
+        let control_window = control_window::ControlWindow::new(&app);
+        about_action.connect_activate(move |_, _| about::present(Some(&control_window.window)));
+        quit_action.connect_activate({let a = app.clone(); move |_, _| a.quit()});
         let (to_fem, from_in) = channel::<inotify_daemon::Message>();
         thread::spawn(||{inotify_daemon::run(to_fem)});
         let (to_cw, from_fem) = channel::<frontend_manager::Message>();
@@ -81,7 +84,9 @@ fn main() {
      */
     // Hack to get a &[&str] of the arguments, required by the gtk::Application::run function.
     // cf. https://users.rust-lang.org/t/vec-string-to-str/
-    let args = env::args().collect::<Vec<_>>();
-    let arguments: Vec<&str> = args.iter().map(String::as_ref).collect();
-    application.run(&arguments);
+    //let args = env::args().collect::<Vec<_>>();
+    //let arguments: Vec<&str> = args.iter().map(String::as_ref).collect();
+    //application.run(&arguments);
+    // No point in passing arguments until argument processing is available.
+    application.run(&[]);
 }

@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017  Russel Winder
+ *  Copyright © 2017, 2018  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,17 +27,19 @@ use std::os::unix::fs::FileTypeExt;
 
 use inotify_daemon::Message as IN_Message;
 
-/// A class to represent the identity of a specific frontend currently
+/// A struct to represent the identity of a specific frontend currently
 /// available on the system.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrontendId {
     pub adapter: u16,
     pub frontend: u16,
 }
 
-impl FrontendId {
-    pub fn clone(&self) -> FrontendId {
-        FrontendId{adapter: self.adapter, frontend: self.frontend}
-    }
+///  A struct to represent a tuning of a frontend.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TuningId {
+    pub frontend: FrontendId,
+    pub channel: String,
 }
 
 /// An enumeration of all the message types that  can be sent by
@@ -62,7 +64,7 @@ pub fn demux_path(fei: &FrontendId) -> String { adapter_path(fei.adapter) + "/de
 /// Return the path to the special file of the data for a given frontend.
 pub fn dvr_path(fei: &FrontendId) -> String { adapter_path(fei.adapter) + "/dvr" + &fei.frontend.to_string() }
 
-/// Process an newly present adapter to inform the control window of all the frontends
+/// Process a newly present adapter to inform the control window of all the frontends
 /// newly accessible.
 fn add_frontends(to_cw: &Sender<Message>, id: u16) {
     let mut fei = FrontendId{adapter: id, frontend: 0};
@@ -116,7 +118,7 @@ pub fn run(from_in: Receiver<IN_Message>, to_cw: Sender<Message>) {
                   },
                 }
             },
-            Err(_) => {println!("Frontend Manager has stopped."); return},
+            Err(_) => println!("Frontend Manager got an error message."),
         }
     }
 }
