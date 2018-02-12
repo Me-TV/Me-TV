@@ -19,14 +19,9 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::rc::Rc;
-
 pub struct GStreamerEngine{
-
 }
 
 impl GStreamerEngine {
-    pub fn new() -> Rc<GStreamerEngine> {
-        Rc::new(GStreamerEngine {})
-    }
+    pub fn new() -> GStreamerEngine { GStreamerEngine {} }
 }

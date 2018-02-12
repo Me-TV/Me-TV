@@ -36,11 +36,11 @@ use gstreamer_engine::GStreamerEngine;
 
 pub struct FrontendWindow {
     pub window: gtk::ApplicationWindow,
-    engine: Rc<GStreamerEngine>,
+    pub engine: GStreamerEngine,
 }
 
 impl FrontendWindow {
-    pub fn new(application: &gtk::Application) -> Rc<FrontendWindow> {
+    pub fn new(application: &gtk::Application) -> FrontendWindow {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         let header_bar = gtk::HeaderBar::new();
@@ -75,13 +75,11 @@ impl FrontendWindow {
         menu_button.set_menu_model(&window_menu);
         header_bar.pack_end(&menu_button);
         window.set_titlebar(&header_bar);
-
         let engine = GStreamerEngine::new();
-
-        Rc::new(FrontendWindow {
+        FrontendWindow {
             window,
             engine,
-        })
+        }
     }
 }
 

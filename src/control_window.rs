@@ -19,6 +19,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
@@ -44,7 +45,7 @@ pub struct ControlWindow {
     main_box: gtk::Box,
     frontends_box: gtk::Box,
     label: gtk::Label,
-    control_window_buttons: Vec<Rc<ControlWindowButton>>,
+    control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
     channel_names: Vec<String>,
     default_channel_name: String,
 }
@@ -57,8 +58,8 @@ struct ControlWindowButton {
     widget: gtk::Box,
     frontend_button: gtk::ToggleButton,
     channel_selector: gtk::ComboBoxText,
-    inhibitor: u32,
-    frontend_window: Rc<FrontendWindow>,
+    inhibitor: Cell<u32>,
+    frontend_window: FrontendWindow,
 }
 
 thread_local!(
@@ -103,7 +104,7 @@ impl ControlWindow {
         main_box.pack_start(&label, true, true, 0);
         window.add(&main_box);
         window.show_all();
-        let control_window_buttons: Vec<Rc<ControlWindowButton>> = Vec::new();
+        let control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>> = RefCell::new(Vec::new());
         let mut channel_names = channel_names::get_names();
         let default_channel_name = channel_names[0].clone();
         channel_names.sort();
@@ -149,7 +150,7 @@ impl ControlWindowButton {
             widget,
             frontend_button: frontend_button.clone(),
             channel_selector,
-            inhibitor: 0,
+            inhibitor: Cell::new(0),
             frontend_window,
         });
         cwb.set_label(&tuning_id.channel);
@@ -168,25 +169,25 @@ impl ControlWindowButton {
     }
 
     /// Toggle the button.
-    fn toggle_button(&mut self) {
+    fn toggle_button(&self) {
         println!("Frontend window button toggled.");
         CONTROL_WINDOW.with(|global|{
              if let Some(ref control_window) = *global.borrow() {
                  let app = control_window.window.get_application().unwrap();
                  if self.frontend_button.get_active() {
                      println!("Active");
-                     if self.inhibitor == 0 {
+                     if self.inhibitor.get() == 0 {
                          println!("Activating inactive window.");
-                         self.inhibitor = app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me Tv inhibits when playing a channel.");
+                         self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me Tv inhibits when playing a channel."));
                      } else {
                          println!("Window being activated is already active.");
                      }
                  } else {
                      println!("Inactive");
-                     if self.inhibitor != 0 {
+                     if self.inhibitor.get() != 0 {
                          println!("Deactivating active window.");
-                         app.uninhibit(self.inhibitor);
-                         self.inhibitor = 0;
+                         app.uninhibit(self.inhibitor.get());
+                         self.inhibitor.set(0);
                      } else {
                          println!("Window being deactivated is not active.");
                      }
@@ -204,7 +205,7 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
     }
     let control_window_button = ControlWindowButton::new(control_window, fei, &control_window.channel_names, &control_window.default_channel_name);
     control_window.frontends_box.pack_start(&control_window_button.widget, true, true, 0);
-    control_window.control_window_buttons.push(control_window_button);
+    control_window.control_window_buttons.borrow_mut().push(control_window_button);
     control_window.window.show_all();
 }
 
