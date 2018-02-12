@@ -69,10 +69,10 @@ fn main() {
         about_action.connect_activate(move |_, _| about::present(Some(&control_window.window)));
         quit_action.connect_activate({let a = app.clone(); move |_, _| a.quit()});
         let (to_fem, from_in) = channel::<inotify_daemon::Message>();
-        thread::spawn(||{inotify_daemon::run(to_fem)});
         let (to_cw, from_fem) = channel::<frontend_manager::Message>();
-        thread::spawn(||{frontend_manager::run(from_in, to_cw)});
         thread::spawn(||{control_window::message_listener(from_fem)});
+        thread::spawn(||{frontend_manager::run(from_in, to_cw)});
+        thread::spawn(||{inotify_daemon::run(to_fem)});
     });
     /*
      * As at 2017-10-14, gtk-rs does not provide access to these signals.
