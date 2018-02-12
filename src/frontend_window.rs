@@ -19,8 +19,6 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::rc::Rc;
-
 //use gdk;
 //use gdk::prelude::*;
 use gio;
@@ -50,9 +48,7 @@ impl FrontendWindow {
         menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
         let fullscreen_menu_button = gtk::MenuButton::new();
         fullscreen_menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
-
         let builder = gtk::Builder::new_from_string(include_str!("resources/frontend_window_menu.xml"));
-
         let window_menu = builder.get_object::<gio::Menu>("window_menu").expect("Could not create the frontend window menu.");
         let fullscreen_action = gio::SimpleAction::new("fullscreen", None);
         fullscreen_action.connect_activate({

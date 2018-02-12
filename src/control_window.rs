@@ -156,7 +156,7 @@ impl ControlWindowButton {
         cwb.set_label(&tuning_id.channel);
         frontend_button.connect_toggled({
             let c_w_b = cwb.clone();
-            move |feb| {
+            move |_| {
                 c_w_b.toggle_button();
             }
         });
@@ -178,7 +178,8 @@ impl ControlWindowButton {
                      println!("Active");
                      if self.inhibitor.get() == 0 {
                          println!("Activating inactive window.");
-                         self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me Tv inhibits when playing a channel."));
+                         self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
+                         self.frontend_window.window.show_all();
                      } else {
                          println!("Window being activated is already active.");
                      }
@@ -188,6 +189,7 @@ impl ControlWindowButton {
                          println!("Deactivating active window.");
                          app.uninhibit(self.inhibitor.get());
                          self.inhibitor.set(0);
+                         self.frontend_window.window.hide();
                      } else {
                          println!("Window being deactivated is not active.");
                      }
@@ -211,8 +213,11 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
 
 /// Remove all the frontends of an adaptor from this control window.
 fn remove_adapter(control_window: &Rc<ControlWindow>, id: u16) {
-    // Do remove: must remove the ControlWindowButton widget  from ControlWindow frontend box
+    //
+    // TODO Get this working.
+    // Must remove the ControlWindowButton widget  from ControlWindow frontend box
     // and the ControlWindowButton object from the Vec of object in the ControlWindow.
+    //
     if control_window.frontends_box.get_children().is_empty() {
         control_window.main_box.remove(&control_window.frontends_box);
         control_window.main_box.pack_start(&control_window.label, true, true, 0);

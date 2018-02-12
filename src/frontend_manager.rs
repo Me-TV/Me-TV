@@ -118,9 +118,13 @@ pub fn run(from_in: Receiver<IN_Message>, to_cw: Sender<Message>) {
                   },
                 }
             },
-            Err(_) => println!("Frontend Manager got an error message."),
+            Err(_) => {
+                println!("Frontend Manager got an Err, so inotify end of channel has dropped..");
+                break;
+            },
         }
     }
+    println!("Frontend Manager terminated.");
 }
 
 #[cfg(test)]
