@@ -25,6 +25,19 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 
+/// An internal function that can be tested.
+fn get_names_from_file(file: &File) -> Vec<String> {
+    let buf_reader = BufReader::new(file);
+    buf_reader
+        .lines()
+        .filter(|i|{ i.is_ok() })
+        .map(|i|{ String::from(i.unwrap().trim()) })
+        .filter(|i|{ i.starts_with('[') && i.ends_with(']') })
+        .map(|i|{ String::from(i[1..(i.len() - 1)].trim()) })
+        .collect()
+}
+
+
 /// Read the file that the GStreamer dvbsrc plugin uses and extract a list of the channels.
 ///
 /// GStreamer uses the XDG directory structure with, currently, gstreamer-1.0 as its
@@ -36,14 +49,49 @@ pub fn get_names() -> Vec<String> {
     let xdg_dirs = xdg::BaseDirectories::with_prefix("gstreamer-1.0").expect("Cannot set XDG prefix.");
     let path = xdg_dirs.find_config_file("dvb-channels.conf").expect("Cannot set XDG path to config file.");
     let file = File::open(path).expect("Cannot open config file.");
-    let buf_reader = BufReader::new(file);
-    buf_reader
-        .lines()
-        .filter(|i|{ i.is_ok() })
-        .map(|i|{ String::from(i.unwrap().trim()) })
-        .filter(|i|{ i.starts_with('[') && i.ends_with(']') })
-        .map(|i|{ String::from(i[1..(i.len() - 1)].trim()) })
-        .collect()
+    get_names_from_file(&file)
 }
 
-// TODO Need a test or seven for this function.
+#[cfg(test)]
+mod tests {
+    use super::get_names_from_file;
+
+    extern crate tempfile;
+
+    use std::io::{Write, Read, Seek, SeekFrom};
+
+    #[test]
+    fn empty_file() {
+        let tmpfile = tempfile::tempfile().unwrap();
+        let empty_vector: Vec<String> = vec![];
+        assert_eq!(get_names_from_file(&tmpfile), empty_vector);
+    }
+
+    fn some_channel_blocks() {
+        let mut tmpfile = tempfile::tempfile().unwrap();
+        let result = vec!["one two", "three four", "five six"];
+        for item in result.iter() {
+            tmpfile.write_all(format!("\n[{}]\n", item).as_bytes()).unwrap();
+            tmpfile.write_all("\
+	SERVICE_ID = 4164
+	VIDEO_PID = 101
+	AUDIO_PID = 102 106
+	PID_0b = 7219 7201
+	PID_06 = 152 105
+	PID_05 = 7105 7103
+	FREQUENCY = 490000000
+	MODULATION = QAM/64
+	BANDWIDTH_HZ = 8000000
+	INVERSION = AUTO
+	CODE_RATE_HP = 2/3
+	CODE_RATE_LP = AUTO
+	GUARD_INTERVAL = 1/32
+	TRANSMISSION_MODE = 8K
+	HIERARCHY = NONE
+	DELIVERY_SYSTEM = DVBT".as_bytes()).unwrap();
+        }
+        tmpfile.seek(SeekFrom::Start(0)).unwrap();
+        assert_eq!(get_names_from_file(&tmpfile), result);
+    }
+
+}
