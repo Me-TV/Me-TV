@@ -73,7 +73,14 @@ impl ControlWindow {
     pub fn new(application: &gtk::Application) -> Rc<ControlWindow> {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
-        window.set_border_width(5);
+        window.set_border_width(10);
+        window.connect_delete_event({
+            let app = application.clone();
+            move |_, _| {
+                app.quit();
+                Inhibit(false)
+            }}
+        );
         let header_bar = gtk::HeaderBar::new();
         header_bar.set_title("Me TV");
         header_bar.set_show_close_button(true);
@@ -100,7 +107,7 @@ impl ControlWindow {
         window.set_titlebar(&header_bar);
         let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let label = gtk::Label::new("No frontends available.");
-        let frontends_box = gtk::Box::new(gtk::Orientation::Horizontal, 5);
+        let frontends_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
         main_box.pack_start(&label, true, true, 0);
         window.add(&main_box);
         window.show_all();
