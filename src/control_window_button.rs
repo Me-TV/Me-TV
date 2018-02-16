@@ -35,7 +35,7 @@ use about;
 use channel_names;
 use control_window::{CONTROL_WINDOW, ControlWindow};
 use frontend_manager::{FrontendId, TuningId, Message};
-use frontend_window::create_frontend_window;
+use frontend_window::FrontendWindow;
 use gstreamer_engine::GStreamerEngine;
 
 use comboboxtext_extras::ComboBoxTextExtras;
@@ -49,7 +49,7 @@ pub struct ControlWindowButton {
     frontend_button: gtk::ToggleButton,
     channel_selector: gtk::ComboBoxText,
     inhibitor: Cell<u32>,
-    frontend_window: gtk::ApplicationWindow,
+    frontend_window: FrontendWindow,
     engine: GStreamerEngine,
 }
 
@@ -71,9 +71,8 @@ impl ControlWindowButton {
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
-        let frontend_window = create_frontend_window(&control_window.window.get_application().unwrap());
-        let f_w = frontend_window.clone();
         let engine = GStreamerEngine::new();
+        let frontend_window = FrontendWindow::new(&control_window.window.get_application().unwrap(), &engine);
         let cwb = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             tuning_id: tuning_id.clone(),
@@ -85,18 +84,15 @@ impl ControlWindowButton {
             engine,
         });
         cwb.set_label(&tuning_id.channel);
-        let close_action = gio::SimpleAction::new("close", None);
-        close_action.connect_activate({
+        cwb.frontend_window.close_button.connect_clicked({
             let c_w_b =cwb.clone();
-            move |_, _| c_w_b.toggle_button()
+            move |_| { println!("XXXXXXXX"); c_w_b.toggle_button() }
         });
-        f_w.add_action(&close_action);
         frontend_button.connect_toggled({
             let c_w_b = cwb.clone();
-            move |_| {
-                c_w_b.toggle_button();
-            }
-        });
+            move |_| c_w_b.toggle_button()
+         });
+
         cwb
     }
 
@@ -115,8 +111,8 @@ impl ControlWindowButton {
                      println!("Active");
                      if self.inhibitor.get() == 0 {
                          println!("Activating inactive window.");
-                         self.inhibitor.set(app.inhibit(&self.frontend_window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
-                         self.frontend_window.show_all();
+                         self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
+                         self.frontend_window.window.show_all();
                      } else {
                          println!("Window being activated is already active.");
                      }
@@ -126,7 +122,7 @@ impl ControlWindowButton {
                          println!("Deactivating active window.");
                          app.uninhibit(self.inhibitor.get());
                          self.inhibitor.set(0);
-                         self.frontend_window.hide();
+                         self.frontend_window.window.hide();
                      } else {
                          println!("Window being deactivated is not active.");
                      }

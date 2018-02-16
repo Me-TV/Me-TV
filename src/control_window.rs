@@ -35,8 +35,6 @@ use about;
 use channel_names;
 use control_window_button::ControlWindowButton;
 use frontend_manager::{FrontendId, TuningId, Message};
-use frontend_window::create_frontend_window;
-use gstreamer_engine::GStreamerEngine;
 
 use comboboxtext_extras::ComboBoxTextExtras;
 
@@ -64,21 +62,17 @@ impl ControlWindow {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         window.set_border_width(10);
-        window.connect_delete_event({
-            let app = application.clone();
-            move |_, _| {
-                app.quit();
-                Inhibit(false)
-            }}
-        );
         let header_bar = gtk::HeaderBar::new();
         header_bar.set_title("Me TV");
-        header_bar.set_show_close_button(true);
+        header_bar.set_show_close_button(false);
         let menu_button = gtk::MenuButton::new();
         menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/control_window_menu.xml"));
         let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").expect("Could not create the control window menu.");
-        // Temporary place holders. Need some better things in this menu.
+        let epg_action = gio::SimpleAction::new("epg", None);
+        //epg_action.connect_activate(
+        //);
+        window.add_action(&epg_action);
         let about_action = gio::SimpleAction::new("about", None);
         about_action.connect_activate({
             let w = window.clone();

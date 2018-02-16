@@ -30,30 +30,41 @@ use gtk::prelude::*;
 
 //use channel_names;
 
-pub fn create_frontend_window(application: &gtk::Application) -> gtk::ApplicationWindow {
-    let window = gtk::ApplicationWindow::new(application);
-    window.set_title("Me TV");
-    let header_bar = gtk::HeaderBar::new();
-    header_bar.set_title("Me TV");
-    header_bar.set_show_close_button(false);
-    let menu_button = gtk::MenuButton::new();
-    menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
-    let fullscreen_menu_button = gtk::MenuButton::new();
-    fullscreen_menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
-    let builder = gtk::Builder::new_from_string(include_str!("resources/frontend_window_menu.xml"));
-    let window_menu = builder.get_object::<gio::Menu>("window_menu").expect("Could not create the frontend window menu.");
-    let fullscreen_action = gio::SimpleAction::new("fullscreen", None);
-    fullscreen_action.connect_activate({
-        let w = window.clone();
-        move |_, _| { if is_fullscreen(&w) { w.unfullscreen(); } else { w.fullscreen(); } }
-    });
-    window.add_action(&fullscreen_action);
-    menu_button.set_menu_model(&window_menu);
-    header_bar.pack_end(&menu_button);
-    window.set_titlebar(&header_bar);
-    window
+use gstreamer_engine::GStreamerEngine;
+
+pub struct FrontendWindow {
+    pub window: gtk::ApplicationWindow,
+    pub close_button: gtk::Button,
+    pub fullscreen_button: gtk::Button,
+    pub channel_selector: gtk::ComboBoxText,
 }
 
-fn is_fullscreen(window: &gtk::ApplicationWindow) -> bool {
-	false // window.get_state() & gdk::WINDOW_STATE_FULLSCREEN
+impl FrontendWindow {
+    pub fn new(application: &gtk::Application, engine: &GStreamerEngine) -> FrontendWindow {
+        let window = gtk::ApplicationWindow::new(application);
+        window.set_title("Me TV");
+        let header_bar = gtk::HeaderBar::new();
+        header_bar.set_title("Me TV");
+        header_bar.set_show_close_button(false);
+        let close_button = gtk::Button::new();
+        close_button.set_image(&gtk::Image::new_from_icon_name("window-close-symbolic", gtk::IconSize::Button.into()));
+        // close_button action added by caller of this funciton.
+        let fullscreen_button = gtk::Button::new();
+        fullscreen_button.set_image(&gtk::Image::new_from_icon_name("view-fullscreen-symbolic", gtk::IconSize::Button.into()));
+        fullscreen_button.connect_clicked({
+            let w = window.clone();
+            move |_| { w.fullscreen(); }
+        });
+        let channel_selector = gtk::ComboBoxText::new();
+        header_bar.pack_end(&close_button);
+        header_bar.pack_end(&fullscreen_button);
+        header_bar.pack_start(&channel_selector);
+        window.set_titlebar(&header_bar);
+        FrontendWindow {
+            window,
+            close_button,
+            fullscreen_button,
+            channel_selector,
+        }
+    }
 }

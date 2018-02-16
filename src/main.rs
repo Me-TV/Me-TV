@@ -64,11 +64,14 @@ fn main() {
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(&application_menu);
+        let epg_action = gio::SimpleAction::new("EPG", None);
+        app.add_action(&epg_action);
         let about_action = gio::SimpleAction::new("about", None);
         app.add_action(&about_action);
         let quit_action = gio::SimpleAction::new("quit", None);
         app.add_action(&quit_action);
         let control_window = control_window::ControlWindow::new(&app);
+        epg_action.connect_activate(move |_, _| {});
         about_action.connect_activate(move |_, _| about::present(Some(&control_window.window)));
         quit_action.connect_activate({let a = app.clone(); move |_, _| a.quit()});
         let (to_fem, from_in) = channel::<inotify_daemon::Message>();

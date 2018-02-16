@@ -2,6 +2,11 @@
 <interface>
   <menu id='application_menu'>
     <item>
+      <attribute name='label' translatable='yes'>_EPG</attribute>
+      <attribute name='action'>win.epg</attribute>
+      <attribute name='accel'>&lt;Primary&gt;e</attribute>
+    </item>
+    <item>
       <attribute name='label' translatable='yes'>_About</attribute>
       <attribute name='action'>app.about</attribute>
       <attribute name='accel'>&lt;Primary&gt;a</attribute>
