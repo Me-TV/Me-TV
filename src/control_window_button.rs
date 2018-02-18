@@ -62,7 +62,7 @@ impl ControlWindowButton {
     ///
     /// This function is executed in the GTK event loop thread.
     pub fn new(control_window: &Rc<ControlWindow>, fei: FrontendId, channel_names: &Vec<String>, default_channel_name: &String) -> Rc<ControlWindowButton> {
-        let tuning_id = TuningId{frontend: fei, channel: default_channel_name.clone()};
+        let tuning_id = TuningId { frontend: fei, channel: default_channel_name.clone() };
         let frontend_button = gtk::ToggleButton::new_with_label(format!("adaptor{}\nfrontend{}", tuning_id.frontend.adapter, tuning_id.frontend.frontend).as_ref());
         let channel_selector = gtk::ComboBoxText::new();
         for (_, name) in channel_names.iter().enumerate() {
@@ -85,14 +85,16 @@ impl ControlWindowButton {
         });
         cwb.set_label(&tuning_id.channel);
         cwb.frontend_window.close_button.connect_clicked({
-            let c_w_b =cwb.clone();
-            move |_| { println!("XXXXXXXX"); c_w_b.toggle_button() }
+            let c_w_b = cwb.clone();
+            move |_| {
+                let button = &c_w_b.frontend_button;
+                button.set_active(! button.get_active())
+            }
         });
         frontend_button.connect_toggled({
             let c_w_b = cwb.clone();
             move |_| c_w_b.toggle_button()
-         });
-
+        });
         cwb
     }
 
@@ -102,32 +104,27 @@ impl ControlWindowButton {
     }
 
     /// Toggle the button.
+    ///
+    /// This function is called after the change of state of the frontend_button.
     fn toggle_button(&self) {
-        println!("Frontend window button toggled.");
-        CONTROL_WINDOW.with(|global|{
-             if let Some(ref control_window) = *global.borrow() {
-                 let app = control_window.window.get_application().unwrap();
-                 if self.frontend_button.get_active() {
-                     println!("Active");
-                     if self.inhibitor.get() == 0 {
-                         println!("Activating inactive window.");
-                         self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
-                         self.frontend_window.window.show_all();
-                     } else {
-                         println!("Window being activated is already active.");
-                     }
-                 } else {
-                     println!("Inactive");
-                     if self.inhibitor.get() != 0 {
-                         println!("Deactivating active window.");
-                         app.uninhibit(self.inhibitor.get());
-                         self.inhibitor.set(0);
-                         self.frontend_window.window.hide();
-                     } else {
-                         println!("Window being deactivated is not active.");
-                     }
-                 }
-             }
-         });
+        let app = self.control_window.window.get_application().unwrap();
+        if self.frontend_button.get_active() {
+            if self.inhibitor.get() == 0 {
+                self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
+                self.frontend_window.window.show_all();
+            } else {
+                println!("Inconsistent state. Should panic in a nice multithreaded way.");
+            }
+        } else {
+            if self.inhibitor.get() != 0 {
+                app.uninhibit(self.inhibitor.get());
+                self.inhibitor.set(0);
+                self.frontend_window.window.hide();
+            } else {
+                println!("Inconsistent state. Should panic in a nice multithreaded way.");
+            }
+        }
     }
+
 }
+
