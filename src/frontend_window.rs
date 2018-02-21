@@ -28,7 +28,7 @@ use gio::prelude::*;
 use gtk;
 use gtk::prelude::*;
 
-//use channel_names;
+use channel_names;
 
 use gstreamer_engine::GStreamerEngine;
 
@@ -40,7 +40,7 @@ pub struct FrontendWindow {
 }
 
 impl FrontendWindow {
-    pub fn new(application: &gtk::Application, engine: &GStreamerEngine) -> FrontendWindow {
+    pub fn new(application: &gtk::Application, channel_names: &Vec<String>, engine: &GStreamerEngine) -> FrontendWindow {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         let header_bar = gtk::HeaderBar::new();
@@ -56,10 +56,14 @@ impl FrontendWindow {
             move |_| { w.fullscreen(); }
         });
         let channel_selector = gtk::ComboBoxText::new();
+        for (_, name) in channel_names.iter().enumerate() {
+            channel_selector.append_text(name);
+        }
         header_bar.pack_end(&close_button);
         header_bar.pack_end(&fullscreen_button);
         header_bar.pack_start(&channel_selector);
         window.set_titlebar(&header_bar);
+        window.add(&engine.video_widget);
         FrontendWindow {
             window,
             close_button,

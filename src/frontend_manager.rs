@@ -19,6 +19,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::cell::RefCell;
 use std::fs;
 use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, time};
@@ -39,7 +40,7 @@ pub struct FrontendId {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TuningId {
     pub frontend: FrontendId,
-    pub channel: String,
+    pub channel: RefCell<String>,
 }
 
 /// An enumeration of all the message types that  can be sent by

@@ -55,6 +55,7 @@ pub static CONTROL_WINDOW: RefCell<Option<Rc<ControlWindow>>> = RefCell::new(Non
 );
 
 impl ControlWindow {
+
     /// Constructor (obviously :-). Creates the window to hold the widgets representing the
     /// frontends available. It is assumed this is called in the main thread that then runs the
     /// GTK event loop.
@@ -114,6 +115,7 @@ impl ControlWindow {
         });
         rv
     }
+
 }
 
 /// Add a new frontend to this control window.

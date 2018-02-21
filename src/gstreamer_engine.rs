@@ -27,15 +27,13 @@ use gstreamer::prelude::*;
 pub struct GStreamerEngine{
     playbin: gstreamer::Element,
     video_element: gstreamer::Element,
-    video_widget: gtk::Widget,
+    pub video_widget: gtk::Widget,
 }
 
 impl GStreamerEngine {
+
     pub fn new() -> GStreamerEngine {
         let playbin = gstreamer::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
-        // BEGIN COPIED CODE
-        // This code copied from https://github.com/sdroege/gstreamer-rs/blob/master/examples/src/bin/gtksink.rs
-        // and then slightly amended.
         let (video_element, video_widget) = if let Some(gtkglsink) = gstreamer::ElementFactory::make("gtkglsink", None) {
             let glsinkbin = gstreamer::ElementFactory::make("glsinkbin", None).unwrap();
             glsinkbin
@@ -48,11 +46,25 @@ impl GStreamerEngine {
             let widget = sink.get_property("widget").unwrap();
             (sink, widget.get::<gtk::Widget>().unwrap())
         };
-        // END COPIED CODE
         GStreamerEngine {
             playbin,
             video_element,
             video_widget,
         }
     }
+
+    fn on_bus_message() {}
+
+    pub fn set_mrl(&self, mrl: &str) {
+        self.playbin.set_property("uri", &mrl).expect("Could not set URI on playbin.");
+    }
+
+    pub fn play(&self) {
+        self.playbin.set_state(gstreamer::State::Playing);
+    }
+
+    pub fn pause(&self) {
+        self.playbin.set_state(gstreamer::State::Paused);
+    }
+
 }
