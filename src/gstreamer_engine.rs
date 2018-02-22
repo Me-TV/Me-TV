@@ -24,10 +24,25 @@ use gtk;
 use gstreamer;
 use gstreamer::prelude::*;
 
-pub struct GStreamerEngine{
+pub struct GStreamerEngine {
     playbin: gstreamer::Element,
     video_element: gstreamer::Element,
     pub video_widget: gtk::Widget,
+}
+
+enum PlayFlags {
+    PlayFlagVideo = (1 << 0),
+    PlayFlagAudio = (1 << 1),
+    PlayFlagText = (1 << 2),
+    PlayFlagVis = (1 << 3),
+    PlayFlagSoftVolume = (1 << 4),
+    PlayFlagNativeAudio = (1 << 5),
+    PlayFlagNativeVideo = (1 << 6),
+    PlayFlagDownload = (1 << 7),
+    PlayFlagBuffering = (1 << 8),
+    PlayFlagDeinterlace = (1 << 9),
+    PlayFlagSoftColorBalance = (1 << 10),
+    PlayFlagForceFilters = (1 << 11)
 }
 
 impl GStreamerEngine {
@@ -59,12 +74,43 @@ impl GStreamerEngine {
         self.playbin.set_property("uri", &mrl).expect("Could not set URI on playbin.");
     }
 
-    pub fn play(&self) {
-        self.playbin.set_state(gstreamer::State::Playing);
+    pub fn pause(&self) {
+        let rv = self.playbin.set_state(gstreamer::State::Paused);
+        assert_eq!(rv,  gstreamer::StateChangeReturn::Success);
     }
 
-    pub fn pause(&self) {
-        self.playbin.set_state(gstreamer::State::Paused);
+    pub fn play(&self) {
+        let rv = self.playbin.set_state(gstreamer::State::Playing);
+        assert_eq!(rv,  gstreamer::StateChangeReturn::Success);
+    }
+
+    pub fn stop(&self) {
+        let rv = self.playbin.set_state(gstreamer::State::Null);
+        assert_eq!(rv,  gstreamer::StateChangeReturn::Success);
+    }
+
+    pub fn get_volume(&self) -> f32 {
+        self.playbin.get_property("volume").unwrap().get().unwrap()
+    }
+
+    pub fn set_volume(&self, value: &f32) {
+        self.playbin.set_property("volume", value).unwrap();
+    }
+
+    pub fn set_mute_state(&self, mute: &bool) {
+        self.playbin.set_property("mute", mute).unwrap();
+    }
+
+    pub fn get_subtitles_showing(&self) -> bool {
+        let flags: i32 = self.playbin.get_property("flags").unwrap().get().unwrap();
+        (flags & PlayFlags::PlayFlagText as i32) != 0
+    }
+
+    pub fn set_subtitles_showing(&self, state: bool) {
+        let mut flags: i32 = self.playbin.get_property("flags").unwrap().get().unwrap();
+        if state { flags |= PlayFlags::PlayFlagText as i32; }
+        else { flags &= !(PlayFlags::PlayFlagText as i32); }
+        self.playbin.set_property("flags", &flags).unwrap();
     }
 
 }

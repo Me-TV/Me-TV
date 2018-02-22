@@ -22,19 +22,12 @@
 use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::mpsc::Receiver;
 
-use gio;
-use gio::prelude::*;
-use glib;
-//use glib::prelude::*;
 use gtk;
 use gtk::prelude::*;
 
-use about;
-use channel_names;
-use control_window::{CONTROL_WINDOW, ControlWindow};
-use frontend_manager::{FrontendId, TuningId, Message};
+use control_window::ControlWindow;
+use frontend_manager::{FrontendId, TuningId};
 use frontend_window::FrontendWindow;
 use gstreamer_engine::GStreamerEngine;
 

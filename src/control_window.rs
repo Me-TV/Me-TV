@@ -19,7 +19,6 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
@@ -34,9 +33,7 @@ use gtk::prelude::*;
 use about;
 use channel_names;
 use control_window_button::ControlWindowButton;
-use frontend_manager::{FrontendId, TuningId, Message};
-
-use comboboxtext_extras::ComboBoxTextExtras;
+use frontend_manager::{FrontendId, Message};
 
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
 /// so use a bit of composition.

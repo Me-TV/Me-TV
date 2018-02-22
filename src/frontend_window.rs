@@ -19,16 +19,8 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-//use gdk;
-//use gdk::prelude::*;
-use gio;
-use gio::prelude::*;
-//use glib;
-//use glib::prelude::*;
 use gtk;
 use gtk::prelude::*;
-
-use channel_names;
 
 use gstreamer_engine::GStreamerEngine;
 
