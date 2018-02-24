@@ -21,6 +21,8 @@
 
 use gtk;
 
+use glib::FlagsClass;
+
 use gstreamer;
 use gstreamer::prelude::*;
 
@@ -28,21 +30,6 @@ pub struct GStreamerEngine {
     playbin: gstreamer::Element,
     video_element: gstreamer::Element,
     pub video_widget: gtk::Widget,
-}
-
-enum PlayFlags {
-    PlayFlagVideo = (1 << 0),
-    PlayFlagAudio = (1 << 1),
-    PlayFlagText = (1 << 2),
-    PlayFlagVis = (1 << 3),
-    PlayFlagSoftVolume = (1 << 4),
-    PlayFlagNativeAudio = (1 << 5),
-    PlayFlagNativeVideo = (1 << 6),
-    PlayFlagDownload = (1 << 7),
-    PlayFlagBuffering = (1 << 8),
-    PlayFlagDeinterlace = (1 << 9),
-    PlayFlagSoftColorBalance = (1 << 10),
-    PlayFlagForceFilters = (1 << 11)
 }
 
 impl GStreamerEngine {
@@ -102,14 +89,22 @@ impl GStreamerEngine {
     }
 
     pub fn get_subtitles_showing(&self) -> bool {
-        let flags: i32 = self.playbin.get_property("flags").unwrap().get().unwrap();
-        (flags & PlayFlags::PlayFlagText as i32) != 0
+        let flags = self.playbin.get_property("flags").unwrap();
+        let flags_class = FlagsClass::new(flags.type_()).unwrap();
+        flags_class.is_set_by_nick(&flags,"text")
     }
 
     pub fn set_subtitles_showing(&self, state: bool) {
-        let mut flags: i32 = self.playbin.get_property("flags").unwrap().get().unwrap();
-        if state { flags |= PlayFlags::PlayFlagText as i32; }
-        else { flags &= !(PlayFlags::PlayFlagText as i32); }
+        let flags = self.playbin.get_property("flags").unwrap();
+        let flags_class = FlagsClass::new(flags.type_()).unwrap();
+        let flags_builder = flags_class.builder_with_value(flags).unwrap();
+        let flags = if state {
+            flags_builder.set_by_nick("text")
+        } else {
+            flags_builder.unset_by_nick("text")
+        }
+            .build()
+            .unwrap();
         self.playbin.set_property("flags", &flags).unwrap();
     }
 
