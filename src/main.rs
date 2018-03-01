@@ -25,7 +25,7 @@ extern crate glib;
 extern crate gtk;
 extern crate gdk_pixbuf;
 
-extern crate gstreamer;
+extern crate gstreamer as gst;
 
 extern crate inotify;
 
@@ -52,7 +52,7 @@ mod inotify_daemon;
 
 #[cfg(not(test))]
 fn main() {
-    gstreamer::init().unwrap();
+    gst::init().unwrap();
     let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed.");
     glib::set_application_name("Me TV");
     /*
