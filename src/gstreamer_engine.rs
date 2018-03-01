@@ -19,32 +19,54 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+//use gio;
+use gio::prelude::*;
+use glib;
+use glib::prelude::*;
 use gtk;
+//use gdk::prelude::*;
 
-use glib::FlagsClass;
-
-use gstreamer;
-use gstreamer::prelude::*;
+use gst;
+use gst::prelude::*;
 
 pub struct GStreamerEngine {
-    playbin: gstreamer::Element,
-    video_element: gstreamer::Element,
+    playbin: gst::Element,
+    video_element: gst::Element,
     pub video_widget: gtk::Widget,
 }
 
 impl GStreamerEngine {
 
-    pub fn new() -> GStreamerEngine {
-        let playbin = gstreamer::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
-        let (video_element, video_widget) = if let Some(gtkglsink) = gstreamer::ElementFactory::make("gtkglsink", None) {
-            let glsinkbin = gstreamer::ElementFactory::make("glsinkbin", None).unwrap();
-            glsinkbin
-                .set_property("sink", &gtkglsink.to_value())
-                .unwrap();
+    pub fn new(application: &gtk::Application) -> GStreamerEngine {
+        let playbin = gst::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
+        let bus = playbin.get_bus().unwrap();
+        bus.add_watch(move |_, msg| {
+                match msg.view() {
+                    gst::MessageView::Eos(..) => {
+                        println!("Got an EOS signal in GStreamer engine.");
+                        application.quit();
+                    },
+                    gst::MessageView::Error(err) => {
+                        println!(
+                            "Error from {:?}: {} ({:?})",
+                            err.get_src().map(|s| s.get_path_string()),
+                            err.get_error(),
+                            err.get_debug()
+                        );
+                        application.quit();
+                    },
+                    _ => (),
+                };
+                glib::Continue(true)
+            }
+        );
+        let (video_element, video_widget) = if let Some(gtkglsink) = gst::ElementFactory::make("gtkglsink", None) {
+            let glsinkbin = gst::ElementFactory::make("glsinkbin", None).unwrap();
+            glsinkbin.set_property("sink", &gtkglsink.to_value()).unwrap();
             let widget = gtkglsink.get_property("widget").unwrap();
             (glsinkbin, widget.get::<gtk::Widget>().unwrap())
         } else {
-            let sink = gstreamer::ElementFactory::make("gtksink", None).unwrap();
+            let sink = gst::ElementFactory::make("gtksink", None).unwrap();
             let widget = sink.get_property("widget").unwrap();
             (sink, widget.get::<gtk::Widget>().unwrap())
         };
@@ -62,18 +84,18 @@ impl GStreamerEngine {
     }
 
     pub fn pause(&self) {
-        let rv = self.playbin.set_state(gstreamer::State::Paused);
-        assert_eq!(rv,  gstreamer::StateChangeReturn::Success);
+        let rv = self.playbin.set_state(gst::State::Paused);
+        assert_eq!(rv,  gst::StateChangeReturn::Success);
     }
 
     pub fn play(&self) {
-        let rv = self.playbin.set_state(gstreamer::State::Playing);
-        assert_eq!(rv,  gstreamer::StateChangeReturn::Success);
+        let rv = self.playbin.set_state(gst::State::Playing);
+        assert_eq!(rv,  gst::StateChangeReturn::Success);
     }
 
     pub fn stop(&self) {
-        let rv = self.playbin.set_state(gstreamer::State::Null);
-        assert_eq!(rv,  gstreamer::StateChangeReturn::Success);
+        let rv = self.playbin.set_state(gst::State::Null);
+        assert_eq!(rv,  gst::StateChangeReturn::Success);
     }
 
     pub fn get_volume(&self) -> f32 {
@@ -90,13 +112,13 @@ impl GStreamerEngine {
 
     pub fn get_subtitles_showing(&self) -> bool {
         let flags = self.playbin.get_property("flags").unwrap();
-        let flags_class = FlagsClass::new(flags.type_()).unwrap();
+        let flags_class = glib::FlagsClass::new(flags.type_()).unwrap();
         flags_class.is_set_by_nick(&flags,"text")
     }
 
     pub fn set_subtitles_showing(&self, state: bool) {
         let flags = self.playbin.get_property("flags").unwrap();
-        let flags_class = FlagsClass::new(flags.type_()).unwrap();
+        let flags_class = glib::FlagsClass::new(flags.type_()).unwrap();
         let flags_builder = flags_class.builder_with_value(flags).unwrap();
         let flags = if state {
             flags_builder.set_by_nick("text")
