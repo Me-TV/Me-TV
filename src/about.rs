@@ -20,7 +20,11 @@
  */
 
 use gtk;
-
+// Can't use:
+//
+//use gtk::prelude::*;
+//
+// since it leads to a resolution problem, so have to explicitly list the bits needed.
 use gtk::AboutDialogExt;
 use gtk::DialogExt;
 use gtk::WidgetExt;
