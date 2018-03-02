@@ -88,7 +88,7 @@ impl ControlWindow {
         header_bar.pack_end(&menu_button);
         window.set_titlebar(&header_bar);
         let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        let label = gtk::Label::new("No frontends available.");
+        let label = gtk::Label::new("\nNo frontends available.\n");
         let frontends_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
         main_box.pack_start(&label, true, true, 0);
         window.add(&main_box);

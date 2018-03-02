@@ -101,8 +101,11 @@ impl ControlWindowButton {
 
     /// Set the state of the channel control widgets..
     fn set_label(&self, channel_name: &String) {
-        self.tuning_id.channel.replace(channel_name.clone());
-        let value = self.tuning_id.channel.borrow().clone();
+        let current = &self.tuning_id.channel;
+        if *current.borrow() != *channel_name {
+            current.replace(channel_name.clone());
+        }
+        let value = &*current.borrow();
         self.channel_selector.set_active_text(value.as_ref());
         self.frontend_window.channel_selector.set_active_text(value.as_ref());
     }
@@ -116,7 +119,10 @@ impl ControlWindowButton {
             if self.inhibitor.get() == 0 {
                 self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
                 self.frontend_window.window.show_all();
-                self.engine.set_mrl(&("dvb://".to_owned() + &self.tuning_id.channel.borrow()));
+                let mut mrl = String::from("dvb://");
+                mrl.push_str(&self.tuning_id.channel.borrow());
+                self.engine.set_mrl(&encode_to_mrl(&mrl));
+                //self.engine.set_mrl(&("dvb://".to_owned() + &self.tuning_id.channel.borrow()));
                 self.engine.play();
 
             } else {
@@ -138,9 +144,13 @@ impl ControlWindowButton {
     fn on_channel_changed(&self, channel_name: &String) {
         self.engine.pause();
         self.set_label(channel_name);
-        self.engine.set_mrl(&("dvb://".to_owned() + channel_name));
+        self.engine.set_mrl(&encode_to_mrl(&self.tuning_id.channel.borrow()));
         self.engine.play();
     }
 
 }
 
+/// Encode a string as used for display to one suitable to be an MRL.
+fn encode_to_mrl(channel_name: &String) -> String {
+    channel_name.replace(" ", "%20")
+}

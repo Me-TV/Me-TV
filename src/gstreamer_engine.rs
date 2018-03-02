@@ -29,6 +29,8 @@ use gtk;
 use gst;
 use gst::prelude::*;
 
+use send_cell::SendCell;
+
 pub struct GStreamerEngine {
     playbin: gst::Element,
     video_element: gst::Element,
@@ -40,26 +42,33 @@ impl GStreamerEngine {
     pub fn new(application: &gtk::Application) -> GStreamerEngine {
         let playbin = gst::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
         let bus = playbin.get_bus().unwrap();
+        // The compiler cannot determine that the bus watch callback will be executed by the same thread that
+        // the gtk::Application object is created with, which must be the case, and so fails to compile unless we
+        // use a SendCell.
+        let app_clone = SendCell::new(application.clone());
         bus.add_watch(move |_, msg| {
-                match msg.view() {
-                    gst::MessageView::Eos(..) => {
-                        println!("Got an EOS signal in GStreamer engine.");
-                        application.quit();
-                    },
-                    gst::MessageView::Error(err) => {
-                        println!(
-                            "Error from {:?}: {} ({:?})",
-                            err.get_src().map(|s| s.get_path_string()),
-                            err.get_error(),
-                            err.get_debug()
-                        );
-                        application.quit();
-                    },
-                    _ => (),
-                };
-                glib::Continue(true)
-            }
-        );
+            let app = app_clone.borrow();
+            match msg.view() {
+                gst::MessageView::Eos(..) => {
+                    println!("Got an EOS signal in GStreamer engine.");
+                    app.quit();
+                },
+                gst::MessageView::Error(err) => {
+                    println!(
+                        "Error from {:?}: {} ({:?})",
+                        // TODO Post 0.10.2 can do:
+                        // err.get_src().map(|s| s.get_path_string()),
+                        // but in 0.10.2 must do:
+                        msg.get_src().map(|s| s.get_path_string()),
+                        err.get_error(),
+                        err.get_debug()
+                    );
+                    app.quit();
+                },
+                _ => (),
+            };
+            glib::Continue(true)
+        });
         let (video_element, video_widget) = if let Some(gtkglsink) = gst::ElementFactory::make("gtkglsink", None) {
             let glsinkbin = gst::ElementFactory::make("glsinkbin", None).unwrap();
             glsinkbin.set_property("sink", &gtkglsink.to_value()).unwrap();
@@ -70,14 +79,17 @@ impl GStreamerEngine {
             let widget = sink.get_property("widget").unwrap();
             (sink, widget.get::<gtk::Widget>().unwrap())
         };
-        GStreamerEngine {
+        let engine = GStreamerEngine {
             playbin,
             video_element,
             video_widget,
-        }
+        };
+        engine.playbin.set_property("video-sink", &engine.video_widget);
+        engine
     }
 
     pub fn set_mrl(&self, mrl: &str) {
+        println!("set_mrl to {}", mrl);
         self.playbin.set_property("uri", &mrl).expect("Could not set URI on playbin.");
     }
 

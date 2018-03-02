@@ -29,6 +29,8 @@ extern crate gstreamer as gst;
 
 extern crate inotify;
 
+extern crate send_cell;
+
 #[cfg(test)]
 #[macro_use]
 extern crate quickcheck;
