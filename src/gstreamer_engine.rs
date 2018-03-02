@@ -77,8 +77,6 @@ impl GStreamerEngine {
         }
     }
 
-    fn on_bus_message() {}
-
     pub fn set_mrl(&self, mrl: &str) {
         self.playbin.set_property("uri", &mrl).expect("Could not set URI on playbin.");
     }
