@@ -84,7 +84,9 @@ impl GStreamerEngine {
             video_element,
             video_widget,
         };
-        engine.playbin.set_property("video-sink", &engine.video_widget);
+        engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
+        engine.video_element.set_property("force-aspect-ratio", &true.to_value()).expect("Could not set 'force-aspect-ration' property");
+        engine.set_subtitles_showing(false);
         engine
     }
 
@@ -94,26 +96,30 @@ impl GStreamerEngine {
     }
 
     pub fn pause(&self) {
-        let rv = self.playbin.set_state(gst::State::Paused);
-        assert_eq!(rv,  gst::StateChangeReturn::Success);
+        let (rv, state, pending) = self.playbin.get_state(gst::CLOCK_TIME_NONE);
+        assert_ne!(rv, gst::StateChangeReturn::Failure);
+        if state == gst::State::Playing {
+            let rv = self.playbin.set_state(gst::State::Paused);
+            assert_ne!(rv, gst::StateChangeReturn::Failure);
+        }
     }
 
     pub fn play(&self) {
         let rv = self.playbin.set_state(gst::State::Playing);
-        assert_eq!(rv,  gst::StateChangeReturn::Success);
+        assert_ne!(rv,  gst::StateChangeReturn::Failure);
     }
 
     pub fn stop(&self) {
         let rv = self.playbin.set_state(gst::State::Null);
-        assert_eq!(rv,  gst::StateChangeReturn::Success);
+        assert_ne!(rv,  gst::StateChangeReturn::Failure);
     }
 
-    pub fn get_volume(&self) -> f32 {
+    pub fn get_volume(&self) -> f64 {
         self.playbin.get_property("volume").unwrap().get().unwrap()
     }
 
-    pub fn set_volume(&self, value: &f32) {
-        self.playbin.set_property("volume", value).unwrap();
+    pub fn set_volume(&self, value: f64) {
+        self.playbin.set_property("volume", &value).unwrap();
     }
 
     pub fn set_mute_state(&self, mute: &bool) {

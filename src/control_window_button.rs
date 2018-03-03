@@ -64,8 +64,9 @@ impl ControlWindowButton {
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
-        let engine = GStreamerEngine::new(&control_window.window.get_application().unwrap());
-        let frontend_window = FrontendWindow::new(&control_window.window.get_application().unwrap(), &channel_names, &engine);
+        let application = control_window.window.get_application().unwrap();
+        let engine = GStreamerEngine::new(&application);
+        let frontend_window = FrontendWindow::new(&application, &channel_names, &engine);
         let cwb = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             tuning_id,
@@ -82,6 +83,12 @@ impl ControlWindowButton {
             move |_| {
                 let button = &c_w_b.frontend_button;
                 button.set_active(! button.get_active())
+            }
+        });
+        cwb.frontend_window.volume_adjustment.connect_value_changed({
+            let c_w_b = cwb.clone();
+            move |_| {
+                c_w_b.engine.set_volume(c_w_b.frontend_window.volume_adjustment.get_value());
             }
         });
         cwb.frontend_button.connect_toggled({
@@ -119,10 +126,7 @@ impl ControlWindowButton {
             if self.inhibitor.get() == 0 {
                 self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
                 self.frontend_window.window.show_all();
-                let mut mrl = String::from("dvb://");
-                mrl.push_str(&self.tuning_id.channel.borrow());
-                self.engine.set_mrl(&encode_to_mrl(&mrl));
-                //self.engine.set_mrl(&("dvb://".to_owned() + &self.tuning_id.channel.borrow()));
+                self.engine.set_mrl(&encode_to_mrl(&("dvb://".to_owned() + &self.tuning_id.channel.borrow())));
                 self.engine.play();
 
             } else {
@@ -142,10 +146,15 @@ impl ControlWindowButton {
 
     /// Callback for an observed channel change.
     fn on_channel_changed(&self, channel_name: &String) {
-        self.engine.pause();
+        let status = self.frontend_button.get_active();
+        if status {
+            self.engine.stop();
+        }
         self.set_label(channel_name);
         self.engine.set_mrl(&encode_to_mrl(&self.tuning_id.channel.borrow()));
-        self.engine.play();
+        if status {
+            self.engine.play();
+        }
     }
 
 }
@@ -153,4 +162,25 @@ impl ControlWindowButton {
 /// Encode a string as used for display to one suitable to be an MRL.
 fn encode_to_mrl(channel_name: &String) -> String {
     channel_name.replace(" ", "%20")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode_to_mrl_with_no_spaces() {
+        assert_eq!(encode_to_mrl(&"dvb://ITV".to_owned()), "dvb://ITV");
+    }
+
+    #[test]
+    fn test_encode_to_mrl_with_one_space() {
+        assert_eq!(encode_to_mrl(&"dvb://BBC NEWS".to_owned()), "dvb://BBC%20NEWS");
+    }
+
+    #[test]
+    fn test_encode_to_mrl_with_two_spaces() {
+        assert_eq!(encode_to_mrl(&"dvb://BBC One Lon".to_owned()), "dvb://BBC%20One%20Lon");
+    }
+
 }

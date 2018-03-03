@@ -28,19 +28,23 @@ pub struct FrontendWindow {
     pub window: gtk::ApplicationWindow,
     pub close_button: gtk::Button,
     pub fullscreen_button: gtk::Button,
+    pub volume_adjustment: gtk::Adjustment,
+    pub volume_button: gtk::VolumeButton,
     pub channel_selector: gtk::ComboBoxText,
 }
 
 impl FrontendWindow {
+
     pub fn new(application: &gtk::Application, channel_names: &Vec<String>, engine: &GStreamerEngine) -> FrontendWindow {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
+        window.set_default_size(480, 270);
         let header_bar = gtk::HeaderBar::new();
         header_bar.set_title("Me TV");
         header_bar.set_show_close_button(false);
         let close_button = gtk::Button::new();
         close_button.set_image(&gtk::Image::new_from_icon_name("window-close-symbolic", gtk::IconSize::Button.into()));
-        // close_button action added by caller of this funciton.
+        // close_button action added by caller of this function.
         let fullscreen_button = gtk::Button::new();
         fullscreen_button.set_image(&gtk::Image::new_from_icon_name("view-fullscreen-symbolic", gtk::IconSize::Button.into()));
         fullscreen_button.connect_clicked({
@@ -51,8 +55,17 @@ impl FrontendWindow {
         for (_, name) in channel_names.iter().enumerate() {
             channel_selector.append_text(name);
         }
+        // With C++ had to set the volume of the button before setting the adjustment
+        // to get the right icons.
+        let volume_adjustment = gtk::Adjustment::new(0.2, 0.0, 1.0, 0.01, 0.05, 0.0);
+        let volume = volume_adjustment.get_value();
+        let volume_button = gtk::VolumeButton::new();
+        volume_button.set_value(volume);
+        volume_button.set_adjustment(&volume_adjustment);
+        // Adjustment callback set in calling function.
         header_bar.pack_end(&close_button);
         header_bar.pack_end(&fullscreen_button);
+        header_bar.pack_end(&volume_button);
         header_bar.pack_start(&channel_selector);
         window.set_titlebar(&header_bar);
         window.add(&engine.video_widget);
@@ -60,7 +73,10 @@ impl FrontendWindow {
             window,
             close_button,
             fullscreen_button,
+            volume_adjustment,
+            volume_button,
             channel_selector,
         }
     }
+
 }
