@@ -131,7 +131,7 @@ impl ControlWindowButton {
             if self.inhibitor.get() == 0 {
                 self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
                 self.frontend_window.window.show();
-                self.engine.set_mrl(&encode_to_mrl(&("dvb://".to_owned() + &self.tuning_id.channel.borrow())));
+                self.engine.set_mrl(&encode_to_mrl(&self.tuning_id.channel.borrow()));
                 self.engine.play();
 
             } else {
@@ -166,7 +166,7 @@ impl ControlWindowButton {
 
 /// Encode a string as used for display to one suitable to be an MRL.
 fn encode_to_mrl(channel_name: &String) -> String {
-    channel_name.replace(" ", "%20")
+    "dvb://".to_owned() + &channel_name.replace(" ", "%20")
 }
 
 #[cfg(test)]
@@ -175,17 +175,17 @@ mod tests {
 
     #[test]
     fn test_encode_to_mrl_with_no_spaces() {
-        assert_eq!(encode_to_mrl(&"dvb://ITV".to_owned()), "dvb://ITV");
+        assert_eq!(encode_to_mrl(&"ITV".to_owned()), "dvb://ITV");
     }
 
     #[test]
     fn test_encode_to_mrl_with_one_space() {
-        assert_eq!(encode_to_mrl(&"dvb://BBC NEWS".to_owned()), "dvb://BBC%20NEWS");
+        assert_eq!(encode_to_mrl(&"BBC NEWS".to_owned()), "dvb://BBC%20NEWS");
     }
 
     #[test]
     fn test_encode_to_mrl_with_two_spaces() {
-        assert_eq!(encode_to_mrl(&"dvb://BBC One Lon".to_owned()), "dvb://BBC%20One%20Lon");
+        assert_eq!(encode_to_mrl(&"BBC One Lon".to_owned()), "dvb://BBC%20One%20Lon");
     }
 
 }
