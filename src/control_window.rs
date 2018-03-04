@@ -66,7 +66,7 @@ impl ControlWindow {
         let menu_button = gtk::MenuButton::new();
         menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/control_window_menu.xml"));
-        let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").expect("Could not create the control window menu.");
+        let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").unwrap();
         let epg_action = gio::SimpleAction::new("epg", None);
         //epg_action.connect_activate(
         //);

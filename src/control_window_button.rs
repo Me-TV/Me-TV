@@ -103,6 +103,10 @@ impl ControlWindowButton {
             let c_w_b = cwb.clone();
             move |_| c_w_b.on_channel_changed(&c_w_b.frontend_window.channel_selector.get_active_text().unwrap())
         });
+        cwb.frontend_window.fullscreen_channel_selector.connect_changed({
+            let c_w_b = cwb.clone();
+            move |_| c_w_b.on_channel_changed(&c_w_b.frontend_window.fullscreen_channel_selector.get_active_text().unwrap())
+        });
         cwb
     }
 
@@ -115,6 +119,7 @@ impl ControlWindowButton {
         let value = &*current.borrow();
         self.channel_selector.set_active_text(value.as_ref());
         self.frontend_window.channel_selector.set_active_text(value.as_ref());
+        self.frontend_window.fullscreen_channel_selector.set_active_text(value.as_ref());
     }
 
     /// Toggle the button.
@@ -125,7 +130,7 @@ impl ControlWindowButton {
         if self.frontend_button.get_active() {
             if self.inhibitor.get() == 0 {
                 self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
-                self.frontend_window.window.show_all();
+                self.frontend_window.window.show();
                 self.engine.set_mrl(&encode_to_mrl(&("dvb://".to_owned() + &self.tuning_id.channel.borrow())));
                 self.engine.play();
 
