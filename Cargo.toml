@@ -14,7 +14,8 @@ inotify = "*"
 send-cell = "*"
 xdg = "*"
 
+# gstreamer-mpegts = { path = "../../Masters/GStreamer-MPEG-TS-Rust" }
+
 [dev-dependencies]
 quickcheck = "*"
 tempfile = "*"
-
