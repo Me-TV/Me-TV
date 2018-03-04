@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.18.3 -->
+<!-- Generated with glade 3.20.2 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkImage" id="image1">
@@ -16,7 +16,7 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <object class="GtkComboBoxText" id="fullscreen_channel_selection">
+          <object class="GtkComboBoxText" id="fullscreen_channel_selector">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
           </object>
@@ -36,7 +36,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
-              <object class="GtkButton" id="unfullscreen_button">
+              <object class="GtkButton" id="fullscreen_unfullscreen_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -50,29 +50,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkMenuButton" id="fullscreen_menu">
+              <object class="GtkVolumeButton" id="fullscreen_volume_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_popover">False</property>
-                <child>
-                  <placeholder/>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="pack_type">end</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkVolumeButton" id="fullscreen_volumebutton">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
+                <property name="focus_on_click">False</property>
                 <property name="receives_default">True</property>
                 <property name="relief">none</property>
-                <property name="focus_on_click">False</property>
                 <property name="orientation">vertical</property>
                 <property name="icons">audio-volume-muted-symbolic
 audio-volume-high-symbolic
