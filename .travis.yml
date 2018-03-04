@@ -4,4 +4,4 @@ sudo: true
 
 before_script:
   - sudo apt-get -qq update
-  - sudo apt-get install -y libpango1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+  - sudo apt-get install -y libatk1.0-dev libpango1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
