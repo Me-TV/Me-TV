@@ -19,6 +19,8 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use gdk;
+//use gdk::prelude::*;
 use gtk;
 use gtk::prelude::*;
 
@@ -69,6 +71,16 @@ impl FrontendWindow {
         header_bar.pack_start(&channel_selector);
         window.set_titlebar(&header_bar);
         window.add(&engine.video_widget);
+        window.add_events(gdk::EventMask::KEY_PRESS_MASK.bits() as i32);
+        window.connect_key_press_event({
+            let w = window.clone();
+            move |_, key| {
+                if key.get_keyval() == gdk::enums::key::Escape {
+                    w.unfullscreen();
+                }
+                Inhibit(false)
+            }
+        });
         FrontendWindow {
             window,
             close_button,
