@@ -143,7 +143,6 @@ fn remove_adapter(control_window: &Rc<ControlWindow>, id: u16) {
 
 /// Put a call on the GTK event loop to add a new frontend.
 fn handle_add_frontend(fei: FrontendId) {
-    println!("handle_add_frontend executed.");
     CONTROL_WINDOW.with(|global| {
         if let Some(ref mut control_window) = *global.borrow_mut() {
             add_frontend(control_window, fei);
@@ -153,7 +152,6 @@ fn handle_add_frontend(fei: FrontendId) {
 
 /// Put a call on the GTK event loop to remove all the frontends of an adaptor.
 fn handle_remove_adapter(id: u16) {
-    println!("handle_remove_adapter executed.");
     CONTROL_WINDOW.with(|global|{
         if let Some(ref mut control_window) = *global.borrow_mut() {
             remove_adapter(control_window, id);
@@ -169,11 +167,9 @@ pub fn message_listener(from_fem: Receiver<Message>) {
             Ok(r) => {
                 match r {
                     Message::FrontendAppeared{fei} => {
-                        println!("Frontend adapter{}:frontend{} appeared.", fei.adapter, fei.frontend);
                         glib::idle_add(move ||{handle_add_frontend(fei.clone()); glib::Continue(false)});
                     },
                     Message::AdapterDisappeared{id} => {
-                        println!("Adapter {} disappeared.", id);
                         glib::idle_add( move||{handle_remove_adapter(id); glib::Continue(false)});
                     },
                 }

@@ -91,7 +91,6 @@ impl GStreamerEngine {
     }
 
     pub fn set_mrl(&self, mrl: &str) {
-        println!("set_mrl to {}", mrl);
         self.playbin.set_property("uri", &mrl).expect("Could not set URI on playbin.");
     }
 
