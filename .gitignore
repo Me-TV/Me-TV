@@ -4,3 +4,5 @@ Me-TV_Rust.iml
 /.idea/
 /notes.txt
 /target/
+install.sh
+uninstall.sh

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Me TV
+Comment=A digital television (DVB) viewer for GTK+3
+Exec=@PREFIX@/bin/me-tv
+Icon=@PREFIX@/share/pixmaps/me-tv.png
+Terminal=false
+StartupNotify=true
+Categories=AudioVideo;GTK;TV;Player;
+MimeType=video/mpeg;audio/x-mpeg;video/x-mpeg;

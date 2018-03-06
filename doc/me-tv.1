@@ -1,0 +1,30 @@
+.pc
+.TH "ME TV" 1 "2017-09-04" "3.0.0" "Me TV Manual"
+
+.SH NAME
+me-tv \- a digital television (DVB) viewer for GTK+3 and GStreamer.
+
+.SH SYNOPSIS
+.B me-tv
+
+.SH DESCRIPTION
+Me TV is a GTK+-3 and GStreamer desktop application for watching digital
+television services that use the DVBv5 standard.  Me TV works with DVB-T/T2/C/S
+and ATSC cards that have kernel driver support.
+
+Me TV reads the Electronic Program Guide (EPG) data that is transmitted over the
+air to populate a built-in program guide which can be used for scheduling
+recordings.
+
+Me TV requires prior construction of a channels file for the local transmitter in
+$HOME/.config/gstreamer-1.0/dvb-channels.conf. dvbv5-scan can produce such a file.
+
+Me TV was initially created by Michael Lamothe (2007–2011) as a C/C++ program.
+Russel Winder then evolved the C/C++ code for a while before reimplementing in
+Rust for this version 3.
+
+.SH AUTHOR
+Russel Winder (2017–) <russel@winder.org.uk>
+
+.SH COPYRIGHT
+Copyright © 2017–2018  Russel Winder <russel@winder.org.uk>
