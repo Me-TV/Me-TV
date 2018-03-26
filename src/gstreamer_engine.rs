@@ -19,6 +19,8 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::process::Command;
+
 //use gio;
 use gio::prelude::*;
 use glib;
@@ -30,6 +32,14 @@ use gst;
 use gst::prelude::*;
 
 use send_cell::SendCell;
+
+// Cannot use GL stuff on Nouveau, so it is important to know f this is running on a Nouveau system.
+// There is likely a much easier, and quicker, way of making this test.
+fn is_using_nouveau() -> bool {
+    let lsmod_output = Command::new("lsmod").output().unwrap().stdout;
+    let lsmod_output = String::from_utf8(lsmod_output).unwrap();
+    lsmod_output.contains("nouveau")
+}
 
 pub struct GStreamerEngine {
     playbin: gst::Element,
@@ -69,15 +79,24 @@ impl GStreamerEngine {
             };
             glib::Continue(true)
         });
-        let (video_element, video_widget) = if let Some(gtkglsink) = gst::ElementFactory::make("gtkglsink", None) {
-            let glsinkbin = gst::ElementFactory::make("glsinkbin", None).unwrap();
-            glsinkbin.set_property("sink", &gtkglsink.to_value()).unwrap();
-            let widget = gtkglsink.get_property("widget").unwrap();
-            (glsinkbin, widget.get::<gtk::Widget>().unwrap())
-        } else {
+        fn create_non_gl_element_and_widget() -> (gst::Element, gtk::Widget) {
             let sink = gst::ElementFactory::make("gtksink", None).unwrap();
             let widget = sink.get_property("widget").unwrap();
+            println!("Using gtksink.");
             (sink, widget.get::<gtk::Widget>().unwrap())
+        }
+        let (video_element, video_widget) = if is_using_nouveau() {
+            create_non_gl_element_and_widget()
+        } else {
+            if let Some(gtkglsink) = gst::ElementFactory::make("gtkglsink", None) {
+                let glsinkbin = gst::ElementFactory::make("glsinkbin", None).unwrap();
+                glsinkbin.set_property("sink", &gtkglsink.to_value()).unwrap();
+                let widget = gtkglsink.get_property("widget").unwrap();
+                println!("Using gtkglsink.");
+                (glsinkbin, widget.get::<gtk::Widget>().unwrap())
+            } else {
+                create_non_gl_element_and_widget()
+            }
         };
         let engine = GStreamerEngine {
             playbin,
