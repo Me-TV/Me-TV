@@ -61,6 +61,10 @@ fn main() {
     application.connect_startup(|app|{
     });
     */
+    /*
+    application.connect_shutdown(|app|{
+    });
+    */
     application.connect_activate(|app|{
         // It seems that the application menu must be added before creating the control window.
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
