@@ -68,9 +68,9 @@ impl GStreamerEngine {
                 gst::MessageView::Error(err) => {
                     println!(
                         "Error from {:?}: {} ({:?})",
-                        // TODO Post 0.10.2 can do:
+                        // TODO Post 1.10.2 can do:
                         // err.get_src().map(|s| s.get_path_string()),
-                        // but in 0.10.2 must do:
+                        // but in 1.10.2 must do:
                         msg.get_src().map(|s| s.get_path_string()),
                         err.get_error(),
                         err.get_debug()
