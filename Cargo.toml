@@ -13,6 +13,7 @@ gtk = { version = "*", features = ["v3_10"] }
 inotify = "*"
 send-cell = "*"
 xdg = "*"
+clap = "*"
 
 # gstreamer-mpegts = { path = "../../Masters/GStreamer-MPEG-TS-Rust" }
 

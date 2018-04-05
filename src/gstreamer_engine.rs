@@ -33,6 +33,8 @@ use gst::prelude::*;
 
 use send_cell::SendCell;
 
+pub static mut USE_OPENGL: Option<bool> = None;
+
 // Cannot use GL stuff on Nouveau, so it is important to know f this is running on a Nouveau system.
 // There is likely a much easier, and quicker, way of making this test.
 fn is_using_nouveau() -> bool {
@@ -85,7 +87,11 @@ impl GStreamerEngine {
             println!("Using gtksink.");
             (sink, widget.get::<gtk::Widget>().unwrap())
         }
-        let (video_element, video_widget) = if is_using_nouveau() {
+        let mut use_gl = true;
+        unsafe {
+            use_gl = USE_OPENGL.unwrap();
+        }
+        let (video_element, video_widget) = if is_using_nouveau() || !use_gl {
             create_non_gl_element_and_widget()
         } else {
             if let Some(gtkglsink) = gst::ElementFactory::make("gtkglsink", None) {

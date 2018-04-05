@@ -31,16 +31,20 @@ extern crate inotify;
 
 extern crate send_cell;
 
+extern crate clap;
+
 #[cfg(test)]
 #[macro_use]
 extern crate quickcheck;
 
-//use std::env;
+use std::env;
 use std::thread;
 use std::sync::mpsc::channel;
 
 use gio::prelude::*;
 use gtk::prelude::*;
+
+use clap::{Arg, App};
 
 mod about;
 mod channel_names;
@@ -54,6 +58,21 @@ mod inotify_daemon;
 
 #[cfg(not(test))]
 fn main() {
+    /*
+     *  As at 2018-04-05 there is no way of dealing with the handle_local_options and commandline events/signals.
+     *  Thus there is no Rust/GTK+ way of handling command line arguments. Actually we only need two, one for
+     *  --version |-v and --no-gl, so just do it with argument passing as though this were a CLI command.
+     */
+    let cli_matches = App::new("Me TV")
+        .version("0.0.0")
+        .about("A GTK+3 application for watching DVB broadcast.")
+        .arg(Arg::with_name("no_gl")
+            .long("no-gl")
+            .help("Do not try to use OpenGL."))
+        .get_matches();
+    unsafe {
+        gstreamer_engine::USE_OPENGL = Some(!cli_matches.is_present("no_gl"));
+    }
     gst::init().unwrap();
     let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed.");
     glib::set_application_name("Me TV");
@@ -87,18 +106,13 @@ fn main() {
         thread::spawn(||{inotify_daemon::run(to_fem)});
     });
     /*
-     * As at 2017-10-14, gtk-rs does not provide access to these signals.
-
     application.connect_handle_local_options(|app|{
     });
     application.connect_command_line(|app|{
     });
      */
-    // Hack to get a &[&str] of the arguments, required by the gtk::Application::run function.
-    // cf. https://users.rust-lang.org/t/vec-string-to-str/
-    //let args = env::args().collect::<Vec<_>>();
-    //let arguments: Vec<&str> = args.iter().map(String::as_ref).collect();
-    //application.run(&arguments);
     // No point in passing arguments until argument processing is available.
+    //let arguments: Vec<String> = env::args().collect();
+    //application.run(&arguments);
     application.run(&[]);
 }
