@@ -101,16 +101,10 @@ fn main() {
         quit_action.connect_activate({let a = app.clone(); move |_, _| a.quit()});
         let (to_fem, from_in) = channel::<inotify_daemon::Message>();
         let (to_cw, from_fem) = channel::<frontend_manager::Message>();
-        thread::spawn(||{control_window::message_listener(from_fem)});
-        thread::spawn(||{frontend_manager::run(from_in, to_cw)});
-        thread::spawn(||{inotify_daemon::run(to_fem)});
+        thread::spawn(||{ control_window::message_listener(from_fem) });
+        thread::spawn(||{ frontend_manager::run(from_in, to_cw) });
+        thread::spawn(||{ inotify_daemon::run(to_fem) });
     });
-    /*
-    application.connect_handle_local_options(|app|{
-    });
-    application.connect_command_line(|app|{
-    });
-     */
     // No point in passing arguments until argument processing is available.
     //let arguments: Vec<String> = env::args().collect();
     //application.run(&arguments);

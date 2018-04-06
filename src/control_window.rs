@@ -62,28 +62,25 @@ impl ControlWindow {
         window.set_border_width(10);
         let header_bar = gtk::HeaderBar::new();
         header_bar.set_title("Me TV");
-        header_bar.set_show_close_button(false);
+        header_bar.set_show_close_button(true);
+        window.connect_delete_event({
+            let a = application.clone();
+            move |_, _| {
+                a.quit();
+                Inhibit(true)
+            }
+        });
         let menu_button = gtk::MenuButton::new();
         menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/control_window_menu.xml"));
         let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").unwrap();
         let epg_action = gio::SimpleAction::new("epg", None);
-        //epg_action.connect_activate(
-        //);
+        epg_action.connect_activate(
+            move |_, _| {
+                println!("Should display the EPG window.");
+            }
+        );
         window.add_action(&epg_action);
-        let about_action = gio::SimpleAction::new("about", None);
-        about_action.connect_activate({
-            let w = window.clone();
-            move |_, _| about::present(Some(&w))
-        });
-        window.add_action(&about_action);
-        let quit_action = gio::SimpleAction::new("quit", None);
-        quit_action.connect_activate({
-            let a = application.clone();
-            move |_, _| a.quit()
-        });
-        window.add_action(&quit_action);
-        // End temporary place holder.
         menu_button.set_menu_model(&window_menu);
         header_bar.pack_end(&menu_button);
         window.set_titlebar(&header_bar);
