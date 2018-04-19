@@ -30,7 +30,6 @@ use glib;
 use gtk;
 use gtk::prelude::*;
 
-use about;
 use channel_names;
 use control_window_button::ControlWindowButton;
 use frontend_manager::{FrontendId, Message};
@@ -161,17 +160,17 @@ fn handle_remove_adapter(id: u16) {
 pub fn message_listener(from_fem: Receiver<Message>) {
     loop {
         match from_fem.recv() {
-            Ok(r) => {
-                match r {
+            Ok(message) => {
+                match message {
                     Message::FrontendAppeared{fei} => {
-                        glib::idle_add(move ||{handle_add_frontend(fei.clone()); glib::Continue(false)});
+                        glib::idle_add(move ||{ handle_add_frontend(fei.clone()); glib::Continue(false) });
                     },
                     Message::AdapterDisappeared{id} => {
-                        glib::idle_add( move||{handle_remove_adapter(id); glib::Continue(false)});
+                        glib::idle_add( move||{ handle_remove_adapter(id); glib::Continue(false) });
                     },
                 }
             },
-            Err(_) => {println!("Control Window Listener has stopped.");},
+            Err(_) => { println!("Control Window Listener has stopped."); },
         }
     }
 }
