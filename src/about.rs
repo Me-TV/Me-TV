@@ -56,9 +56,6 @@ fn create() -> gtk::AboutDialog {
 }
 
 pub fn present(parent: Option<&gtk::ApplicationWindow>) {
-    // TODO Is there a way to create this once so as to show/hide instead of this create/destroy?
-    // TODO lazy_static appears not to be able to handle the GTK stuff –
-    // TODO gobject_sys::GObject does not support std::marker::Sync
     let dialog = create();
     dialog.set_transient_for(parent);
     dialog.run();

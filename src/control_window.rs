@@ -18,8 +18,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 use std::cell::RefCell;
+use std::process::Command;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 
@@ -42,8 +42,8 @@ pub struct ControlWindow {
     frontends_box: gtk::Box,
     label: gtk::Label,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
-    channel_names: Vec<String>,
-    default_channel_name: String,
+    pub channel_names: RefCell<Option<Vec<String>>>,
+    pub default_channel_name: RefCell<Option<String>>,
 }
 
 thread_local!(
@@ -76,10 +76,49 @@ impl ControlWindow {
         let epg_action = gio::SimpleAction::new("epg", None);
         epg_action.connect_activate(
             move |_, _| {
-                println!("Should display the EPG window.");
+               CONTROL_WINDOW.with(|global| {
+                   if let Some(ref control_window) = *global.borrow_mut() {
+                       let message = if (*control_window.control_window_buttons.borrow()).len() >0 {
+                           "Should display the EPG window."
+                       } else {
+                           "No frontends, so no EPG."
+                       };
+                       let dialog = gtk::MessageDialog::new(
+                           Some(&control_window.window),
+                           gtk::DialogFlags::MODAL,
+                           gtk::MessageType::Info,
+                           gtk::ButtonsType::Ok,
+                           message
+                       );
+                       dialog.run();
+                       dialog.destroy();
+                   }
+               });
             }
         );
         window.add_action(&epg_action);
+        let channels_file_action = gio::SimpleAction::new("create_channels_file", None);
+        channels_file_action.connect_activate(
+            move |_, _| {
+                CONTROL_WINDOW.with(|global| {
+                    if let Some(ref control_window) = *global.borrow_mut() {
+                        if (*control_window.control_window_buttons.borrow()).len() >0 {
+                            ensure_channel_file_present(true).unwrap();
+                        } else {
+                            let dialog = gtk::MessageDialog::new(
+                                Some(&control_window.window),
+                                gtk::DialogFlags::MODAL,
+                                gtk::MessageType::Info,
+                                gtk::ButtonsType::Ok,
+                                "No frontends, so no tuning possible.");
+                            dialog.run();
+                            dialog.destroy();
+                        }
+                    }
+                })
+            }
+        );
+        window.add_action(&channels_file_action);
         menu_button.set_menu_model(&window_menu);
         header_bar.pack_end(&menu_button);
         window.set_titlebar(&header_bar);
@@ -90,17 +129,19 @@ impl ControlWindow {
         window.add(&main_box);
         window.show_all();
         let control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>> = RefCell::new(Vec::new());
-        let mut channel_names = channel_names::get_names();
-        let default_channel_name = channel_names[0].clone();
-        channel_names.sort();
+        let channel_names = channel_names::get_names();
+        let default_channel_name = match channel_names {
+            Some(ref vector) => Some(vector[0].clone()),
+            None => None,
+        };
         let control_window = Rc::new(ControlWindow {
             window,
             main_box,
             frontends_box,
             label,
             control_window_buttons,
-            channel_names,
-            default_channel_name,
+            channel_names: RefCell::new(channel_names),
+            default_channel_name: RefCell::new(default_channel_name),
         });
         let rv = control_window.clone();
         CONTROL_WINDOW.with(|global| {
@@ -111,13 +152,37 @@ impl ControlWindow {
 
 }
 
+/// Ensure that the GStreamer dvbsrc channels file is present.
+/// If the argument is `false` then exit if the file is present or try to create it if it isn't.
+/// If the argument is `true` then always try to recreate it.
+///
+/// Currently try to use dvbv5-scan to create the file, or if it isn't present, try dvbscan or w_scan.
+fn ensure_channel_file_present(force_rewrite: bool) -> Result<String, String> {
+    let mut channels_file_path = channel_names::channels_file_path();
+    let channels_file_path = channels_file_path.as_path();
+    if ! force_rewrite & channels_file_path.exists() {
+        return Ok("Channels file exists.".to_string());
+    }
+    match Command::new("dvbv5-scan")
+        .arg("-o")
+        .arg(channel_names::channels_file_path())
+        .arg("/usr/share/dvb/dvb-t/uk-CrystalPalace")
+        .output() {
+        Ok(output) => {
+            println!("{:?}", String::from_utf8_lossy(&output.stdout));
+            Ok("Should be all done now.".to_string())
+        },
+        Err(e) => Err("Scan command failed.".to_string())
+    }
+}
+
 /// Add a new frontend to this control window.
 fn add_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
     if control_window.main_box.get_children()[0] == control_window.label {
         control_window.main_box.remove(&control_window.label);
         control_window.main_box.pack_start(&control_window.frontends_box, true, true, 0);
     }
-    let control_window_button = ControlWindowButton::new(control_window, fei, &control_window.channel_names, &control_window.default_channel_name);
+    let control_window_button = ControlWindowButton::new(control_window, fei);
     control_window.frontends_box.pack_start(&control_window_button.widget, true, true, 0);
     control_window.control_window_buttons.borrow_mut().push(control_window_button);
     control_window.window.show_all();

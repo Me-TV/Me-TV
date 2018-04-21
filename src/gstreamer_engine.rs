@@ -33,7 +33,7 @@ use gst::prelude::*;
 
 use send_cell::SendCell;
 
-pub static mut USE_OPENGL: Option<bool> = None;
+pub static mut USE_OPENGL: Option<bool> = Some(true);
 
 // Cannot use GL stuff on Nouveau, so it is important to know f this is running on a Nouveau system.
 // There is likely a much easier, and quicker, way of making this test.

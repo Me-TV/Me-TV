@@ -40,7 +40,7 @@ pub struct FrontendId {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TuningId {
     pub frontend: FrontendId,
-    pub channel: RefCell<String>,
+    pub channel: RefCell<Option<String>>,
 }
 
 /// An enumeration of all the message types that  can be sent by

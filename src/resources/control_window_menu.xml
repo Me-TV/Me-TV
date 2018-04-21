@@ -6,5 +6,9 @@
       <attribute name='action'>win.epg</attribute>
       <attribute name='accel'>&lt;Primary&gt;e</attribute>
     </item>
-  </menu>
+    <item>
+      <attribute name='label' translatable='yes'>_Create channels file</attribute>
+      <attribute name='action'>win.create_channels_file</attribute>
+      <attribute name='accel'>&lt;Primary&gt;c</attribute>
+    </item> </menu>
 </interface>

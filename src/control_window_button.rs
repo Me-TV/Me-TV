@@ -54,19 +54,38 @@ impl ControlWindowButton {
     /// is a drop down list button to select the channel to tune the front end to.
     ///
     /// This function is executed in the GTK event loop thread.
-    pub fn new(control_window: &Rc<ControlWindow>, fei: FrontendId, channel_names: &Vec<String>, default_channel_name: &String) -> Rc<ControlWindowButton> {
-        let tuning_id = TuningId { frontend: fei, channel: RefCell::new(default_channel_name.clone()) };
-        let frontend_button = gtk::ToggleButton::new_with_label(format!("adaptor{}\nfrontend{}", tuning_id.frontend.adapter, tuning_id.frontend.frontend).as_ref());
+    pub fn new(control_window: &Rc<ControlWindow>, fei: FrontendId) -> Rc<ControlWindowButton> {
+        let tuning_id = TuningId {
+            frontend: fei,
+            channel: RefCell::new(
+                if let Some(ref default_channel_name) = *control_window.default_channel_name.borrow() {
+                    Some(default_channel_name.clone())
+                } else {
+                    None
+                }
+            )
+        };
+        let frontend_button = gtk::ToggleButton::new_with_label(
+            format!("adaptor{}\nfrontend{}", tuning_id.frontend.adapter, tuning_id.frontend.frontend).as_ref()
+        );
         let channel_selector = gtk::ComboBoxText::new();
-        for (_, name) in channel_names.iter().enumerate() {
-            channel_selector.append_text(name);
+        match *control_window.channel_names.borrow() {
+            Some(ref channel_names) => {
+                for name in channel_names {
+                    channel_selector.append_text(&name);
+                }
+            },
+            None => {
+                channel_selector.insert_text(0, " No channels file.");
+                channel_selector.set_active(0);
+            },
         }
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
         let application = control_window.window.get_application().unwrap();
         let engine = GStreamerEngine::new(&application);
-        let frontend_window = FrontendWindow::new(&application, &channel_names, &engine);
+        let frontend_window = FrontendWindow::new(&application, &control_window.channel_names, &engine);
         let cwb = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             tuning_id,
@@ -77,7 +96,9 @@ impl ControlWindowButton {
             frontend_window,
             engine,
         });
-        cwb.set_label(&cwb.tuning_id.channel.borrow());
+        if let Some(ref default_channel_name) = *cwb.tuning_id.channel.borrow() {
+            cwb.set_label(default_channel_name);
+        }
         cwb.frontend_window.close_button.connect_clicked({
             let c_w_b = cwb.clone();
             move |_| {
@@ -93,7 +114,23 @@ impl ControlWindowButton {
         });
         cwb.frontend_button.connect_toggled({
             let c_w_b = cwb.clone();
-            move |_| c_w_b.toggle_button()
+            move |button| {
+                if let Some(ref channel_names) = *c_w_b.control_window.channel_names.borrow() {
+                    if channel_names.len() > 0 {
+                        c_w_b.toggle_button();
+                    }
+                } else {
+                    let dialog = gtk::MessageDialog::new(
+                        Some(&c_w_b.control_window.window),
+                        gtk::DialogFlags::MODAL,
+                        gtk::MessageType::Info,
+                        gtk::ButtonsType::Ok,
+                        "No frontends, so cannot play a channel.");
+                    dialog.run();
+                    dialog.destroy();
+                    //button.set_active(false); // causes the reissueing of the signal. :-(
+                }
+            }
         });
         cwb.channel_selector.connect_changed({
             let c_w_b = cwb.clone();
@@ -110,16 +147,17 @@ impl ControlWindowButton {
         cwb
     }
 
-    /// Set the state of the channel control widgets..
+    /// Set the state of the channel control widgets.
     fn set_label(&self, channel_name: &String) {
         let current = &self.tuning_id.channel;
-        if *current.borrow() != *channel_name {
-            current.replace(channel_name.clone());
+        if let Some(ref name) = *current.borrow() {
+            if *name != *channel_name {
+                current.replace(Some(channel_name.clone()));
+            }
+            self.channel_selector.set_active_text(name.as_ref());
+            self.frontend_window.channel_selector.set_active_text(name.as_ref());
+            self.frontend_window.fullscreen_channel_selector.set_active_text(name.as_ref());
         }
-        let value = &*current.borrow();
-        self.channel_selector.set_active_text(value.as_ref());
-        self.frontend_window.channel_selector.set_active_text(value.as_ref());
-        self.frontend_window.fullscreen_channel_selector.set_active_text(value.as_ref());
     }
 
     /// Toggle the button.
@@ -128,14 +166,15 @@ impl ControlWindowButton {
     fn toggle_button(&self) {
         let app = self.control_window.window.get_application().unwrap();
         if self.frontend_button.get_active() {
-            if self.inhibitor.get() == 0 {
-                self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
-                self.frontend_window.window.show();
-                self.engine.set_mrl(&encode_to_mrl(&self.tuning_id.channel.borrow()));
-                self.engine.play();
-
-            } else {
-                println!("Inconsistent state. Should panic in a nice multithreaded way.");
+            if let Some(ref channel_name) = *self.tuning_id.channel.borrow() {
+                if self.inhibitor.get() == 0 {
+                    self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
+                    self.frontend_window.window.show();
+                    self.engine.set_mrl(&encode_to_mrl(channel_name));
+                    self.engine.play();
+                } else {
+                    println!("Inconsistent state. Should panic in a nice multithreaded way.");
+                }
             }
         } else {
             if self.inhibitor.get() != 0 {
@@ -156,7 +195,7 @@ impl ControlWindowButton {
             self.engine.stop();
         }
         self.set_label(channel_name);
-        self.engine.set_mrl(&encode_to_mrl(&self.tuning_id.channel.borrow()));
+        self.engine.set_mrl(&encode_to_mrl(channel_name));
         if status {
             self.engine.play();
         }

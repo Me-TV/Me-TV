@@ -19,6 +19,8 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::cell::RefCell;
+
 use gdk;
 use gdk::prelude::*;
 use gtk;
@@ -42,7 +44,7 @@ pub struct FrontendWindow {
 
 impl FrontendWindow {
 
-    pub fn new(application: &gtk::Application, channel_names: &Vec<String>, engine: &GStreamerEngine) -> FrontendWindow {
+    pub fn new(application: &gtk::Application, channel_names: &RefCell<Option<Vec<String>>>, engine: &GStreamerEngine) -> FrontendWindow {
         let window = gtk::ApplicationWindow::new(application);
         let video_overlay = gtk::Overlay::new();
         let header_bar = gtk::HeaderBar::new();
@@ -75,9 +77,17 @@ impl FrontendWindow {
                 w.unfullscreen();
             }
         });
-        for (_, name) in channel_names.iter().enumerate() {
-            channel_selector.append_text(name);
-            fullscreen_channel_selector.append_text(name);
+        match *channel_names.borrow() {
+            Some(ref channel_names) => {
+                for name in channel_names {
+                    channel_selector.append_text(&name);
+                    fullscreen_channel_selector.append_text(&name);
+                }
+            },
+            None => {
+                channel_selector.append_text("No channels file.");
+                fullscreen_channel_selector.append_text("No channels file.");
+            },
         }
         // Channel selector callbacks set in calling function.
         let volume = volume_adjustment.get_value();

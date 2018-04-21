@@ -37,14 +37,11 @@ extern crate clap;
 #[macro_use]
 extern crate quickcheck;
 
-use std::env;
 use std::thread;
 use std::sync::mpsc::channel;
 
 use gio::prelude::*;
 use gtk::prelude::*;
-
-use clap::{Arg, App};
 
 mod about;
 mod channel_names;
@@ -55,26 +52,25 @@ mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
 mod inotify_daemon;
+mod preferences_dialog;
 
 #[cfg(not(test))]
 fn main() {
     /*
      *  As at 2018-04-05 there is no way of dealing with the handle_local_options and commandline events/signals.
-     *  Thus there is no Rust/GTK+ way of handling command line arguments. Actually we only need two, one for
-     *  --version |-v and --no-gl, so just do it with argument passing as though this were a CLI command.
+     *  Thus there is no Rust/GTK+ way of handling command line arguments.
      */
-    let cli_matches = App::new("Me TV")
+    let cli_matches = clap::App::new("Me TV")
         .version("0.0.0")
         .about("A GTK+3 application for watching DVB broadcast.")
-        .arg(Arg::with_name("no_gl")
-            .long("no-gl")
-            .help("Do not try to use OpenGL."))
         .get_matches();
-    unsafe {
-        gstreamer_engine::USE_OPENGL = Some(!cli_matches.is_present("no_gl"));
+    if cli_matches.is_present("no_gl") {
+        unsafe {
+            gstreamer_engine::USE_OPENGL = Some(false);
+        }
     }
     gst::init().unwrap();
-    let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed.");
+    let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
     /*
     application.connect_startup(|app|{
@@ -89,16 +85,25 @@ fn main() {
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(&application_menu);
-        let epg_action = gio::SimpleAction::new("EPG", None);
-        app.add_action(&epg_action);
+        let control_window = control_window::ControlWindow::new(&app);
+        let preferences_action = gio::SimpleAction::new("preferences", None);
+        preferences_action.connect_activate({
+            let c_w = control_window.clone();
+            move |_, _| preferences_dialog::present(Some(&c_w.window))
+        });
+        app.add_action(&preferences_action);
         let about_action = gio::SimpleAction::new("about", None);
+        about_action.connect_activate({
+            let c_w= control_window.clone();
+            move |_, _| about::present(Some(&c_w.window))
+        });
         app.add_action(&about_action);
         let quit_action = gio::SimpleAction::new("quit", None);
+        quit_action.connect_activate({
+            let a = app.clone();
+            move |_, _| a.quit()
+        });
         app.add_action(&quit_action);
-        let control_window = control_window::ControlWindow::new(&app);
-        epg_action.connect_activate(move |_, _| {});
-        about_action.connect_activate(move |_, _| about::present(Some(&control_window.window)));
-        quit_action.connect_activate({let a = app.clone(); move |_, _| a.quit()});
         let (to_fem, from_in) = channel::<inotify_daemon::Message>();
         let (to_cw, from_fem) = channel::<frontend_manager::Message>();
         thread::spawn(||{ control_window::message_listener(from_fem) });
