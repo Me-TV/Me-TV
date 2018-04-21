@@ -50,7 +50,7 @@ fn create() -> gtk::AboutDialog {
     let image = loader.get_pixbuf().unwrap();
     about.set_logo(Some(&image));
     about.set_name("Me TV");
-    about.set_translator_credits("Translator Credits");
+    about.set_translator_credits("");
     about.set_version(env!("CARGO_PKG_VERSION"));
     about
 }
