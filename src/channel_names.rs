@@ -24,6 +24,7 @@ extern crate xdg;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
+use std::path::PathBuf;
 
 /// An internal function that can be tested.
 fn get_names_from_file(file: &File) -> Vec<String> {
@@ -37,6 +38,13 @@ fn get_names_from_file(file: &File) -> Vec<String> {
         .collect()
 }
 
+/// Return the `PathBuf` to the GStreamer dvbsrc plugin channels file using the XDG directory structure.
+pub fn channels_file_path() -> PathBuf {
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("gstreamer-1.0").expect("Cannot set XDG prefix.");
+    let mut path_buf = xdg_dirs.get_config_home();
+    path_buf.push("dvb-channels.conf");
+    path_buf
+}
 
 /// Read the file that the GStreamer dvbsrc plugin uses and extract a list of the channels.
 ///
@@ -45,11 +53,11 @@ fn get_names_from_file(file: &File) -> Vec<String> {
 /// is INI/TOML style: a sequence of blocks, one for each channel, starting with a channel
 /// name surrounded by brackets and then a sequence of binding of keys to values each
 /// one indented.
-pub fn get_names() -> Vec<String> {
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("gstreamer-1.0").expect("Cannot set XDG prefix.");
-    let path = xdg_dirs.find_config_file("dvb-channels.conf").expect("Cannot set XDG path to config file.");
-    let file = File::open(path).expect("Cannot open config file.");
-    get_names_from_file(&file)
+pub fn get_names() -> Option<Vec<String>> {
+    match File::open(channels_file_path()) {
+        Ok(file) => Some(get_names_from_file(&file)),
+        Err(_) => None,
+    }
 }
 
 #[cfg(test)]
