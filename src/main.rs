@@ -63,6 +63,9 @@ fn main() {
     let cli_matches = clap::App::new("Me TV")
         .version("0.0.0")
         .about("A GTK+3 application for watching DVB broadcast.")
+        .arg(clap::Arg::with_name("no_gl")
+            .long("no-gl")
+            .help("Do not try to use OpenGL."))
         .get_matches();
     if cli_matches.is_present("no_gl") {
         unsafe {
