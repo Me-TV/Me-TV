@@ -103,7 +103,7 @@ impl ControlWindow {
                 CONTROL_WINDOW.with(|global| {
                     if let Some(ref control_window) = *global.borrow_mut() {
                         if (*control_window.control_window_buttons.borrow()).len() >0 {
-                            ensure_channel_file_present(true).unwrap();
+                            ensure_channel_file_present(true).expect("Something went wrong creating the channels file");
                         } else {
                             let dialog = gtk::MessageDialog::new(
                                 Some(&control_window.window),
@@ -129,9 +129,13 @@ impl ControlWindow {
         window.add(&main_box);
         window.show_all();
         let control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>> = RefCell::new(Vec::new());
-        let channel_names = channel_names::get_names();
+        let mut channel_names = channel_names::get_names();
         let default_channel_name = match channel_names {
-            Some(ref vector) => Some(vector[0].clone()),
+            Some(ref mut vector) => {
+                let result = Some(vector[0].clone());
+                vector.sort();
+                result
+            },
             None => None,
         };
         let control_window = Rc::new(ControlWindow {
