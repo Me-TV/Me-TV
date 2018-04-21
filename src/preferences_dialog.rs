@@ -38,7 +38,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
     }
     use_opengl_button.connect_toggled(
         move |button| unsafe {
-            //gstreamer_engine::USE_OPENGL = Some(button.get_active());
+            gstreamer_engine::USE_OPENGL = Some(button.get_active());
         }
     );
     content_area.pack_start(&use_opengl_button, false, false, 10);
