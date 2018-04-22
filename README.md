@@ -44,21 +44,31 @@ which will install the executable to $HOME/Built/bin.
 
 ## Setting up for watching DVB
 
-It is assumed people are using GStreamer 1.10.2 or later.
+It is assumed people are using GStreamer 1.10.2 or later. It is best if you have the DVBv5 tools installed,
+in particular dvbv5-scan. However, unlike the GStreamer version, this is not a requirement, just a "good to
+have".
 
-Before running Me TV, you must create a virtual channels file ~/.config/gstreamer-1.0/dvb-channels.conf for
-the transmitter you receive DVB signal from. There are many tools for scanning to create a channels file, on
-Linux perhaps the most used one is dvbv5-scan.  For example:
+Before being able to watch a TV channel using Me TV you must have a channels file for the transmitter you
+are getting DVB signal from. This channels file is ~/.config/gstreamer-1.0/dvb-channels.conf.
+
+A way of creating this file from a running Me TV using the menu system is under construction, currently it
+requires dvbv5-scan and does work – albeit it a little "alpha product quality".
+
+To have the channels file available before executing Me TV you can run dvbv5-scan manually. For example:
 
     dvbv5-scan --output=~/.config/gstreamer-1.0/dvb-channels.conf /usr/share/dvb/dvb-t/uk-CrystalPalace
 
 on a Linux system will do the right thing of you live in the Crystal Palace transmitter region in the UK. I
 suspect people will want to scan on their local transmitter, in this case you should replace the
-uk-CrystalPalace with the name appropriate for the location you are when you run Me TV..
+uk-CrystalPalace with the name appropriate for the location you are when you run Me TV.
+
+If you do not have dvb5-scan installed then best advice is to install it, preferably using the Linux
+distribution package management. If that is not possible then dvbscan or w_scan can be used to create the
+needed file, but it must be in v5 format, not v3 format.
 
 ## Using Me TV
 
-When started the initial screen of Me TV shows the frontends available. It
+When started the initial screen of Me TV shows the frontends available or a message if none are connected. It
 should show any new ones as they are connected – and remove ones as they are removed. Each frontend button
 is a toggle button for the associated display for that frontend. Clicking on a frontend button will start a
 new frame, tune the frontend to the channel that was shown, and start playing the channel. Channels can be
