@@ -150,14 +150,17 @@ impl ControlWindowButton {
     /// Set the state of the channel control widgets.
     fn set_label(&self, channel_name: &String) {
         let current = &self.tuning_id.channel;
-        if let Some(ref name) = *current.borrow() {
-            if *name != *channel_name {
-                current.replace(Some(channel_name.clone()));
-            }
-            self.channel_selector.set_active_text(name.as_ref());
-            self.frontend_window.channel_selector.set_active_text(name.as_ref());
-            self.frontend_window.fullscreen_channel_selector.set_active_text(name.as_ref());
+        let name = match *current.borrow() {
+            Some(ref n) => n.clone(),
+            None => "".to_string(),
+        };
+        if name != *channel_name {
+            let previous_name = current.replace(Some(channel_name.clone()));
+            assert_eq!(previous_name.unwrap(), *name);
         }
+        self.channel_selector.set_active_text(channel_name.as_ref());
+        self.frontend_window.channel_selector.set_active_text(channel_name.as_ref());
+        self.frontend_window.fullscreen_channel_selector.set_active_text(channel_name.as_ref());
     }
 
     /// Toggle the button.
