@@ -56,7 +56,6 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> TransmitterSelector {
     );
     let label = gtk::Label::new("Select the transmitter\nyou get signal from.");
     let transmitter = gtk::ComboBoxText::new();
-
     let mut transmitter_files = match fs::read_dir(dvbt_transmitter_files_path()) {
         Ok(iterator) => iterator.map(|item| item.unwrap().file_name().to_str().unwrap().to_string()).collect::<Vec<String>>(),
         Err(_) => panic!("Failed to find directory of transmitter files "),
