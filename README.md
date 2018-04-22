@@ -7,7 +7,7 @@
 *NB This is a rewrite of Me TV for GTK+3 and GStreamer using the Rust programming language and the gtk-rs and
 gstreamer-rs bindings.*
 
-Me TV is a digital television (DVB – digital video broadcast) viewer for GTK-based systems.
+Me TV is a digital television (DVB – digital video broadcast) viewer cased on GTK+3 and GStreamer.
 
 ## Reporting Issues
 
