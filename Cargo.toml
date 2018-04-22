@@ -10,7 +10,7 @@ gio = "*"
 glib = { version = "*", features = ["v2_40"] }
 gstreamer = { version = "*", features = ["v1_10"] }
 gtk = { version = "*", features = ["v3_10"] }
-inotify = "*"
+notify = "*"
 send-cell = "*"
 xdg = "*"
 clap = "*"

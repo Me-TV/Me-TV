@@ -30,12 +30,20 @@ struct TransmitterSelector {
     dialog: gtk::Dialog,
 }
 
+/// Return the path to the directory of DVB-T transmitter files.
+/// On Fedora /usr/share/dvbv5/dvb-t
+/// On Debian /usr/share/dvb/dvb-t
 fn dvbt_transmitter_files_path() -> path::PathBuf {
     let mut path = path::PathBuf::new();
     path.push("/usr");
     path.push("share");
-    path.push("dvb");
+    path.push("dvbv5");
+    if ! path.is_dir() {
+        path.pop();
+        path.push("dvb");
+    }
     path.push("dvb-t");
+    assert!(path.is_dir());
     path
 }
 

@@ -27,7 +27,7 @@ extern crate gdk_pixbuf;
 
 extern crate gstreamer as gst;
 
-extern crate inotify;
+extern crate notify;
 
 extern crate send_cell;
 
@@ -51,7 +51,7 @@ mod control_window_button;
 mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
-mod inotify_daemon;
+mod notify_daemon;
 mod preferences_dialog;
 mod transmitter_dialog;
 
@@ -108,11 +108,11 @@ fn main() {
             move |_, _| a.quit()
         });
         app.add_action(&quit_action);
-        let (to_fem, from_in) = channel::<inotify_daemon::Message>();
+        let (to_fem, from_in) = channel::<notify_daemon::Message>();
         let (to_cw, from_fem) = channel::<frontend_manager::Message>();
         thread::spawn(||{ control_window::message_listener(from_fem) });
         thread::spawn(||{ frontend_manager::run(from_in, to_cw) });
-        thread::spawn(||{ inotify_daemon::run(to_fem) });
+        thread::spawn(||{ notify_daemon::run(to_fem) });
     });
     // No point in passing arguments until argument processing is available.
     //let arguments: Vec<String> = env::args().collect();

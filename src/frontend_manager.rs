@@ -26,7 +26,7 @@ use std::{thread, time};
 
 use std::os::unix::fs::FileTypeExt;
 
-use inotify_daemon::Message as IN_Message;
+use notify_daemon::Message as N_Message;
 
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.
@@ -99,28 +99,23 @@ pub fn search_and_add_adaptors(to_cw: &Sender<Message>) {
 }
 
 /// The entry point for the thread that is the front end manager process.
-pub fn run(from_in: Receiver<IN_Message>, to_cw: Sender<Message>) {
+pub fn run(from_in: Receiver<N_Message>, to_cw: Sender<Message>) {
     search_and_add_adaptors(&to_cw);
     loop {
         match from_in.recv() {
             Ok(r) => {
                 match r {
-                  IN_Message::AdapterAppeared{id} => {
-                      // The C++ version discovered that there was a delay between
-                      // notification of the adapter creation and the accessibility of
-                      // the frontend file(s). Delaying for 1s seemed to do the trick.
-                      // Add this for the Rust version with a view to trying the experiment
-                      // again to see if the delay is still required.
-                      thread::sleep(time::Duration::from_secs(1));
+                  N_Message::AdapterAppeared{id} => {
                       add_frontends(&to_cw, id);
                   },
-                  IN_Message::AdapterDisappeared{id} => {
+                  N_Message::AdapterDisappeared{id} => {
+                      println!("Frontend manager sending adapter removed message.");
                       to_cw.send(Message::AdapterDisappeared{id}).unwrap();
                   },
                 }
             },
             Err(_) => {
-                println!("Frontend Manager got an Err, so inotify end of channel has dropped..");
+                println!("Frontend Manager got an Err, notify end of channel must have dropped.");
                 break;
             },
         }
