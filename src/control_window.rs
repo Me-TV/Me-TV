@@ -33,6 +33,7 @@ use gtk::prelude::*;
 use channel_names;
 use control_window_button::ControlWindowButton;
 use frontend_manager::{FrontendId, Message};
+use transmitter_dialog;
 
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
 /// so use a bit of composition.
@@ -103,7 +104,7 @@ impl ControlWindow {
                 CONTROL_WINDOW.with(|global| {
                     if let Some(ref control_window) = *global.borrow_mut() {
                         if (*control_window.control_window_buttons.borrow()).len() >0 {
-                            ensure_channel_file_present(true).expect("Something went wrong creating the channels file");
+                            ensure_channel_file_present(&control_window.window, true).expect("Something went wrong creating the channels file");
                         } else {
                             let dialog = gtk::MessageDialog::new(
                                 Some(&control_window.window),
@@ -161,16 +162,17 @@ impl ControlWindow {
 /// If the argument is `true` then always try to recreate it.
 ///
 /// Currently try to use dvbv5-scan to create the file, or if it isn't present, try dvbscan or w_scan.
-fn ensure_channel_file_present(force_rewrite: bool) -> Result<String, String> {
+fn ensure_channel_file_present(control_window: &gtk::ApplicationWindow, force_rewrite: bool) -> Result<String, String> {
     let mut channels_file_path = channel_names::channels_file_path();
     let channels_file_path = channels_file_path.as_path();
-    if ! force_rewrite & channels_file_path.exists() {
+    if !force_rewrite & channels_file_path.exists() {
         return Ok("Channels file exists.".to_string());
     }
+    let path_to_transmitter_file = transmitter_dialog::present(Some(&control_window));
     match Command::new("dvbv5-scan")
         .arg("-o")
         .arg(channel_names::channels_file_path())
-        .arg("/usr/share/dvb/dvb-t/uk-CrystalPalace")
+        .arg(path_to_transmitter_file)
         .output() {
         Ok(output) => {
             println!("{:?}", String::from_utf8_lossy(&output.stdout));

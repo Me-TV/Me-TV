@@ -53,6 +53,7 @@ mod frontend_window;
 mod gstreamer_engine;
 mod inotify_daemon;
 mod preferences_dialog;
+mod transmitter_dialog;
 
 #[cfg(not(test))]
 fn main() {

@@ -38,7 +38,7 @@ fn get_names_from_file(file: &File) -> Vec<String> {
         .collect()
 }
 
-/// Return the `PathBuf` to the GStreamer dvbsrc plugin channels file using the XDG directory structure.
+/// Return a `PathBuf` to the GStreamer dvbsrc plugin channels file using the XDG directory structure.
 pub fn channels_file_path() -> PathBuf {
     let xdg_dirs = xdg::BaseDirectories::with_prefix("gstreamer-1.0").expect("Cannot set XDG prefix.");
     let mut path_buf = xdg_dirs.get_config_home();
