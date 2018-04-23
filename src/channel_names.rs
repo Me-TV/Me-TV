@@ -60,9 +60,14 @@ pub fn get_names() -> Option<Vec<String>> {
     }
 }
 
+/// Encode a string as used for display to one suitable to be an MRL.
+pub fn encode_to_mrl(channel_name: &String) -> String {
+    "dvb://".to_owned() + &channel_name.replace(" ", "%20")
+}
+
 #[cfg(test)]
 mod tests {
-    use super::get_names_from_file;
+    use super::{get_names_from_file,encode_to_mrl};
 
     extern crate tempfile;
 
@@ -100,6 +105,21 @@ mod tests {
         }
         tmpfile.seek(SeekFrom::Start(0)).unwrap();
         assert_eq!(get_names_from_file(&tmpfile), result);
+    }
+
+    #[test]
+    fn test_encode_to_mrl_with_no_spaces() {
+        assert_eq!(encode_to_mrl(&"ITV".to_owned()), "dvb://ITV");
+    }
+
+    #[test]
+    fn test_encode_to_mrl_with_one_space() {
+        assert_eq!(encode_to_mrl(&"BBC NEWS".to_owned()), "dvb://BBC%20NEWS");
+    }
+
+    #[test]
+    fn test_encode_to_mrl_with_two_spaces() {
+        assert_eq!(encode_to_mrl(&"BBC One Lon".to_owned()), "dvb://BBC%20One%20Lon");
     }
 
 }

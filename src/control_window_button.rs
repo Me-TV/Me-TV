@@ -26,6 +26,7 @@ use std::rc::Rc;
 use gtk;
 use gtk::prelude::*;
 
+use channel_names::encode_to_mrl;
 use control_window::ControlWindow;
 use frontend_manager::{FrontendId, TuningId};
 use frontend_window::FrontendWindow;
@@ -41,7 +42,7 @@ pub struct ControlWindowButton {
     frontend_button: gtk::ToggleButton,
     channel_selector: gtk::ComboBoxText,
     inhibitor: Cell<u32>,
-    frontend_window: FrontendWindow,
+    frontend_window: RefCell<Option<Rc<FrontendWindow>>>,
 }
 
 impl ControlWindowButton {
@@ -90,30 +91,21 @@ impl ControlWindowButton {
             frontend_button,
             channel_selector,
             inhibitor: Cell::new(0),
-            frontend_window,
+            frontend_window: RefCell::new(None),
         });
         if let Some(ref default_channel_name) = *cwb.tuning_id.channel.borrow() {
             cwb.set_label(default_channel_name);
         }
-        cwb.frontend_window.close_button.connect_clicked({
+        cwb.channel_selector.connect_changed({
             let c_w_b = cwb.clone();
-            move |_| {
-                let button = &c_w_b.frontend_button;
-                button.set_active(! button.get_active())
-            }
-        });
-        cwb.frontend_window.volume_adjustment.connect_value_changed({
-            let c_w_b = cwb.clone();
-            move |_| {
-                c_w_b.frontend_window.engine.set_volume(c_w_b.frontend_window.volume_adjustment.get_value());
-            }
+            move |_| Self::on_channel_changed(&c_w_b, &c_w_b.channel_selector.get_active_text().unwrap())
         });
         cwb.frontend_button.connect_toggled({
             let c_w_b = cwb.clone();
             move |button| {
                 if let Some(ref channel_names) = *c_w_b.control_window.channel_names.borrow() {
                     if channel_names.len() > 0 {
-                        c_w_b.toggle_button();
+                        Self::toggle_button(&c_w_b);
                     }
                 } else {
                     let dialog = gtk::MessageDialog::new(
@@ -124,21 +116,9 @@ impl ControlWindowButton {
                         "No frontends, so cannot play a channel.");
                     dialog.run();
                     dialog.destroy();
-                    //button.set_active(false); // causes the reissueing of the signal. :-(
+                    //button.set_active(false); // causes the reissuing of the signal. :-(
                 }
             }
-        });
-        cwb.channel_selector.connect_changed({
-            let c_w_b = cwb.clone();
-            move |_| c_w_b.on_channel_changed(&c_w_b.channel_selector.get_active_text().unwrap())
-        });
-        cwb.frontend_window.channel_selector.connect_changed({
-            let c_w_b = cwb.clone();
-            move |_| c_w_b.on_channel_changed(&c_w_b.frontend_window.channel_selector.get_active_text().unwrap())
-        });
-        cwb.frontend_window.fullscreen_channel_selector.connect_changed({
-            let c_w_b = cwb.clone();
-            move |_| c_w_b.on_channel_changed(&c_w_b.frontend_window.fullscreen_channel_selector.get_active_text().unwrap())
         });
         cwb
     }
@@ -152,78 +132,88 @@ impl ControlWindowButton {
         };
         if name != *channel_name {
             let previous_name = current.replace(Some(channel_name.clone()));
-            assert_eq!(previous_name.unwrap(), *name);
+            assert_eq!(previous_name.unwrap(), name);
         }
         self.channel_selector.set_active_text(channel_name.as_ref());
-        self.frontend_window.channel_selector.set_active_text(channel_name.as_ref());
-        self.frontend_window.fullscreen_channel_selector.set_active_text(channel_name.as_ref());
+        if let Some(ref frontend_window) = *self.frontend_window.borrow() {
+            frontend_window.channel_selector.set_active_text(channel_name.as_ref());
+            frontend_window.fullscreen_channel_selector.set_active_text(channel_name.as_ref());
+        }
     }
 
     /// Toggle the button.
     ///
     /// This function is called after the change of state of the frontend_button.
-    fn toggle_button(&self) {
-        let app = self.control_window.window.get_application().unwrap();
-        if self.frontend_button.get_active() {
-            if let Some(ref channel_name) = *self.tuning_id.channel.borrow() {
-                if self.inhibitor.get() == 0 {
-                    self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
-                    self.frontend_window.window.show();
-                    self.frontend_window.engine.set_mrl(&encode_to_mrl(channel_name));
-                    self.frontend_window.engine.play();
+    fn toggle_button(control_window_button: &Rc<ControlWindowButton>) {
+        let application = control_window_button.control_window.window.get_application().unwrap();
+        if control_window_button.frontend_button.get_active() {
+            if let Some(ref channel_name) = *control_window_button.tuning_id.channel.borrow() {
+                assert!((*control_window_button.frontend_window.borrow()).is_none());
+                let frontend_window = Rc::new(FrontendWindow::new(&application, &control_window_button.control_window.channel_names));
+                frontend_window.close_button.connect_clicked({
+                    let button = control_window_button.frontend_button.clone();
+                    move |_| button.set_active(!button.get_active())
+                });
+                frontend_window.volume_adjustment.connect_value_changed({
+                    let f_w = frontend_window.clone();
+                    move |_| f_w.engine.set_volume(f_w.volume_adjustment.get_value())
+                });
+                frontend_window.channel_selector.connect_changed({
+                    let c_w_b = control_window_button.clone();
+                    let f_w = frontend_window.clone();
+                    move |_| Self::on_channel_changed(&c_w_b, &f_w.channel_selector.get_active_text().unwrap())
+                });
+                frontend_window.fullscreen_channel_selector.connect_changed({
+                    let c_w_b = control_window_button.clone();
+                    let f_w = frontend_window.clone();
+                    move |_| Self::on_channel_changed(&c_w_b, &f_w.fullscreen_channel_selector.get_active_text().unwrap())
+                });
+                match control_window_button.frontend_window.replace(Some(frontend_window)) {
+                    Some(_) => panic!("Inconsistent state of frontend,"),
+                    None => {},
+                };
+                if control_window_button.inhibitor.get() == 0 {
+                    if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
+                        control_window_button.inhibitor.set(application.inhibit(&frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
+                        frontend_window.window.show();
+                        frontend_window.engine.set_mrl(&encode_to_mrl(channel_name));
+                        frontend_window.engine.play();
+                    }
                 } else {
-                    println!("Inconsistent state. Should panic in a nice multithreaded way.");
+                    panic!("Inconsistent state. Inhibitor error.");
                 }
             }
         } else {
-            if self.inhibitor.get() != 0 {
-                app.uninhibit(self.inhibitor.get());
-                self.inhibitor.set(0);
-                self.frontend_window.window.hide();
-                self.frontend_window.engine.pause();
+            if control_window_button.inhibitor.get() != 0 {
+                application.uninhibit(control_window_button.inhibitor.get());
+                control_window_button.inhibitor.set(0);
+                if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
+                    frontend_window.window.hide();
+                    frontend_window.engine.stop();
+                }
+                match control_window_button.frontend_window.replace(None) {
+                    Some(_) => {},
+                    None => panic!("Inconsistent state of frontend,"),
+                }
             } else {
-                println!("Inconsistent state. Should panic in a nice multithreaded way.");
+                panic!("Inconsistent state. Inhibitor error.");
             }
         }
     }
 
     /// Callback for an observed channel change.
-    fn on_channel_changed(&self, channel_name: &String) {
-        let status = self.frontend_button.get_active();
-        if status {
-            self.frontend_window.engine.stop();
+    fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_name: &String) {
+        let status = control_window_button.frontend_button.get_active();
+        if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
+            if status {
+                frontend_window.engine.stop();
+            }
+            control_window_button.set_label(channel_name);
+            frontend_window.engine.set_mrl(&encode_to_mrl(channel_name));
+            if status {
+                frontend_window.engine.play();
+            }
         }
-        self.set_label(channel_name);
-        self.frontend_window.engine.set_mrl(&encode_to_mrl(channel_name));
-        if status {
-            self.frontend_window.engine.play();
-        }
-    }
-
-}
-
-/// Encode a string as used for display to one suitable to be an MRL.
-fn encode_to_mrl(channel_name: &String) -> String {
-    "dvb://".to_owned() + &channel_name.replace(" ", "%20")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_encode_to_mrl_with_no_spaces() {
-        assert_eq!(encode_to_mrl(&"ITV".to_owned()), "dvb://ITV");
-    }
-
-    #[test]
-    fn test_encode_to_mrl_with_one_space() {
-        assert_eq!(encode_to_mrl(&"BBC NEWS".to_owned()), "dvb://BBC%20NEWS");
-    }
-
-    #[test]
-    fn test_encode_to_mrl_with_two_spaces() {
-        assert_eq!(encode_to_mrl(&"BBC One Lon".to_owned()), "dvb://BBC%20One%20Lon");
     }
 
 }
