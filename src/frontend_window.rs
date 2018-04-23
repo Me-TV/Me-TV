@@ -40,11 +40,13 @@ pub struct FrontendWindow {
     fullscreen_unfullscreen_button: gtk::Button,
     fullscreen_volume_button: gtk::VolumeButton,
     pub fullscreen_channel_selector: gtk::ComboBoxText,
+    pub engine: GStreamerEngine,
 }
 
 impl FrontendWindow {
 
-    pub fn new(application: &gtk::Application, channel_names: &RefCell<Option<Vec<String>>>, engine: &GStreamerEngine) -> FrontendWindow {
+    pub fn new(application: &gtk::Application, channel_names: &RefCell<Option<Vec<String>>>) -> FrontendWindow {
+        let engine = GStreamerEngine::new(&application);
         let window = gtk::ApplicationWindow::new(application);
         let video_overlay = gtk::Overlay::new();
         let header_bar = gtk::HeaderBar::new();
@@ -151,6 +153,7 @@ impl FrontendWindow {
             fullscreen_unfullscreen_button,
             fullscreen_volume_button,
             fullscreen_channel_selector,
+            engine,
         }
     }
 

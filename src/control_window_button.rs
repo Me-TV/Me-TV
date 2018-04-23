@@ -29,7 +29,6 @@ use gtk::prelude::*;
 use control_window::ControlWindow;
 use frontend_manager::{FrontendId, TuningId};
 use frontend_window::FrontendWindow;
-use gstreamer_engine::GStreamerEngine;
 
 use comboboxtext_extras::ComboBoxTextExtras;
 
@@ -43,7 +42,6 @@ pub struct ControlWindowButton {
     channel_selector: gtk::ComboBoxText,
     inhibitor: Cell<u32>,
     frontend_window: FrontendWindow,
-    engine: GStreamerEngine,
 }
 
 impl ControlWindowButton {
@@ -84,8 +82,7 @@ impl ControlWindowButton {
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
         let application = control_window.window.get_application().unwrap();
-        let engine = GStreamerEngine::new(&application);
-        let frontend_window = FrontendWindow::new(&application, &control_window.channel_names, &engine);
+        let frontend_window = FrontendWindow::new(&application, &control_window.channel_names);
         let cwb = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             tuning_id,
@@ -94,7 +91,6 @@ impl ControlWindowButton {
             channel_selector,
             inhibitor: Cell::new(0),
             frontend_window,
-            engine,
         });
         if let Some(ref default_channel_name) = *cwb.tuning_id.channel.borrow() {
             cwb.set_label(default_channel_name);
@@ -109,7 +105,7 @@ impl ControlWindowButton {
         cwb.frontend_window.volume_adjustment.connect_value_changed({
             let c_w_b = cwb.clone();
             move |_| {
-                c_w_b.engine.set_volume(c_w_b.frontend_window.volume_adjustment.get_value());
+                c_w_b.frontend_window.engine.set_volume(c_w_b.frontend_window.volume_adjustment.get_value());
             }
         });
         cwb.frontend_button.connect_toggled({
@@ -173,8 +169,8 @@ impl ControlWindowButton {
                 if self.inhibitor.get() == 0 {
                     self.inhibitor.set(app.inhibit(&self.frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
                     self.frontend_window.window.show();
-                    self.engine.set_mrl(&encode_to_mrl(channel_name));
-                    self.engine.play();
+                    self.frontend_window.engine.set_mrl(&encode_to_mrl(channel_name));
+                    self.frontend_window.engine.play();
                 } else {
                     println!("Inconsistent state. Should panic in a nice multithreaded way.");
                 }
@@ -184,7 +180,7 @@ impl ControlWindowButton {
                 app.uninhibit(self.inhibitor.get());
                 self.inhibitor.set(0);
                 self.frontend_window.window.hide();
-                self.engine.pause();
+                self.frontend_window.engine.pause();
             } else {
                 println!("Inconsistent state. Should panic in a nice multithreaded way.");
             }
@@ -195,12 +191,12 @@ impl ControlWindowButton {
     fn on_channel_changed(&self, channel_name: &String) {
         let status = self.frontend_button.get_active();
         if status {
-            self.engine.stop();
+            self.frontend_window.engine.stop();
         }
         self.set_label(channel_name);
-        self.engine.set_mrl(&encode_to_mrl(channel_name));
+        self.frontend_window.engine.set_mrl(&encode_to_mrl(channel_name));
         if status {
-            self.engine.play();
+            self.frontend_window.engine.play();
         }
     }
 
