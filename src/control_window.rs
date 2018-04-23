@@ -174,11 +174,10 @@ fn ensure_channel_file_present(control_window: &gtk::ApplicationWindow, force_re
         .arg(channel_names::channels_file_path())
         .arg(path_to_transmitter_file)
         .output() {
-        Ok(output) => {
-            println!("{:?}", String::from_utf8_lossy(&output.stdout));
+        Ok(_) => {
             Ok("Should be all done now.".to_string())
         },
-        Err(e) => Err("Scan command failed.".to_string())
+        Err(_) => Err("Scan command failed.".to_string())
     }
 }
 

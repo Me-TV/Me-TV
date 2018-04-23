@@ -84,7 +84,6 @@ impl GStreamerEngine {
         fn create_non_gl_element_and_widget() -> (gst::Element, gtk::Widget) {
             let sink = gst::ElementFactory::make("gtksink", None).unwrap();
             let widget = sink.get_property("widget").unwrap();
-            println!("Using gtksink.");
             (sink, widget.get::<gtk::Widget>().unwrap())
         }
         let mut use_gl = true;
@@ -98,7 +97,6 @@ impl GStreamerEngine {
                 let glsinkbin = gst::ElementFactory::make("glsinkbin", None).unwrap();
                 glsinkbin.set_property("sink", &gtkglsink.to_value()).unwrap();
                 let widget = gtkglsink.get_property("widget").unwrap();
-                println!("Using gtkglsink.");
                 (glsinkbin, widget.get::<gtk::Widget>().unwrap())
             } else {
                 create_non_gl_element_and_widget()

@@ -21,8 +21,8 @@
 
 use std::cell::RefCell;
 use std::fs;
+use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
-use std::{thread, time};
 
 use std::os::unix::fs::FileTypeExt;
 
@@ -51,19 +51,35 @@ pub enum Message {
 }
 
 /// The path in the filesystem to the DVB related special files.
-pub static DVB_BASE_PATH: &str = "/dev/dvb";
+pub fn dvb_base_path() -> PathBuf { PathBuf::from("/dev/dvb") }
 
 /// Return the path to the adapter director for a given adapter.
-pub fn adapter_path(id: u16) -> String { DVB_BASE_PATH.to_owned() + "/adapter" + &id.to_string() }
+pub fn adapter_path(id: u16) -> PathBuf {
+    let mut result = dvb_base_path();
+    result.push("adapter".to_string() + &id.to_string());
+    result
+}
 
 /// Return the path to the special file for a given frontend.
-pub fn frontend_path(fei: &FrontendId) -> String { adapter_path(fei.adapter) + "/frontend" + &fei.frontend.to_string() }
+pub fn frontend_path(fei: &FrontendId) -> PathBuf {
+    let mut result = adapter_path(fei.adapter);
+    result.push("frontend".to_string() + &fei.frontend.to_string());
+    result
+}
 
 /// Return the path to the special file of the demux for a given frontend.
-pub fn demux_path(fei: &FrontendId) -> String { adapter_path(fei.adapter) + "/demux" + &fei.frontend.to_string() }
+pub fn demux_path(fei: &FrontendId) -> PathBuf {
+    let mut result = adapter_path(fei.adapter);
+    result.push("demux".to_string() + &fei.frontend.to_string());
+    result
+}
 
 /// Return the path to the special file of the data for a given frontend.
-pub fn dvr_path(fei: &FrontendId) -> String { adapter_path(fei.adapter) + "/dvr" + &fei.frontend.to_string() }
+pub fn dvr_path(fei: &FrontendId) -> PathBuf {
+    let mut result = adapter_path(fei.adapter);
+    result.push("dvr".to_string() + &fei.frontend.to_string());
+    result
+}
 
 /// Process a newly present adapter to inform the control window of all the frontends
 /// newly accessible.
@@ -87,12 +103,14 @@ fn add_frontends(to_cw: &Sender<Message>, id: u16) {
 
 /// Search for any adapters already installed on start of the application
 pub fn search_and_add_adaptors(to_cw: &Sender<Message>) {
-    if fs::metadata(DVB_BASE_PATH).is_ok() {
+    if dvb_base_path().is_dir() {
         let mut adapter_number = 0;
         loop {
-            if fs::metadata(adapter_path(adapter_number)).is_ok() {
+            if adapter_path(adapter_number).is_dir() {
                 add_frontends(to_cw, adapter_number);
-            } else { break; }
+            } else {
+                break;
+            }
             adapter_number += 1;
         }
     }
@@ -109,7 +127,6 @@ pub fn run(from_in: Receiver<N_Message>, to_cw: Sender<Message>) {
                       add_frontends(&to_cw, id);
                   },
                   N_Message::AdapterDisappeared{id} => {
-                      println!("Frontend manager sending adapter removed message.");
                       to_cw.send(Message::AdapterDisappeared{id}).unwrap();
                   },
                 }
@@ -129,25 +146,25 @@ mod tests {
 
     quickcheck! {
         fn adapter_path_is_correct(id: u16) -> bool {
-            adapter_path(id) == format!("/dev/dvb/adapter{}", id)
+            adapter_path(id).to_str().unwrap() == format!("/dev/dvb/adapter{}", id)
         }
     }
 
     quickcheck! {
         fn frontend_path_is_correct(a: u16, f: u16) -> bool {
-            frontend_path(&FrontendId{adapter: a, frontend: f}) == format!("/dev/dvb/adapter{}/frontend{}", a, f)
+            frontend_path(&FrontendId{adapter: a, frontend: f}).to_str().unwrap() == format!("/dev/dvb/adapter{}/frontend{}", a, f)
         }
     }
 
     quickcheck! {
         fn demux_path_is_correct(a: u16, f: u16) -> bool {
-            demux_path(&FrontendId{adapter: a, frontend: f}) == format!("/dev/dvb/adapter{}/demux{}", a, f)
+            demux_path(&FrontendId{adapter: a, frontend: f}).to_str().unwrap() == format!("/dev/dvb/adapter{}/demux{}", a, f)
         }
     }
 
     quickcheck! {
         fn dvr_path_is_correct(a: u16, f: u16) -> bool {
-            dvr_path(&FrontendId{adapter: a, frontend: f}) == format!("/dev/dvb/adapter{}/dvr{}", a, f)
+            dvr_path(&FrontendId{adapter: a, frontend: f}).to_str().unwrap() == format!("/dev/dvb/adapter{}/dvr{}", a, f)
         }
     }
 

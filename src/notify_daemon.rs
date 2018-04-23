@@ -19,15 +19,12 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::fs;
 use std::path::PathBuf;
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::mpsc::{Sender, channel};
 
-use notify::{Watcher, RecommendedWatcher, RecursiveMode, RawEvent, op, raw_watcher};
+use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 
-use frontend_manager::{
-    DVB_BASE_PATH,
-};
+use frontend_manager::dvb_base_path;
 
 /// Messages that can be sent from here to the frontend manager.
 pub enum Message {
@@ -59,19 +56,15 @@ fn set_watch_on_dvb(to_fem: &Sender<Message>) {
             Ok(RawEvent{path: Some(path), op: Ok(op), cookie}) => {
                 match op {
                     op::CREATE => {
-                        println!("Got a create event: {:?} {:?}", path, path.is_dir());
                         if path.is_dir() {
                             if let Some(created_adapter_number) = extract_adapter_number(path.file_name().unwrap().to_str().unwrap()) {
-                                println!("Created adapter {}", created_adapter_number);
                                 to_fem.send(Message::AdapterAppeared{id: created_adapter_number}).unwrap();
                             }
                         }
                     },
                     op::REMOVE => {
-                        println!("Got a remove event: {:?} {:?}", path, path.is_dir());
                         if path == PathBuf::from("/dev/dvb") { break; }
                         if let Some(removed_adapter_number) = extract_adapter_number(path.file_name().unwrap().to_str().unwrap()) {
-                            println!("Removed adapter {}", removed_adapter_number);
                             to_fem.send(Message::AdapterDisappeared{id: removed_adapter_number}).unwrap();
                         }
                     },
@@ -92,9 +85,7 @@ fn set_watch_on_dev(to_fem: &Sender<Message>) {
     loop {
         match receive_end.recv() {
             Ok(RawEvent{path: Some(path), op: Ok(op), cookie}) => {
-                println!("Top level listener: {:?}, {:?}, {:?}", op, path, path.is_dir());
                 if op == op::CREATE && path == PathBuf::from("/dev/dvb")  && path.is_dir() {
-                    println!("Sending create message.");
                     to_fem.send(Message::AdapterAppeared {id: 0}).unwrap();
                     set_watch_on_dvb(&to_fem)
                 }
@@ -107,10 +98,8 @@ fn set_watch_on_dev(to_fem: &Sender<Message>) {
 
 /// The function that drives the inotify daemon.
 pub fn run(to_fem: Sender<Message>) {
-    match fs::metadata(DVB_BASE_PATH) {
-        Ok(_)  => set_watch_on_dvb(&to_fem),
-        Err(_) => set_watch_on_dev(&to_fem)
-    };
+    if dvb_base_path().is_dir() { set_watch_on_dvb(&to_fem); }
+    else { set_watch_on_dev(&to_fem); }
 }
 
 #[cfg(test)]

@@ -101,7 +101,7 @@ impl ControlWindowButton {
         });
         cwb.frontend_button.connect_toggled({
             let c_w_b = cwb.clone();
-            move |button| {
+            move |_| {
                 if let Some(ref channel_names) = *c_w_b.control_window.channel_names.borrow() {
                     if channel_names.len() > 0 {
                         Self::toggle_button(&c_w_b);
@@ -112,10 +112,10 @@ impl ControlWindowButton {
                         gtk::DialogFlags::MODAL,
                         gtk::MessageType::Info,
                         gtk::ButtonsType::Ok,
-                        "No frontends, so cannot play a channel.");
+                        "No channel file, so no channel list, so cannot play a channel.");
                     dialog.run();
                     dialog.destroy();
-                    //button.set_active(false); // causes the reissuing of the signal. :-(
+                    //button.set_active(false); // TODO causes the reissuing of the signal. :-(
                 }
             }
         });
@@ -151,7 +151,7 @@ impl ControlWindowButton {
                 let frontend_window = Rc::new(FrontendWindow::new(
                     &application,
                     &control_window_button.control_window.channel_names,
-                    &control_window_button.control_window.default_channel_name));
+                    &control_window_button.channel_selector.get_active_text().unwrap()));
                 frontend_window.close_button.connect_clicked({
                     let button = control_window_button.frontend_button.clone();
                     move |_| button.set_active(!button.get_active())
