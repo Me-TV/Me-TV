@@ -26,6 +26,7 @@ use gdk::prelude::*;
 use gtk;
 use gtk::prelude::*;
 
+use comboboxtext_extras::ComboBoxTextExtras;
 use gstreamer_engine::GStreamerEngine;
 
 pub struct FrontendWindow {
@@ -45,7 +46,7 @@ pub struct FrontendWindow {
 
 impl FrontendWindow {
 
-    pub fn new(application: &gtk::Application, channel_names: &RefCell<Option<Vec<String>>>) -> FrontendWindow {
+    pub fn new(application: &gtk::Application, channel_names: &RefCell<Option<Vec<String>>>, default_channel_name: &RefCell<Option<String>>) -> FrontendWindow {
         let engine = GStreamerEngine::new(&application);
         let window = gtk::ApplicationWindow::new(application);
         let video_overlay = gtk::Overlay::new();
@@ -84,6 +85,10 @@ impl FrontendWindow {
                 for name in channel_names {
                     channel_selector.append_text(&name);
                     fullscreen_channel_selector.append_text(&name);
+                }
+                if let Some(ref default_channel_name) = *default_channel_name.borrow() {
+                    channel_selector.set_active_text(&default_channel_name);
+                    fullscreen_channel_selector.set_active_text(&default_channel_name);
                 }
             },
             None => {

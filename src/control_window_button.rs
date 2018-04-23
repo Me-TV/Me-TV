@@ -83,7 +83,6 @@ impl ControlWindowButton {
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
         let application = control_window.window.get_application().unwrap();
-        let frontend_window = FrontendWindow::new(&application, &control_window.channel_names);
         let cwb = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             tuning_id,
@@ -149,7 +148,10 @@ impl ControlWindowButton {
         if control_window_button.frontend_button.get_active() {
             if let Some(ref channel_name) = *control_window_button.tuning_id.channel.borrow() {
                 assert!((*control_window_button.frontend_window.borrow()).is_none());
-                let frontend_window = Rc::new(FrontendWindow::new(&application, &control_window_button.control_window.channel_names));
+                let frontend_window = Rc::new(FrontendWindow::new(
+                    &application,
+                    &control_window_button.control_window.channel_names,
+                    &control_window_button.control_window.default_channel_name));
                 frontend_window.close_button.connect_clicked({
                     let button = control_window_button.frontend_button.clone();
                     move |_| button.set_active(!button.get_active())
