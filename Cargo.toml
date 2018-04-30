@@ -13,6 +13,7 @@ gstreamer = { version = "*", features = ["v1_12"] }
 gtk = { version = "*", features = ["v3_10"] }
 lazy_static = "*"
 notify = "*"
+regex= "*"
 send-cell = "*"
 serde = "*"
 serde_derive = "*"

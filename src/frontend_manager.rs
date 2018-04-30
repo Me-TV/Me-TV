@@ -26,8 +26,6 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use std::os::unix::fs::FileTypeExt;
 
-use notify_daemon::Message as N_Message;
-
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -46,8 +44,8 @@ pub struct TuningId {
 /// An enumeration of all the message types that  can be sent by
 /// the frontend manager.
 pub enum Message {
-    AdapterDisappeared{id: u16},
     FrontendAppeared{fei: FrontendId},
+    FrontendDisappeared{fei: FrontendId},
 }
 
 /// The path in the filesystem to the DVB related special files.
@@ -86,7 +84,8 @@ pub fn dvr_path(fei: &FrontendId) -> PathBuf {
 fn add_frontends(to_cw: &Sender<Message>, id: u16) {
     let mut fei = FrontendId{adapter: id, frontend: 0};
     loop {
-        match fs::metadata(&frontend_path(&fei)) {
+        let path = frontend_path(&fei);
+        match fs::metadata(&path) {
             Ok(m) => {
                 // NB m.is_file() is false for special files. :-(
                 // Assume the special devices were are dealing with are
@@ -95,7 +94,10 @@ fn add_frontends(to_cw: &Sender<Message>, id: u16) {
                     to_cw.send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
                 }
             },
-            Err(_) => { break; },
+            Err(error) => {
+                println!("frontend_manager::add_frontends failed to deal with {:?}, {:?}", &path, error);
+                break;
+            },
         };
         fei.frontend += 1;
     }
@@ -117,17 +119,17 @@ pub fn search_and_add_adaptors(to_cw: &Sender<Message>) {
 }
 
 /// The entry point for the thread that is the front end manager process.
-pub fn run(from_in: Receiver<N_Message>, to_cw: Sender<Message>) {
+pub fn run(from_in: Receiver<Message>, to_cw: Sender<Message>) {
     search_and_add_adaptors(&to_cw);
     loop {
         match from_in.recv() {
             Ok(r) => {
                 match r {
-                  N_Message::AdapterAppeared{id} => {
-                      add_frontends(&to_cw, id);
+                  Message::FrontendAppeared{fei} => {
+                      to_cw.send(Message::FrontendAppeared{fei}).unwrap();
                   },
-                  N_Message::AdapterDisappeared{id} => {
-                      to_cw.send(Message::AdapterDisappeared{id}).unwrap();
+                  Message::FrontendDisappeared{fei} => {
+                      to_cw.send(Message::FrontendDisappeared{fei}).unwrap();
                   },
                 }
             },

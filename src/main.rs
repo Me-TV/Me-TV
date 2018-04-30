@@ -29,6 +29,7 @@ extern crate gstreamer as gst;
 #[macro_use]
 extern crate lazy_static;
 extern crate notify;
+extern crate regex;
 extern crate send_cell;
 extern crate serde;
 #[macro_use]
@@ -115,7 +116,7 @@ fn main() {
             move |_, _| a.quit()
         });
         app.add_action(&quit_action);
-        let (to_fem, from_in) = channel::<notify_daemon::Message>();
+        let (to_fem, from_in) = channel::<frontend_manager::Message>();
         let (to_cw, from_fem) = channel::<frontend_manager::Message>();
         thread::spawn(||{ control_window::message_listener(from_fem) });
         thread::spawn(||{ frontend_manager::run(from_in, to_cw) });

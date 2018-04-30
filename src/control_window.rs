@@ -192,18 +192,17 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
     control_window.window.show_all();
 }
 
-/// Remove all the frontends of an adaptor from this control window.
-fn remove_adapter(control_window: &Rc<ControlWindow>, id: u16) {
-    let mut removals: Vec<usize> = Vec::new();
+/// Remove the frontend from this control window.
+fn remove_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
+    let mut remove_index = 0;
     for (index, control_window_button) in control_window.control_window_buttons.borrow().iter().enumerate() {
-        if control_window_button.tuning_id.frontend.adapter == id {
+        if control_window_button.tuning_id.frontend == fei {
             control_window.frontends_box.remove(&control_window_button.widget);
-            removals.push(index);
+            remove_index = index;
+            break;
         }
     }
-    for index in removals.iter() {
-        control_window.control_window_buttons.borrow_mut().remove(*index);
-    }
+    control_window.control_window_buttons.borrow_mut().remove(remove_index);
     if control_window.frontends_box.get_children().is_empty() {
         control_window.main_box.remove(&control_window.frontends_box);
         control_window.main_box.pack_start(&control_window.label, true, true, 0);
@@ -221,10 +220,10 @@ fn handle_add_frontend(fei: FrontendId) {
 }
 
 /// Put a call on the GTK event loop to remove all the frontends of an adaptor.
-fn handle_remove_adapter(id: u16) {
+fn handle_remove_frontend(fei: FrontendId) {
     CONTROL_WINDOW.with(|global|{
         if let Some(ref mut control_window) = *global.borrow_mut() {
-            remove_adapter(control_window, id);
+            remove_frontend(control_window, fei);
         }
     })
 }
@@ -239,12 +238,15 @@ pub fn message_listener(from_fem: Receiver<Message>) {
                     Message::FrontendAppeared{fei} => {
                         glib::idle_add(move ||{ handle_add_frontend(fei.clone()); glib::Continue(false) });
                     },
-                    Message::AdapterDisappeared{id} => {
-                        glib::idle_add( move||{ handle_remove_adapter(id); glib::Continue(false) });
+                    Message::FrontendDisappeared{fei} => {
+                        glib::idle_add( move||{ handle_remove_frontend(fei.clone()); glib::Continue(false) });
                     },
                 }
             },
-            Err(_) => { println!("Control Window Listener has stopped."); },
+            Err(error) => {
+                println!("Control Window Listener has stopped: {:?}", error);
+                break;
+            },
         }
     }
 }

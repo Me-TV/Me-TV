@@ -19,87 +19,72 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::fs;
 use std::path::PathBuf;
 use std::sync::mpsc::{Sender, channel};
 
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 
-use frontend_manager::dvb_base_path;
+use regex::Regex;
 
-/// Messages that can be sent from here to the frontend manager.
-pub enum Message {
-    AdapterAppeared{id: u16},
-    AdapterDisappeared{id: u16},
-}
+use frontend_manager::{FrontendId, Message, dvb_base_path};
 
-/// Ensure the name is adaptorXXX where XXX is pure numeric, return the
-/// integer value of XXX.
-fn extract_adapter_number(name: &str) -> Option<u16> {
-    let matches: Vec<&str> = name.split("adapter").collect();
-    if matches.len() == 2 {
-        match u16::from_str_radix(matches.get(1).unwrap(), 10) {
-            Ok(r) => Some(r),
-            Err(_) => None,
-        }
+// TODO Find out how to fix this.
+//
+// Experimental evidence from Fedora Rawhide indicates that some USB DVB devices
+// (the newer ones) do not give an event for creating the frontend file.
+// Some USB devices do not give an event for the demux device. All seem to give events
+// for the dvr and net devices. All file removes are notified.
+
+/// Ensure the name is adaptorXXX /frontendYYY where XXX and YYY are pure numeric,
+///and return a `FrontendId` based on these numbers.
+fn frontend_id_from(path: &str) -> Option<FrontendId> {
+    let regex = Regex::new(r"/dev/dvb/adapter([0-9]+)/frontend([0-9]+)").unwrap();
+    if regex.is_match(&path) {
+        let captures = regex.captures(path).unwrap();
+        let adapter_number = u16::from_str_radix(&captures[1], 10).unwrap();
+        let frontend_number= u16::from_str_radix(&captures[2], 10).unwrap();
+        Some(FrontendId{adapter: adapter_number, frontend: frontend_number})
     } else {
         None
     }
 }
 
-/// Set up the notify watch on the existing DVB directory.
-fn set_watch_on_dvb(to_fem: &Sender<Message>) {
+/// The function that drives the inotify daemon.
+pub fn run(to_fem: Sender<Message>) {
     let (transmit_end, receive_end) = channel();
     let mut watcher = raw_watcher(transmit_end).unwrap();
-    watcher.watch("/dev/dvb", RecursiveMode::NonRecursive).unwrap();
+    watcher.watch("/dev", RecursiveMode::Recursive).unwrap();
     loop {
         match receive_end.recv() {
             Ok(RawEvent{path: Some(path), op: Ok(op), cookie: _cookie}) => {
                 match op {
                     op::CREATE => {
-                        if path.is_dir() {
-                            if let Some(created_adapter_number) = extract_adapter_number(path.file_name().unwrap().to_str().unwrap()) {
-                                to_fem.send(Message::AdapterAppeared{id: created_adapter_number}).unwrap();
+                        let path = path.to_str().unwrap();
+                        // Hack because of the lack of certainty that the frontend notifies.
+                        if path.contains("dvb") && path.contains("adapter") && path.contains("dvr") {
+                            let path = path.replace("dvr", "frontend");
+                            if let Some(fei) = frontend_id_from(&path) {
+                                to_fem.send(Message::FrontendAppeared{fei: fei}).unwrap();
                             }
                         }
                     },
                     op::REMOVE => {
-                        if path == PathBuf::from("/dev/dvb") { break; }
-                        if let Some(removed_adapter_number) = extract_adapter_number(path.file_name().unwrap().to_str().unwrap()) {
-                            to_fem.send(Message::AdapterDisappeared{id: removed_adapter_number}).unwrap();
+                        let path = path.to_str().unwrap();
+                        if path.contains("dvb") && path.contains("adapter") && path.contains("frontend") {
+                            if let Some(fei) = frontend_id_from(&path) {
+                                to_fem.send(Message::FrontendDisappeared{fei: fei}).unwrap();
+                            }
                         }
                     },
                     _ => {},
                 }
             },
-            Ok(event) => println!("broken event: {:?}", event),
-            Err(e) => println!("watch error: {:?}", e),
+            Ok(event) => println!("notify_daemon: broken event: {:?}", event),
+            Err(e) => println!("notify_daemon: watch error: {:?}", e),
         }
     }
-}
-
-/// Set up the notify watch on the /dev directory as there is currently no DVB directory.
-fn set_watch_on_dev(to_fem: &Sender<Message>) {
-    let (transmit_end, receive_end) = channel();
-    let mut watcher = raw_watcher(transmit_end).unwrap();
-    watcher.watch("/dev", RecursiveMode::NonRecursive).unwrap();
-    loop {
-        match receive_end.recv() {
-            Ok(RawEvent{path: Some(path), op: Ok(op), cookie: _cookie}) => {
-                if op == op::CREATE && path == PathBuf::from("/dev/dvb")  && path.is_dir() {
-                    to_fem.send(Message::AdapterAppeared {id: 0}).unwrap();
-                    set_watch_on_dvb(&to_fem)
-                }
-            },
-            Ok(event) => println!("broken event: {:?}", event),
-            Err(e) => println!("watch error: {:?}", e),
-        }
-    }
-}
-
-/// The function that drives the inotify daemon.
-pub fn run(to_fem: Sender<Message>) {
-    if dvb_base_path().is_dir() { set_watch_on_dvb(&to_fem); }
-    else { set_watch_on_dev(&to_fem); }
+    println!("Notify daemon terminated.");
 }
 
 #[cfg(test)]
@@ -107,15 +92,15 @@ mod tests {
     use super::*;
 
     quickcheck! {
-        fn check_return_adapter_number_with_correct_structure(id: u16) -> bool {
-            Some(id) == extract_adapter_number(&("adapter".to_string() + &id.to_string()))
+        fn check_frontend_id_from_with_correct_structure(adapter: u16, frontend: u16) -> bool {
+            Some(FrontendId{adapter: adapter, frontend: frontend}) == frontend_id_from(&format!("/dev/dvb/adapter{}/frontend{}", adapter, frontend))
         }
     }
 
     quickcheck! {
-        fn check_return_adapter_number_with_incorrect_structure(prefix: String, id: u16) -> bool {
-            None == extract_adapter_number(&(prefix + &id.to_string()))
-        }
+        fn check_frontend_id_from_with_incorrect_structure(prefix: String, postfix: String, adapter: u16, frontend: u16) -> bool {
+            None == frontend_id_from(&format!("{}/adapter{}/frontend{}{}", prefix, adapter, frontend, postfix))
+         }
     }
 
 }
