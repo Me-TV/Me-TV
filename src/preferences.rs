@@ -69,7 +69,9 @@ fn write_preferences() {
 /// instance with the hard-coded default.
 pub fn init() {
     let path = get_preferences_file_path();
-    create_dir_all(path.parent().unwrap()).unwrap();
+    if let Err(error) = create_dir_all(path.parent().unwrap()) {
+        panic!("create_dir_all({:?}) failed: {:?}", path.parent().unwrap(), error);
+    }
     if path.is_file() {
         if let Ok(mut file) = File::open(path) {
             let mut buffer = String::new();

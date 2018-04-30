@@ -37,7 +37,7 @@ use comboboxtext_extras::ComboBoxTextExtras;
 /// a bit of composition.
 pub struct ControlWindowButton {
     control_window: Rc<ControlWindow>,
-    tuning_id: TuningId,
+    pub tuning_id: TuningId,
     pub widget: gtk::Box,
     frontend_button: gtk::ToggleButton,
     channel_selector: gtk::ComboBoxText,

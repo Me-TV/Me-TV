@@ -79,10 +79,10 @@ impl ControlWindow {
             move |_, _| {
                CONTROL_WINDOW.with(|global| {
                    if let Some(ref control_window) = *global.borrow_mut() {
-                       let message = if (*control_window.control_window_buttons.borrow()).len() >0 {
-                           "Should display the EPG window."
-                       } else {
+                       let message = if control_window.control_window_buttons.borrow().is_empty() {
                            "No frontends, so no EPG."
+                       } else {
+                           "Should display the EPG window."
                        };
                        let dialog = gtk::MessageDialog::new(
                            Some(&control_window.window),
@@ -103,9 +103,7 @@ impl ControlWindow {
             move |_, _| {
                 CONTROL_WINDOW.with(|global| {
                     if let Some(ref control_window) = *global.borrow_mut() {
-                        if (*control_window.control_window_buttons.borrow()).len() >0 {
-                            ensure_channel_file_present(&control_window.window, true).expect("Something went wrong creating the channels file");
-                        } else {
+                        if control_window.control_window_buttons.borrow().is_empty() {
                             let dialog = gtk::MessageDialog::new(
                                 Some(&control_window.window),
                                 gtk::DialogFlags::MODAL,
@@ -114,6 +112,8 @@ impl ControlWindow {
                                 "No frontends, so no tuning possible.");
                             dialog.run();
                             dialog.destroy();
+                        } else {
+                            ensure_channel_file_present(&control_window.window, true).expect("Something went wrong creating the channels file");
                         }
                     }
                 })
@@ -194,11 +194,16 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
 
 /// Remove all the frontends of an adaptor from this control window.
 fn remove_adapter(control_window: &Rc<ControlWindow>, id: u16) {
-    //
-    // TODO Get this working.
-    // Must remove the ControlWindowButton widget  from ControlWindow frontend box
-    // and the ControlWindowButton object from the Vec of object in the ControlWindow.
-    //
+    let mut removals: Vec<usize> = Vec::new();
+    for (index, control_window_button) in control_window.control_window_buttons.borrow().iter().enumerate() {
+        if control_window_button.tuning_id.frontend.adapter == id {
+            control_window.frontends_box.remove(&control_window_button.widget);
+            removals.push(index);
+        }
+    }
+    for index in removals.iter() {
+        control_window.control_window_buttons.borrow_mut().remove(*index);
+    }
     if control_window.frontends_box.get_children().is_empty() {
         control_window.main_box.remove(&control_window.frontends_box);
         control_window.main_box.pack_start(&control_window.label, true, true, 0);
