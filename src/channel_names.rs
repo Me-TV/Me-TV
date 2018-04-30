@@ -71,7 +71,7 @@ mod tests {
 
     extern crate tempfile;
 
-    use std::io::{Write, Read, Seek, SeekFrom};
+    use std::io::{Write, Seek, SeekFrom};
 
     #[test]
     fn empty_file() {

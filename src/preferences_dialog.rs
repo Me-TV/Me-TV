@@ -35,9 +35,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
     let use_opengl_button = gtk::CheckButton::new_with_label("Use OpenGL if possible");
     use_opengl_button.set_active(preferences::get_use_opengl());
     use_opengl_button.connect_toggled(
-        move |button| unsafe {
-            preferences::set_use_opengl(button.get_active(), true);
-        }
+        move |button| preferences::set_use_opengl(button.get_active(), true)
     );
     content_area.pack_start(&use_opengl_button, false, false, 10);
     dialog.show_all();

@@ -82,7 +82,6 @@ impl ControlWindowButton {
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
-        let application = control_window.window.get_application().unwrap();
         let cwb = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             tuning_id,

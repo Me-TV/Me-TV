@@ -163,8 +163,7 @@ impl ControlWindow {
 ///
 /// Currently try to use dvbv5-scan to create the file, or if it isn't present, try dvbscan or w_scan.
 fn ensure_channel_file_present(control_window: &gtk::ApplicationWindow, force_rewrite: bool) -> Result<String, String> {
-    let mut channels_file_path = channel_names::channels_file_path();
-    let channels_file_path = channels_file_path.as_path();
+    let channels_file_path = channel_names::channels_file_path();
     if !force_rewrite & channels_file_path.exists() {
         return Ok("Channels file exists.".to_string());
     }

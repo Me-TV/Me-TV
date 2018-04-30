@@ -53,7 +53,7 @@ fn set_watch_on_dvb(to_fem: &Sender<Message>) {
     watcher.watch("/dev/dvb", RecursiveMode::NonRecursive).unwrap();
     loop {
         match receive_end.recv() {
-            Ok(RawEvent{path: Some(path), op: Ok(op), cookie}) => {
+            Ok(RawEvent{path: Some(path), op: Ok(op), cookie: _cookie}) => {
                 match op {
                     op::CREATE => {
                         if path.is_dir() {
@@ -84,7 +84,7 @@ fn set_watch_on_dev(to_fem: &Sender<Message>) {
     watcher.watch("/dev", RecursiveMode::NonRecursive).unwrap();
     loop {
         match receive_end.recv() {
-            Ok(RawEvent{path: Some(path), op: Ok(op), cookie}) => {
+            Ok(RawEvent{path: Some(path), op: Ok(op), cookie: _cookie}) => {
                 if op == op::CREATE && path == PathBuf::from("/dev/dvb")  && path.is_dir() {
                     to_fem.send(Message::AdapterAppeared {id: 0}).unwrap();
                     set_watch_on_dvb(&to_fem)

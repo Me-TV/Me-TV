@@ -114,7 +114,7 @@ impl GStreamerEngine {
     }
 
     pub fn pause(&self) {
-        let (rv, state, pending) = self.playbin.get_state(gst::CLOCK_TIME_NONE);
+        let (rv, state, _pending) = self.playbin.get_state(gst::CLOCK_TIME_NONE);
         assert_ne!(rv, gst::StateChangeReturn::Failure);
         if state == gst::State::Playing {
             let rv = self.playbin.set_state(gst::State::Paused);

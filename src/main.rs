@@ -40,10 +40,14 @@ extern crate xdg;
 #[macro_use]
 extern crate quickcheck;
 
+#[cfg(not(test))]
 use std::thread;
+#[cfg(not(test))]
 use std::sync::mpsc::channel;
 
+#[cfg(not(test))]
 use gio::prelude::*;
+#[cfg(not(test))]
 use gtk::prelude::*;
 
 mod about;
