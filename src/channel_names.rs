@@ -19,12 +19,12 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate xdg;
-
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::path::PathBuf;
+
+use xdg;
 
 /// An internal function that can be tested.
 fn get_names_from_file(file: &File) -> Vec<String> {

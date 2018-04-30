@@ -4,16 +4,20 @@ version = "3.0.0"
 authors = ["Russel Winder <russel@winder.org.uk>"]
 
 [dependencies]
+clap = "*"
 gdk = "*"
 gdk-pixbuf = "*"
 gio = "*"
 glib = { version = "*", features = ["v2_40"] }
 gstreamer = { version = "*", features = ["v1_10"] }
 gtk = { version = "*", features = ["v3_10"] }
+lazy_static = "*"
 notify = "*"
 send-cell = "*"
+serde = "*"
+serde_derive = "*"
+serde_yaml = "*"
 xdg = "*"
-clap = "*"
 
 # gstreamer-mpegts = { path = "../../Masters/GStreamer-MPEG-TS-Rust" }
 

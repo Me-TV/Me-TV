@@ -22,7 +22,7 @@
 use gtk;
 use gtk::prelude::*;
 
-use gstreamer_engine;
+use preferences;
 
 fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
     let dialog = gtk::Dialog::new_with_buttons(
@@ -33,12 +33,10 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
     );
     let content_area = dialog.get_content_area();
     let use_opengl_button = gtk::CheckButton::new_with_label("Use OpenGL if possible");
-    unsafe {
-        use_opengl_button.set_active(gstreamer_engine::USE_OPENGL.unwrap());
-    }
+    use_opengl_button.set_active(preferences::get_use_opengl());
     use_opengl_button.connect_toggled(
         move |button| unsafe {
-            gstreamer_engine::USE_OPENGL = Some(button.get_active());
+            preferences::set_use_opengl(button.get_active(), true);
         }
     );
     content_area.pack_start(&use_opengl_button, false, false, 10);

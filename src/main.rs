@@ -19,19 +19,22 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+extern crate clap;
 extern crate gdk;
 extern crate gio;
 extern crate glib;
 extern crate gtk;
 extern crate gdk_pixbuf;
-
 extern crate gstreamer as gst;
-
+#[macro_use]
+extern crate lazy_static;
 extern crate notify;
-
 extern crate send_cell;
-
-extern crate clap;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_yaml;
+extern crate xdg;
 
 #[cfg(test)]
 #[macro_use]
@@ -52,11 +55,13 @@ mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
 mod notify_daemon;
+mod preferences;
 mod preferences_dialog;
 mod transmitter_dialog;
 
 #[cfg(not(test))]
 fn main() {
+    preferences::init();
     /*
      *  As at 2018-04-05 there is no way of dealing with the handle_local_options and commandline events/signals.
      *  Thus there is no Rust/GTK+ way of handling command line arguments.
@@ -69,9 +74,7 @@ fn main() {
             .help("Do not try to use OpenGL."))
         .get_matches();
     if cli_matches.is_present("no_gl") {
-        unsafe {
-            gstreamer_engine::USE_OPENGL = Some(false);
-        }
+        preferences::set_use_opengl(false, false);
     }
     gst::init().unwrap();
     let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed");
