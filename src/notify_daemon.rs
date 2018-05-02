@@ -29,7 +29,7 @@ use regex::Regex;
 
 use frontend_manager::{FrontendId, Message, dvb_base_path};
 
-// TODO Find out how to fix this.
+// TODO Find out how to fix this problem of notification of the frontendX files..
 //
 // Experimental evidence from Fedora Rawhide indicates that some USB DVB devices
 // (the newer ones) do not give an event for creating the frontend file.

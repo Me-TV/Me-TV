@@ -84,6 +84,7 @@ pub fn dvr_path(fei: &FrontendId) -> PathBuf {
 fn add_frontends(to_cw: &Sender<Message>, id: u16) {
     let mut fei = FrontendId{adapter: id, frontend: 0};
     loop {
+        // TODO Is it worth doing the check for special file or just check for existence.
         let path = frontend_path(&fei);
         match fs::metadata(&path) {
             Ok(m) => {
@@ -94,10 +95,7 @@ fn add_frontends(to_cw: &Sender<Message>, id: u16) {
                     to_cw.send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
                 }
             },
-            Err(error) => {
-                println!("frontend_manager::add_frontends failed to deal with {:?}, {:?}", &path, error);
-                break;
-            },
+            Err(error) => break,
         };
         fei.frontend += 1;
     }

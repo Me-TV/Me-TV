@@ -19,7 +19,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 use std::cell::RefCell;
-use std::process::Command;
+use std::process;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 
@@ -29,6 +29,8 @@ use glib;
 //use glib::prelude::*;
 use gtk;
 use gtk::prelude::*;
+
+use send_cell::SendCell;
 
 use channel_names;
 use control_window_button::ControlWindowButton;
@@ -48,7 +50,7 @@ pub struct ControlWindow {
 }
 
 thread_local!(
-pub static CONTROL_WINDOW: RefCell<Option<Rc<ControlWindow>>> = RefCell::new(None)
+static CONTROL_WINDOW: RefCell<Option<Rc<ControlWindow>>> = RefCell::new(None)
 );
 
 impl ControlWindow {
@@ -113,7 +115,7 @@ impl ControlWindow {
                             dialog.run();
                             dialog.destroy();
                         } else {
-                            ensure_channel_file_present(&control_window.window, true).expect("Something went wrong creating the channels file");
+                            ensure_channel_file_present(&control_window);
                         }
                     }
                 })
@@ -162,22 +164,43 @@ impl ControlWindow {
 /// If the argument is `true` then always try to recreate it.
 ///
 /// Currently try to use dvbv5-scan to create the file, or if it isn't present, try dvbscan or w_scan.
-fn ensure_channel_file_present(control_window: &gtk::ApplicationWindow, force_rewrite: bool) -> Result<String, String> {
-    let channels_file_path = channel_names::channels_file_path();
-    if !force_rewrite & channels_file_path.exists() {
-        return Ok("Channels file exists.".to_string());
-    }
-    let path_to_transmitter_file = transmitter_dialog::present(Some(&control_window));
-    match Command::new("dvbv5-scan")
-        .arg("-o")
-        .arg(channel_names::channels_file_path())
-        .arg(path_to_transmitter_file)
-        .output() {
-        Ok(_) => {
-            Ok("Should be all done now.".to_string())
-        },
-        Err(_) => Err("Scan command failed.".to_string())
-    }
+fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
+    let path_to_transmitter_file = transmitter_dialog::present(Some(&control_window.window));
+    let dialog = gtk::MessageDialog::new(
+        Some(&control_window.window),
+        gtk::DialogFlags::MODAL,
+        gtk::MessageType::Info,
+        gtk::ButtonsType::Ok,
+        "Run dvbv5-scan, this may take a while.");
+    dialog.run();
+    // The compiler appears not to be able to deduce that this code is run in the GTK event loop thread
+    // and the callback will be executed in the same thread. Must thus code it as though different threads can be used.
+    glib::idle_add({
+        let cw = SendCell::new(control_window.clone());
+        let d = SendCell::new(dialog);
+        // TODO for now we run this in the GTK event loop thread so as to make the UI stop.
+        // This is not the right way of doing this but it does for now.
+        move || {
+            process::Command::new("dvbv5-scan")
+                .arg("-o")
+                .arg(channel_names::channels_file_path())
+                .arg(&path_to_transmitter_file)
+                .output().expect("dvbv5-scan failed in some way");
+            // TODO need better error handling on a dvbv5-scan fail
+            let c_w = cw.borrow();
+            c_w.channel_names.replace(channel_names::get_names());
+            c_w.default_channel_name.replace(match *c_w.channel_names.borrow_mut() {
+                Some(ref mut vector) => {
+                    let result = Some(vector[0].clone());
+                    vector.sort();
+                    result
+                },
+                None => None,
+            });
+            d.borrow().destroy();
+            glib::Continue(false)
+        }
+    });
 }
 
 /// Add a new frontend to this control window.
