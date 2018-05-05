@@ -62,9 +62,6 @@ impl ControlWindow {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         window.set_border_width(10);
-        let header_bar = gtk::HeaderBar::new();
-        header_bar.set_title("Me TV");
-        header_bar.set_show_close_button(true);
         window.connect_delete_event({
             let a = application.clone();
             move |_, _| {
@@ -72,55 +69,16 @@ impl ControlWindow {
                 Inhibit(true)
             }
         });
+        let header_bar = gtk::HeaderBar::new();
+        header_bar.set_title("Me TV");
+        header_bar.set_show_close_button(true);
         let menu_button = gtk::MenuButton::new();
         menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/control_window_menu.xml"));
         let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").unwrap();
         let epg_action = gio::SimpleAction::new("epg", None);
-        epg_action.connect_activate(
-            move |_, _| {
-               CONTROL_WINDOW.with(|global| {
-                   if let Some(ref control_window) = *global.borrow_mut() {
-                       let message = if control_window.control_window_buttons.borrow().is_empty() {
-                           "No frontends, so no EPG."
-                       } else {
-                           "Should display the EPG window."
-                       };
-                       let dialog = gtk::MessageDialog::new(
-                           Some(&control_window.window),
-                           gtk::DialogFlags::MODAL,
-                           gtk::MessageType::Info,
-                           gtk::ButtonsType::Ok,
-                           message
-                       );
-                       dialog.run();
-                       dialog.destroy();
-                   }
-               });
-            }
-        );
         window.add_action(&epg_action);
         let channels_file_action = gio::SimpleAction::new("create_channels_file", None);
-        channels_file_action.connect_activate(
-            move |_, _| {
-                CONTROL_WINDOW.with(|global| {
-                    if let Some(ref control_window) = *global.borrow_mut() {
-                        if control_window.control_window_buttons.borrow().is_empty() {
-                            let dialog = gtk::MessageDialog::new(
-                                Some(&control_window.window),
-                                gtk::DialogFlags::MODAL,
-                                gtk::MessageType::Info,
-                                gtk::ButtonsType::Ok,
-                                "No frontends, so no tuning possible.");
-                            dialog.run();
-                            dialog.destroy();
-                        } else {
-                            ensure_channel_file_present(&control_window);
-                        }
-                    }
-                })
-            }
-        );
         window.add_action(&channels_file_action);
         menu_button.set_menu_model(&window_menu);
         header_bar.pack_end(&menu_button);
@@ -149,6 +107,42 @@ impl ControlWindow {
             control_window_buttons,
             channel_names: RefCell::new(channel_names),
             default_channel_name: RefCell::new(default_channel_name),
+        });
+        epg_action.connect_activate({
+            let c_w = control_window.clone();
+            move |_, _| {
+                let message = if c_w.control_window_buttons.borrow().is_empty() {
+                    "No frontends, so no EPG."
+                } else {
+                    "Should display the EPG window."
+                };
+                let dialog = gtk::MessageDialog::new(
+                    Some(&c_w.window),
+                    gtk::DialogFlags::MODAL,
+                    gtk::MessageType::Info,
+                    gtk::ButtonsType::Ok,
+                    message
+                );
+                dialog.run();
+                dialog.destroy();
+            }
+        });
+        channels_file_action.connect_activate({
+            let c_w = control_window.clone();
+            move |_, _| {
+                if c_w.control_window_buttons.borrow().is_empty() {
+                    let dialog = gtk::MessageDialog::new(
+                        Some(&c_w.window),
+                        gtk::DialogFlags::MODAL,
+                        gtk::MessageType::Info,
+                        gtk::ButtonsType::Ok,
+                        "No frontends, so no tuning possible.");
+                    dialog.run();
+                    dialog.destroy();
+                } else {
+                    ensure_channel_file_present(&c_w);
+                }
+            }
         });
         let rv = control_window.clone();
         CONTROL_WINDOW.with(|global| {
