@@ -97,7 +97,7 @@ fn add_frontends(to_cw: &mut Sender<Message>, id: u16) {
                     to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
                 }
             },
-            Err(error) => break,
+            Err(_) => break,
         };
         fei.frontend += 1;
     }

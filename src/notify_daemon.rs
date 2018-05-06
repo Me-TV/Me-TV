@@ -19,15 +19,13 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::fs;
-use std::path::PathBuf;
 use std::sync::mpsc::{Sender, channel};
 
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 
 use regex::Regex;
 
-use frontend_manager::{FrontendId, Message, dvb_base_path};
+use frontend_manager::{FrontendId, Message};
 
 // TODO Find out how to fix this problem of notification of the frontendX files..
 //
@@ -84,7 +82,6 @@ pub fn run(to_fem: Sender<Message>) {
             Err(e) => println!("notify_daemon: watch error: {:?}", e),
         }
     }
-    println!("Notify daemon terminated.");
 }
 
 #[cfg(test)]

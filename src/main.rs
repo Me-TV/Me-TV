@@ -89,14 +89,6 @@ fn main() {
     gst::init().unwrap();
     let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
-    /*
-    application.connect_startup(|app|{
-    });
-    */
-    /*
-    application.connect_shutdown(|app|{
-    });
-    */
     application.connect_activate(|app|{
         // It seems that the application menu must be added before creating the control window.
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
@@ -126,8 +118,5 @@ fn main() {
         thread::spawn(||{ frontend_manager::run(from_in, to_cw) });
         thread::spawn(||{ notify_daemon::run(to_fem) });
     });
-    // No point in passing arguments until argument processing is available.
-    //let arguments: Vec<String> = env::args().collect();
-    //application.run(&arguments);
     application.run(&[]);
 }

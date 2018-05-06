@@ -212,6 +212,7 @@ impl ControlWindowButton {
             control_window_button.set_label(channel_name);
             frontend_window.engine.set_mrl(&encode_to_mrl(channel_name));
             if status {
+                // TODO Must handle not being able to tune to a channel better than panicing.
                 frontend_window.engine.play();
             }
         }

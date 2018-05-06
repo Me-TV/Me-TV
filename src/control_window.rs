@@ -145,12 +145,8 @@ impl ControlWindow {
             let c_w = control_window.clone();
             message_channel.for_each(move |message| {
                 match message {
-                    Message::FrontendAppeared { fei } => {
-                        add_frontend(&c_w, fei.clone());
-                    },
-                    Message::FrontendDisappeared { fei } => {
-                        remove_frontend(&c_w, fei.clone());
-                    },
+                    Message::FrontendAppeared { fei } => add_frontend(&c_w, fei.clone()),
+                    Message::FrontendDisappeared { fei } => remove_frontend(&c_w, fei.clone()),
                 }
                 Ok(())
             }).map(|_| ())
