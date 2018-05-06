@@ -110,7 +110,7 @@ impl ControlWindowButton {
                     self.channel_selector.append_text(&name);
                 };
                 if let Some(ref default_channel_name) = *control_window.default_channel_name.borrow() {
-                    self.tuning_id.channel.replace(Some(default_channel_name.to_string()));
+                    self.tuning_id.channel.replace(Some(default_channel_name.clone()));
                     self.set_label(default_channel_name);
                 }
             },
@@ -215,6 +215,7 @@ impl ControlWindowButton {
                 frontend_window.engine.play();
             }
         }
+        control_window_button.tuning_id.channel.replace(Some(channel_name.clone()));
     }
 
 }
