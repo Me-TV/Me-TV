@@ -48,6 +48,10 @@ use std::thread;
 use std::sync::mpsc::channel;
 
 #[cfg(not(test))]
+use futures::channel::mpsc::channel as futures_channel;
+
+
+#[cfg(not(test))]
 use gio::prelude::*;
 #[cfg(not(test))]
 use gtk::prelude::*;
@@ -98,7 +102,9 @@ fn main() {
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(&application_menu);
-        let control_window = control_window::ControlWindow::new(&app);
+        let (to_fem, from_in) = channel::<frontend_manager::Message>();
+        let (to_cw, from_fem) = futures_channel::<frontend_manager::Message>(4);
+        let control_window = control_window::ControlWindow::new(&app, from_fem);
         let preferences_action = gio::SimpleAction::new("preferences", None);
         preferences_action.connect_activate({
             let c_w = control_window.clone();
@@ -117,9 +123,6 @@ fn main() {
             move |_, _| a.quit()
         });
         app.add_action(&quit_action);
-        let (to_fem, from_in) = channel::<frontend_manager::Message>();
-        let (to_cw, from_fem) = channel::<frontend_manager::Message>();
-        thread::spawn(||{ control_window::message_listener(from_fem) });
         thread::spawn(||{ frontend_manager::run(from_in, to_cw) });
         thread::spawn(||{ notify_daemon::run(to_fem) });
     });

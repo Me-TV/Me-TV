@@ -21,10 +21,10 @@
 use std::cell::RefCell;
 use std::process;
 use std::rc::Rc;
-use std::sync::mpsc::Receiver;
 
 use futures;
 use futures::prelude::*;
+use futures::channel::mpsc::Receiver;
 
 use gio;
 use gio::prelude::*;
@@ -32,8 +32,6 @@ use glib;
 //use glib::prelude::*;
 use gtk;
 use gtk::prelude::*;
-
-use send_cell::SendCell;
 
 use channel_names;
 use control_window_button::ControlWindowButton;
@@ -52,15 +50,11 @@ pub struct ControlWindow {
     pub default_channel_name: RefCell<Option<String>>,
 }
 
-thread_local!(
-static CONTROL_WINDOW: RefCell<Option<Rc<ControlWindow>>> = RefCell::new(None)
-);
-
 impl ControlWindow {
     /// Constructor (obviously :-). Creates the window to hold the widgets representing the
     /// frontends available. It is assumed this is called in the main thread that then runs the
     /// GTK event loop.
-    pub fn new(application: &gtk::Application) -> Rc<ControlWindow> {
+    pub fn new(application: &gtk::Application, message_channel: Receiver<Message>) -> Rc<ControlWindow> {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         window.set_border_width(10);
@@ -146,11 +140,22 @@ impl ControlWindow {
                 }
             }
         });
-        let rv = control_window.clone();
-        CONTROL_WINDOW.with(|global| {
-            *global.borrow_mut() = Some(control_window);
+        let context = glib::MainContext::ref_thread_default().unwrap();
+        context.spawn_local({
+            let c_w = control_window.clone();
+            message_channel.for_each(move |message| {
+                match message {
+                    Message::FrontendAppeared { fei } => {
+                        add_frontend(&c_w, fei.clone());
+                    },
+                    Message::FrontendDisappeared { fei } => {
+                        remove_frontend(&c_w, fei.clone());
+                    },
+                }
+                Ok(())
+            }).map(|_| ())
         });
-        rv
+        control_window
     }
 
 }
@@ -248,45 +253,4 @@ fn remove_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
         control_window.main_box.pack_start(&control_window.label, true, true, 0);
     }
     control_window.window.show_all();
-}
-
-/// Put a call on the GTK event loop to add a new frontend.
-fn handle_add_frontend(fei: FrontendId) {
-    CONTROL_WINDOW.with(|global| {
-        if let Some(ref mut control_window) = *global.borrow_mut() {
-            add_frontend(control_window, fei);
-        }
-    })
-}
-
-/// Put a call on the GTK event loop to remove all the frontends of an adaptor.
-fn handle_remove_frontend(fei: FrontendId) {
-    CONTROL_WINDOW.with(|global|{
-        if let Some(ref mut control_window) = *global.borrow_mut() {
-            remove_frontend(control_window, fei);
-        }
-    })
-}
-
-/// This function, running in it's own thread, receives messages from elsewhere and
-/// schedules events on the GTK event loop thread to realise the requests.
-pub fn message_listener(from_fem: Receiver<Message>) {
-    loop {
-        match from_fem.recv() {
-            Ok(message) => {
-                match message {
-                    Message::FrontendAppeared{fei} => {
-                        glib::idle_add(move ||{ handle_add_frontend(fei.clone()); glib::Continue(false) });
-                    },
-                    Message::FrontendDisappeared{fei} => {
-                        glib::idle_add( move||{ handle_remove_frontend(fei.clone()); glib::Continue(false) });
-                    },
-                }
-            },
-            Err(error) => {
-                println!("Control Window Listener has stopped: {:?}", error);
-                break;
-            },
-        }
-    }
 }

@@ -22,9 +22,11 @@
 use std::cell::RefCell;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Receiver;
 
 use std::os::unix::fs::FileTypeExt;
+
+use futures::channel::mpsc::Sender;
 
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.
@@ -81,7 +83,7 @@ pub fn dvr_path(fei: &FrontendId) -> PathBuf {
 
 /// Process a newly present adapter to inform the control window of all the frontends
 /// newly accessible.
-fn add_frontends(to_cw: &Sender<Message>, id: u16) {
+fn add_frontends(to_cw: &mut Sender<Message>, id: u16) {
     let mut fei = FrontendId{adapter: id, frontend: 0};
     loop {
         // TODO Is it worth doing the check for special file or just check for existence.
@@ -92,7 +94,7 @@ fn add_frontends(to_cw: &Sender<Message>, id: u16) {
                 // Assume the special devices were are dealing with are
                 // character devices not block devices.
                 if m.file_type().is_char_device() {
-                    to_cw.send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
+                    to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
                 }
             },
             Err(error) => break,
@@ -102,7 +104,7 @@ fn add_frontends(to_cw: &Sender<Message>, id: u16) {
 }
 
 /// Search for any adapters already installed on start of the application
-pub fn search_and_add_adaptors(to_cw: &Sender<Message>) {
+pub fn search_and_add_adaptors(to_cw: &mut Sender<Message>) {
     if dvb_base_path().is_dir() {
         let mut adapter_number = 0;
         loop {
@@ -117,17 +119,17 @@ pub fn search_and_add_adaptors(to_cw: &Sender<Message>) {
 }
 
 /// The entry point for the thread that is the front end manager process.
-pub fn run(from_in: Receiver<Message>, to_cw: Sender<Message>) {
-    search_and_add_adaptors(&to_cw);
+pub fn run(from_in: Receiver<Message>, mut to_cw: Sender<Message>) {
+    search_and_add_adaptors(&mut to_cw);
     loop {
         match from_in.recv() {
             Ok(r) => {
                 match r {
                   Message::FrontendAppeared{fei} => {
-                      to_cw.send(Message::FrontendAppeared{fei}).unwrap();
+                      to_cw.try_send(Message::FrontendAppeared{fei}).unwrap();
                   },
                   Message::FrontendDisappeared{fei} => {
-                      to_cw.send(Message::FrontendDisappeared{fei}).unwrap();
+                      to_cw.try_send(Message::FrontendDisappeared{fei}).unwrap();
                   },
                 }
             },
