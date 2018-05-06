@@ -180,9 +180,9 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                     .arg(channel_names::channels_file_path())
                     .arg(p_t_t_f)
                     .output();
+                // TODO Show some form of activity during the scanning.
                 d.destroy();
                 output
-                // TODO Show some form of activity.
             }
         }).then({
             let c_w = control_window.clone();

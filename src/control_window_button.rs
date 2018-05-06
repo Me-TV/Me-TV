@@ -56,29 +56,12 @@ impl ControlWindowButton {
     pub fn new(control_window: &Rc<ControlWindow>, fei: FrontendId) -> Rc<ControlWindowButton> {
         let tuning_id = TuningId {
             frontend: fei,
-            channel: RefCell::new(
-                if let Some(ref default_channel_name) = *control_window.default_channel_name.borrow() {
-                    Some(default_channel_name.clone())
-                } else {
-                    None
-                }
-            )
+            channel: RefCell::new(None),
         };
         let frontend_button = gtk::ToggleButton::new_with_label(
             format!("adaptor{}\nfrontend{}", tuning_id.frontend.adapter, tuning_id.frontend.frontend).as_ref()
         );
         let channel_selector = gtk::ComboBoxText::new();
-        match *control_window.channel_names.borrow() {
-            Some(ref channel_names) => {
-                for name in channel_names {
-                    channel_selector.append_text(&name);
-                }
-            },
-            None => {
-                channel_selector.insert_text(0, " No channels file.");
-                channel_selector.set_active(0);
-            },
-        }
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
@@ -91,9 +74,7 @@ impl ControlWindowButton {
             inhibitor: Cell::new(0),
             frontend_window: RefCell::new(None),
         });
-        if let Some(ref default_channel_name) = *cwb.tuning_id.channel.borrow() {
-            cwb.set_label(default_channel_name);
-        }
+        cwb.fill_channel_list(&control_window);
         cwb.channel_selector.connect_changed({
             let c_w_b = cwb.clone();
             move |_| Self::on_channel_changed(&c_w_b, &c_w_b.channel_selector.get_active_text().unwrap())
@@ -134,7 +115,7 @@ impl ControlWindowButton {
                 }
             },
             None => {
-                self.channel_selector.insert_text(0, " No channels file.");
+                self.channel_selector.insert_text(0, "No channels file.");
                 self.channel_selector.set_active(0);
             },
         }
