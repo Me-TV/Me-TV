@@ -121,6 +121,25 @@ impl ControlWindowButton {
         cwb
     }
 
+    /// Transfer the list of channel names held by the control window into the selector box and set the default.
+    pub fn fill_channel_list(&self, control_window: &Rc<ControlWindow>) {
+        match *control_window.channel_names.borrow() {
+            Some(ref channel_names) => {
+                for name in channel_names {
+                    self.channel_selector.append_text(&name);
+                };
+                if let Some(ref default_channel_name) = *control_window.default_channel_name.borrow() {
+                    self.tuning_id.channel.replace(Some(default_channel_name.to_string()));
+                    self.set_label(default_channel_name);
+                }
+            },
+            None => {
+                self.channel_selector.insert_text(0, " No channels file.");
+                self.channel_selector.set_active(0);
+            },
+        }
+    }
+
     /// Set the state of the channel control widgets.
     fn set_label(&self, channel_name: &String) {
         let current = &self.tuning_id.channel;

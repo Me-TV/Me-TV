@@ -23,6 +23,9 @@ use std::process;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 
+use futures;
+use futures::prelude::*;
+
 use gio;
 use gio::prelude::*;
 use glib;
@@ -54,7 +57,6 @@ static CONTROL_WINDOW: RefCell<Option<Rc<ControlWindow>>> = RefCell::new(None)
 );
 
 impl ControlWindow {
-
     /// Constructor (obviously :-). Creates the window to hold the widgets representing the
     /// frontends available. It is assumed this is called in the main thread that then runs the
     /// GTK event loop.
@@ -167,34 +169,55 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
         gtk::ButtonsType::Ok,
         "Run dvbv5-scan, this may take a while.");
     dialog.run();
-    // The compiler appears not to be able to deduce that this code is run in the GTK event loop thread
-    // and the callback will be executed in the same thread. Must thus code it as though different threads can be used.
-    glib::idle_add({
-        let cw = SendCell::new(control_window.clone());
-        let d = SendCell::new(dialog);
-        // TODO for now we run this in the GTK event loop thread so as to make the UI stop.
-        // This is not the right way of doing this but it does for now.
-        move || {
-            process::Command::new("dvbv5-scan")
-                .arg("-o")
-                .arg(channel_names::channels_file_path())
-                .arg(&path_to_transmitter_file)
-                .output().expect("dvbv5-scan failed in some way");
-            // TODO need better error handling on a dvbv5-scan fail
-            let c_w = cw.borrow();
-            c_w.channel_names.replace(channel_names::get_names());
-            c_w.default_channel_name.replace(match *c_w.channel_names.borrow_mut() {
-                Some(ref mut vector) => {
-                    let result = Some(vector[0].clone());
-                    vector.sort();
-                    result
-                },
-                None => None,
-            });
-            d.borrow().destroy();
-            glib::Continue(false)
-        }
-    });
+    let context = glib::MainContext::ref_thread_default().unwrap();
+    context.block_on(
+        futures::future::lazy({
+            let p_t_t_f = path_to_transmitter_file.clone();
+            let d = dialog.clone();
+            move |_| {
+                let output = process::Command::new("dvbv5-scan")
+                    .arg("-o")
+                    .arg(channel_names::channels_file_path())
+                    .arg(p_t_t_f)
+                    .output();
+                d.destroy();
+                output
+                // TODO Show some form of activity.
+            }
+        }).then({
+            let c_w = control_window.clone();
+            move |output| {
+                match output {
+                    Ok(_) => {
+                        c_w.channel_names.replace(channel_names::get_names());
+                        c_w.default_channel_name.replace(match *c_w.channel_names.borrow_mut() {
+                            Some(ref mut vector) => {
+                                let result = Some(vector[0].clone());
+                                vector.sort();
+                                result
+                            },
+                            None => None,
+                        });
+                        for button in c_w.control_window_buttons.borrow().iter() {
+                            button.fill_channel_list(&c_w);
+                        }
+                    },
+                    Err(error) => {
+                        let dialog = gtk::MessageDialog::new(
+                            Some(&c_w.window),
+                            gtk::DialogFlags::MODAL,
+                            gtk::MessageType::Info,
+                            gtk::ButtonsType::Ok,
+                            &format!("dvbv5-scan failed to generate a file.\n{:?}", error),
+                        );
+                        dialog.run();
+                        dialog.destroy();
+                    },
+                };
+                futures::future::ok::<(), ()>(())
+            }
+        })
+    ).unwrap();
 }
 
 /// Add a new frontend to this control window.

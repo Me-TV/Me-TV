@@ -20,6 +20,7 @@
  */
 
 extern crate clap;
+extern crate futures;
 extern crate gdk;
 extern crate gio;
 extern crate glib;
