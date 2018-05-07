@@ -35,7 +35,7 @@ Of course there is always:
     cargo run
 
 to build and run. Again the `--release` option is available – but see below about creating the channels
-configuration file, which must happen before you run Me TV.
+configuration file, which must happen before you can watch television channels using Me TV.
 
 If you want to install, then as an example:
 
@@ -45,23 +45,23 @@ which will install the executable to $HOME/Built/bin.
 
 ## Setting up for watching DVB
 
-It is assumed people are using GStreamer 1.10.2 or later. It is best if you have the DVBv5 tools installed,
-in particular dvbv5-scan. However, unlike the GStreamer version, this is not a requirement, just a "good to
-have".
+It is assumed you have GTK+3 3.10.0 or later and GStreamer 1.12.0 or later installed. It is also assumed you
+have the executable dvbv5-scan installed, but this is not totally necessary as there are workarounds.
 
-Before being able to watch a TV channel using Me TV you must have a channels file for the transmitter you
-are getting DVB signal from. This channels file is ~/.config/gstreamer-1.0/dvb-channels.conf.
+Before being able to watch a television channel using Me TV you must have a channels file for the transmitter you
+are getting DVB signal from. This channels file is $HOME/.config/gstreamer-1.0/dvb-channels.conf.
 
-A way of creating this file from a running Me TV using the menu system is under construction, currently it
-requires dvbv5-scan and does work – albeit it a little "alpha product quality".
+A way of creating this file from a running Me TV is available using the menu on the application window, currently it
+requires dvbv5-scan.
 
 To have the channels file available before executing Me TV you can run dvbv5-scan manually. For example:
 
     dvbv5-scan --output=~/.config/gstreamer-1.0/dvb-channels.conf /usr/share/dvb/dvb-t/uk-CrystalPalace
 
-on a Linux system will do the right thing of you live in the Crystal Palace transmitter region in the UK. I
-suspect people will want to scan on their local transmitter, in this case you should replace the
-uk-CrystalPalace with the name appropriate for the location you are when you run Me TV.
+on a Debian system (Fedora puts the transmitter files in a different place) will do the right thing of you
+live in the Crystal Palace transmitter region in the UK. I suspect people will want to scan on their local
+transmitter, in this case you should replace the uk-CrystalPalace with the name appropriate for the location
+you are when you run Me TV.
 
 If you do not have dvb5-scan installed then best advice is to install it, preferably using the Linux
 distribution package management. If that is not possible then dvbscan or w_scan can be used to create the
@@ -72,7 +72,7 @@ needed file, but it must be in v5 format, not v3 format.
 When started the initial screen of Me TV shows the frontends available or a message if none are connected. It
 should show any new ones as they are connected – and remove ones as they are removed. Each frontend button
 is a toggle button for the associated display for that frontend. Clicking on a frontend button will start a
-new frame, tune the frontend to the channel that was shown, and start playing the channel. Channels can be
+new frame, tune the frontend to the channel that is shown, and start playing the channel. Channels can be
 changed and there is a full screen capability.
 
 Hopefully the UI is intuitive and gives a good UX. If not please feel free to submit an issue.
