@@ -54,9 +54,7 @@ mod tests {
 
     #[test]
     fn set_active_using_string() {
-        if let Err(error) = gtk::init() {
-            panic!("GTK initialisation failed {:?}", error);
-        }
+        gtk::init().unwrap();
         let thingy = gtk::ComboBoxText::new();
         thingy.append_text("fred");
         thingy.append_text("jane");
