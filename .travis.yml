@@ -12,3 +12,4 @@ before_install:
   - export PKG_CONFIG_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig
   - export GST_PLUGIN_SYSTEM_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0
   - export PATH=$PATH:$PWD/gstreamer/bin
+  - export RUST_BACKTRACE=1
