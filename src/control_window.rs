@@ -140,7 +140,7 @@ impl ControlWindow {
                 }
             }
         });
-        let context = glib::MainContext::ref_thread_default().unwrap();
+        let context = glib::MainContext::ref_thread_default();
         context.spawn_local({
             let c_w = control_window.clone();
             message_channel.for_each(move |message| {
@@ -170,7 +170,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
         gtk::ButtonsType::Ok,
         "Run dvbv5-scan, this may take a while.");
     dialog.run();
-    let context = glib::MainContext::ref_thread_default().unwrap();
+    let context = glib::MainContext::ref_thread_default();
     context.block_on(
         futures::future::lazy({
             let p_t_t_f = path_to_transmitter_file.clone();
