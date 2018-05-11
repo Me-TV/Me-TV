@@ -58,7 +58,7 @@ use gtk::prelude::*;
 
 mod about;
 mod channel_names;
-mod comboboxtext_extras;
+mod metvcomboboxtext;
 mod control_window;
 mod control_window_button;
 mod frontend_manager;

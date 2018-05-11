@@ -18,7 +18,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::process;
 use std::rc::Rc;
 
@@ -41,13 +41,13 @@ use transmitter_dialog;
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
 /// so use a bit of composition.
 pub struct ControlWindow {
-    pub window: gtk::ApplicationWindow,
+    pub window: gtk::ApplicationWindow, // main.rs needs this for putting application menus dialogues over this window.
     main_box: gtk::Box,
     frontends_box: gtk::Box,
     label: gtk::Label,
+    pub channel_names_store: gtk::ListStore, // The model for all the ComboBoxes in the ControlWindowButtons, FrontendWindows, etc.
+    pub channel_names_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
-    pub channel_names: RefCell<Option<Vec<String>>>,
-    pub default_channel_name: RefCell<Option<String>>,
 }
 
 impl ControlWindow {
@@ -85,24 +85,14 @@ impl ControlWindow {
         main_box.pack_start(&label, true, true, 0);
         window.add(&main_box);
         window.show_all();
-        let control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>> = RefCell::new(Vec::new());
-        let mut channel_names = channel_names::get_names();
-        let default_channel_name = match channel_names {
-            Some(ref mut vector) => {
-                let result = Some(vector[0].clone());
-                vector.sort();
-                result
-            },
-            None => None,
-        };
         let control_window = Rc::new(ControlWindow {
             window,
             main_box,
             frontends_box,
             label,
-            control_window_buttons,
-            channel_names: RefCell::new(channel_names),
-            default_channel_name: RefCell::new(default_channel_name),
+            channel_names_store: gtk::ListStore::new(&[String::static_type()]),
+            channel_names_loaded: Cell::new(false),
+            control_window_buttons: RefCell::new(Vec::new()),
         });
         epg_action.connect_activate({
             let c_w = control_window.clone();
@@ -190,17 +180,15 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
             move |output| {
                 match output {
                     Ok(_) => {
-                        c_w.channel_names.replace(channel_names::get_names());
-                        c_w.default_channel_name.replace(match *c_w.channel_names.borrow_mut() {
-                            Some(ref mut vector) => {
-                                let result = Some(vector[0].clone());
-                                vector.sort();
-                                result
-                            },
-                            None => None,
-                        });
+                        if let Some(mut channel_names) = channel_names::get_names() {
+                            channel_names.sort();
+                            c_w.channel_names_store.clear();
+                            for name in channel_names.iter() {
+                                c_w.channel_names_store.insert_with_values(None, &[0], &[&name]);
+                            }
+                        }
                         for button in c_w.control_window_buttons.borrow().iter() {
-                            button.fill_channel_list(&c_w);
+                            button.update_channel_store(&c_w);
                         }
                     },
                     Err(error) => {
@@ -237,7 +225,7 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
 fn remove_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
     let mut remove_index = 0;
     for (index, control_window_button) in control_window.control_window_buttons.borrow().iter().enumerate() {
-        if control_window_button.tuning_id.frontend == fei {
+        if control_window_button.frontend_id == fei {
             control_window.frontends_box.remove(&control_window_button.widget);
             remove_index = index;
             break;

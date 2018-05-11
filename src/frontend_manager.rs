@@ -19,7 +19,6 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::cell::RefCell;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
@@ -34,13 +33,6 @@ use futures::channel::mpsc::Sender;
 pub struct FrontendId {
     pub adapter: u16,
     pub frontend: u16,
-}
-
-///  A struct to represent a tuning of a frontend.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct TuningId {
-    pub frontend: FrontendId,
-    pub channel: RefCell<Option<String>>,
 }
 
 /// An enumeration of all the message types that  can be sent by
