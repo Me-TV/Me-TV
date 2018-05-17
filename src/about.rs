@@ -63,18 +63,18 @@ fn create() -> gtk::AboutDialog {
 }
 
 pub fn present(parent: Option<&gtk::ApplicationWindow>) {
-    if let Ok(about) = ABOUT.lock() {
-        if ! about.get() {
+    if let Ok(active) = ABOUT.lock() {
+        if ! active.get() {
             let dialog = create();
             dialog.set_transient_for(parent);
             dialog.connect_response(move |_, _| {
-                if let Ok(about) = ABOUT.lock() {
-                    about.set(false);
+                if let Ok(active) = ABOUT.lock() {
+                    active.set(false);
                 }
             });
             dialog.move_(0, 0);
             dialog.show();
-            about.set(true);
+            active.set(true);
         }
     }
 }

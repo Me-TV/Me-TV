@@ -19,16 +19,23 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::cell::Cell;
+use std::sync::Mutex;
+
 use gtk;
 use gtk::prelude::*;
 
 use preferences;
 
+lazy_static! {
+    static ref PREFERENCES: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
+}
+
 fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
     let dialog = gtk::Dialog::new_with_buttons(
         Some("Me TV Preferences"),
         parent,
-        gtk::DialogFlags::MODAL,
+        gtk::DialogFlags::DESTROY_WITH_PARENT,
         &[],
     );
     let content_area = dialog.get_content_area();
@@ -43,7 +50,17 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
 }
 
 pub fn present(parent: Option<&gtk::ApplicationWindow>) {
-    let dialog = create(parent);
-    dialog.run();
-    dialog.destroy();
+    if let Ok(active) = PREFERENCES.lock() {
+        if ! active.get() {
+            let dialog = create(parent);
+            dialog.connect_response(move |_, _| {
+                if let Ok(active) = PREFERENCES.lock() {
+                    active.set(false);
+                }
+            });
+            dialog.move_(0, 0);
+            dialog.show();
+            active.set(true);
+        }
+    }
 }
