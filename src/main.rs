@@ -87,7 +87,7 @@ fn main() {
         preferences::set_use_opengl(false, false);
     }
     gst::init().unwrap();
-    let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed");
+    let application = gtk::Application::new("uk.org.russel.me-tv", gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
     application.connect_startup(|app| {
         // It seems that the application menu must be added before creating the control window.
