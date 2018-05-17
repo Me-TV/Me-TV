@@ -89,7 +89,7 @@ fn main() {
     gst::init().unwrap();
     let application = gtk::Application::new("uk.org.russel.me-tv_rust", gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
-    application.connect_activate(|app|{
+    application.connect_startup(|app| {
         // It seems that the application menu must be added before creating the control window.
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
