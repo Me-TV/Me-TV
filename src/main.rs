@@ -89,7 +89,7 @@ fn main() {
     gst::init().unwrap();
     let application = gtk::Application::new("uk.org.russel.me-tv", gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
-    application.connect_startup(|app| {
+    application.connect_startup(move |app| {
         // It seems that the application menu must be added before creating the control window.
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
@@ -105,7 +105,7 @@ fn main() {
         app.add_action(&preferences_action);
         let about_action = gio::SimpleAction::new("about", None);
         about_action.connect_activate({
-            let c_w= control_window.clone();
+            let c_w = control_window.clone();
             move |_, _| about::present(Some(&c_w.window))
         });
         app.add_action(&about_action);
@@ -118,5 +118,7 @@ fn main() {
         thread::spawn(||{ frontend_manager::run(from_in, to_cw) });
         thread::spawn(||{ notify_daemon::run(to_fem) });
     });
+    // Get a glib-gio warning is activate is not handled.
+    application.connect_activate(move |_| { });
     application.run(&[]);
 }
