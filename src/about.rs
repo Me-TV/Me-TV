@@ -19,6 +19,9 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::cell::Cell;
+use std::sync::Mutex;
+
 use gtk;
 // Can't use:
 //
@@ -32,6 +35,10 @@ use gtk::GtkWindowExt;
 
 use gdk_pixbuf::PixbufLoader;
 use gdk_pixbuf::PixbufLoaderExt;
+
+lazy_static! {
+    static ref ABOUT: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
+}
 
 fn create() -> gtk::AboutDialog {
     let about = gtk::AboutDialog::new();
@@ -56,8 +63,18 @@ fn create() -> gtk::AboutDialog {
 }
 
 pub fn present(parent: Option<&gtk::ApplicationWindow>) {
-    let dialog = create();
-    dialog.set_transient_for(parent);
-    dialog.run();
-    dialog.destroy();
+    if let Ok(about) = ABOUT.lock() {
+        if ! about.get() {
+            let dialog = create();
+            dialog.set_transient_for(parent);
+            dialog.connect_response(move |_, _| {
+                if let Ok(about) = ABOUT.lock() {
+                    about.set(false);
+                }
+            });
+            dialog.move_(0, 0);
+            dialog.show();
+            about.set(true);
+        }
+    }
 }
