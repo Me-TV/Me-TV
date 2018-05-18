@@ -62,17 +62,18 @@ fn create() -> gtk::AboutDialog {
     about
 }
 
+/// Present an about dialog in a non-modal way, but only if one is not already displaying.
 pub fn present(parent: Option<&gtk::ApplicationWindow>) {
     if let Ok(active) = ABOUT.lock() {
         if ! active.get() {
             let dialog = create();
             dialog.set_transient_for(parent);
-            dialog.connect_response(move |_, _| {
+            dialog.connect_response(move |d, _| {
                 if let Ok(active) = ABOUT.lock() {
+                    d.destroy();
                     active.set(false);
                 }
             });
-            dialog.move_(0, 0);
             dialog.show();
             active.set(true);
         }

@@ -49,16 +49,17 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
     dialog
 }
 
+/// Display a preferences dialog in a non-modal way, but only if one is not already being displayed.
 pub fn present(parent: Option<&gtk::ApplicationWindow>) {
     if let Ok(active) = PREFERENCES.lock() {
         if ! active.get() {
             let dialog = create(parent);
-            dialog.connect_response(move |_, _| {
+            dialog.connect_response(move |d, _| {
                 if let Ok(active) = PREFERENCES.lock() {
+                    d.destroy();
                     active.set(false);
                 }
             });
-            dialog.move_(0, 0);
             dialog.show();
             active.set(true);
         }
