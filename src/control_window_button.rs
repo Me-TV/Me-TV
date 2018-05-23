@@ -19,7 +19,6 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -38,9 +37,8 @@ pub struct ControlWindowButton {
     pub control_window: Rc<ControlWindow>, // FrontendWindow instance needs access to this.
     pub frontend_id: FrontendId, // ControlWindow instance needs access to this for searching.
     pub widget: gtk::Box, // ControlWindow instance needs access to this for packing.
-    frontend_button: gtk::ToggleButton,
+    pub frontend_button: gtk::ToggleButton, // FrontendWindow needs access to this.
     pub channel_selector: MeTVComboBoxText, // FrontendWindow needs read access to this.
-    inhibitor: Cell<u32>,
     frontend_window: RefCell<Option<Rc<FrontendWindow>>>,
 }
 
@@ -67,7 +65,6 @@ impl ControlWindowButton {
             widget,
             frontend_button,
             channel_selector,
-            inhibitor: Cell::new(0),
             frontend_window: RefCell::new(None),
         });
         cwb.update_channel_store(&control_window);
@@ -135,63 +132,24 @@ impl ControlWindowButton {
     ///
     /// This function is called after the change of state of the frontend_button.
     fn toggle_button(control_window_button: &Rc<ControlWindowButton>) {
-        let application = control_window_button.control_window.window.get_application().unwrap();
         if control_window_button.frontend_button.get_active() {
             if control_window_button.control_window.channel_names_loaded.get() && control_window_button.channel_selector.get_active() >= 0 {
-                let frontend_window = Rc::new(FrontendWindow::new(&control_window_button,));
-                frontend_window.close_button.connect_clicked({
-                    let button = control_window_button.frontend_button.clone();
-                    move |_| button.set_active(!button.get_active())
-                });
-                frontend_window.volume_adjustment.connect_value_changed({
-                    let f_w = frontend_window.clone();
-                    move |_| f_w.engine.set_volume(f_w.volume_adjustment.get_value())
-                });
-                frontend_window.channel_selector.connect_changed({
-                    let c_w_b = control_window_button.clone();
-                    let f_w = frontend_window.clone();
-                    move |_| Self::on_channel_changed(&c_w_b, f_w.channel_selector.get_active())
-                });
-                frontend_window.fullscreen_channel_selector.connect_changed({
-                    let c_w_b = control_window_button.clone();
-                    let f_w = frontend_window.clone();
-                    move |_| Self::on_channel_changed(&c_w_b, f_w.fullscreen_channel_selector.get_active())
-                });
+                let frontend_window = FrontendWindow::new(&control_window_button);
                 match control_window_button.frontend_window.replace(Some(frontend_window)) {
                     Some(_) => panic!("Inconsistent state of frontend,"),
                     None => {},
                 };
-                if control_window_button.inhibitor.get() == 0 {
-                    if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
-                        control_window_button.inhibitor.set(application.inhibit(&frontend_window.window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."));
-                        frontend_window.window.show();
-                        frontend_window.engine.set_mrl(&encode_to_mrl(&control_window_button.channel_selector.get_active_text().unwrap()));
-                        frontend_window.engine.play();
-                    }
-                } else {
-                    panic!("Inconsistent state. Inhibitor error.");
-                }
             }
         } else {
-            if control_window_button.inhibitor.get() != 0 {
-                application.uninhibit(control_window_button.inhibitor.get());
-                control_window_button.inhibitor.set(0);
-                if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
-                    frontend_window.window.hide();
-                    frontend_window.engine.stop();
-                }
-                match control_window_button.frontend_window.replace(None) {
-                    Some(_) => {},
-                    None => panic!("Inconsistent state of frontend,"),
-                }
-            } else {
-                panic!("Inconsistent state. Inhibitor error.");
+            match control_window_button.frontend_window.replace(None) {
+                Some(ref frontend_window) => frontend_window.stop(),
+                None => panic!("Inconsistent state of frontend,"),
             }
         }
     }
 
     /// Callback for an observed channel change.
-    fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_index: i32) {
+    pub fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_index: i32) {
         let status = control_window_button.frontend_button.get_active();
         if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
             if status {
