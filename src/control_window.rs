@@ -62,7 +62,7 @@ impl ControlWindow {
             let a = application.clone();
             move |_, _| {
                 a.quit();
-                Inhibit(true)
+                Inhibit(false)
             }
         });
         let header_bar = gtk::HeaderBar::new();

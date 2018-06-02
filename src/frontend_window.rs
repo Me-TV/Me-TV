@@ -132,7 +132,7 @@ impl FrontendWindow {
                         Continue(false)
                     }
                 });
-                Inhibit(true)
+                Inhibit(false)
             }
         });
         window.add(&video_overlay);
@@ -152,6 +152,14 @@ impl FrontendWindow {
         engine.play();
         window.show();
         let application = control_window_button.control_window.window.get_application().unwrap();
+        let inhibitor = application.inhibit(
+            &window,
+            gtk::ApplicationInhibitFlags::SUSPEND | gtk::ApplicationInhibitFlags::IDLE,
+            "Me TV inhibits when playing a channel."
+        );
+        if inhibitor == 0 {
+            println!("Warning: could not set inhibitor.");
+        }
         let frontend_window = Rc::new(FrontendWindow {
             control_window_button: control_window_button.clone(),
             window: window.clone(),
@@ -165,7 +173,7 @@ impl FrontendWindow {
             fullscreen_unfullscreen_button,
             fullscreen_volume_button,
             fullscreen_channel_selector,
-            inhibitor: application.inhibit(&window, gtk::ApplicationInhibitFlags::SUSPEND, "Me TV inhibits when playing a channel."),
+            inhibitor,
             engine,
         });
         volume_adjustment.connect_value_changed({
@@ -179,6 +187,8 @@ impl FrontendWindow {
         if self.inhibitor  != 0 {
             let application = self.control_window_button.control_window.window.get_application().unwrap();
             application.uninhibit(self.inhibitor);
+        } else {
+            println!("Warning: inhibitor was not set.");
         }
         self.window.hide();
         self.engine.stop();

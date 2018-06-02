@@ -121,7 +121,7 @@ impl GStreamerEngine {
 
     pub fn play(&self) {
         let rv = self.playbin.set_state(gst::State::Playing);
-        assert_ne!(rv,  gst::StateChangeReturn::Failure);
+        assert_ne!(rv,  gst::StateChangeReturn::Failure, "could not set play state, try 'GST_DEBUG=3 me-tv' to see why.");
     }
 
     pub fn stop(&self) {
