@@ -34,7 +34,6 @@ use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
 pub struct FrontendWindow {
     control_window_button: Rc<ControlWindowButton>,
     window: gtk::ApplicationWindow,
-    video_overlay: gtk::Overlay,
     pub close_button: gtk::Button, // ControlWindowButton instance needs access to this.
     fullscreen_button: gtk::Button,
     volume_adjustment: gtk::Adjustment,
@@ -56,7 +55,6 @@ impl FrontendWindow {
         let window = gtk::ApplicationWindow::new(&application);
         window.set_title("Me TV");
         window.set_default_size(480, 270);
-        let video_overlay = gtk::Overlay::new();
         let header_bar = gtk::HeaderBar::new();
         header_bar.set_title("Me TV");
         header_bar.set_show_close_button(false);
@@ -111,6 +109,7 @@ impl FrontendWindow {
         header_bar.pack_start(&channel_selector);
         header_bar.show_all();
         window.set_titlebar(&header_bar);
+        let video_overlay = gtk::Overlay::new();
         video_overlay.add(&engine.video_widget);
         video_overlay.show_all();
         fullscreen_toolbar.set_halign(gtk::Align::Baseline);
@@ -162,8 +161,7 @@ impl FrontendWindow {
         }
         let frontend_window = Rc::new(FrontendWindow {
             control_window_button: control_window_button.clone(),
-            window: window.clone(),
-            video_overlay,
+            window,
             close_button,
             fullscreen_button,
             volume_adjustment: volume_adjustment.clone(),

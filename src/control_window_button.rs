@@ -25,7 +25,7 @@ use std::rc::Rc;
 use gtk;
 use gtk::prelude::*;
 
-use channel_names::{encode_to_mrl, get_names};
+use channel_names::encode_to_mrl;
 use control_window::ControlWindow;
 use frontend_manager::FrontendId;
 use frontend_window::FrontendWindow;
@@ -67,7 +67,7 @@ impl ControlWindowButton {
             channel_selector,
             frontend_window: RefCell::new(None),
         });
-        cwb.update_channel_store(&control_window);
+        cwb.reset_active_channel();
         cwb.channel_selector.connect_changed({
             let c_w_b = cwb.clone();
             move |_| Self::on_channel_changed(&c_w_b, c_w_b.channel_selector.get_active())
@@ -75,7 +75,7 @@ impl ControlWindowButton {
         cwb.frontend_button.connect_toggled({
             let c_w_b = cwb.clone();
             move |_| {
-                if c_w_b.control_window.channel_names_loaded.get() {
+                if c_w_b.control_window.is_channels_store_loaded() {
                     Self::toggle_button(&c_w_b);
                 } else {
                     let dialog = gtk::MessageDialog::new(
@@ -93,22 +93,8 @@ impl ControlWindowButton {
         cwb
     }
 
-    /// Transfer the list of channel names held by the control window into the selector box and set the default.
-    pub fn update_channel_store(&self, control_window: &Rc<ControlWindow>) {
-        control_window.channel_names_store.clear();
-        match get_names() {
-            Some(mut channel_names) => {
-                channel_names.sort();
-                for name in channel_names {
-                    control_window.channel_names_store.insert_with_values(None, &[0], &[&name]);
-                };
-                control_window.channel_names_loaded.set(true);
-            },
-            None => {
-                control_window.channel_names_store.insert_with_values(None, &[0], &[&"No channels file."]);
-                control_window.channel_names_loaded.set(false);
-            }
-        }
+    /// Set the active channel to 0.
+    pub fn reset_active_channel(&self) {
         self.channel_selector.set_active(0);
         if let Some(ref frontend_window) = *self.frontend_window.borrow() {
             frontend_window.channel_selector.set_active(0);
@@ -133,7 +119,7 @@ impl ControlWindowButton {
     /// This function is called after the change of state of the frontend_button.
     fn toggle_button(control_window_button: &Rc<ControlWindowButton>) {
         if control_window_button.frontend_button.get_active() {
-            if control_window_button.control_window.channel_names_loaded.get() && control_window_button.channel_selector.get_active() >= 0 {
+            if control_window_button.control_window.is_channels_store_loaded() && control_window_button.channel_selector.get_active() >= 0 {
                 let frontend_window = FrontendWindow::new(&control_window_button);
                 match control_window_button.frontend_window.replace(Some(frontend_window)) {
                     Some(_) => panic!("Inconsistent state of frontend,"),
@@ -158,7 +144,7 @@ impl ControlWindowButton {
             control_window_button.set_channel_index(channel_index);
             frontend_window.engine.set_mrl(&encode_to_mrl(&control_window_button.channel_selector.get_active_text().unwrap()));
             if status {
-                // TODO Must handle not being able to tune to a channel better than panicing.
+                // TODO Must handle not being able to tune to a channel better than panicking.
                 frontend_window.engine.play();
             }
         }

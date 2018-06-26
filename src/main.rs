@@ -48,7 +48,6 @@ use std::thread;
 #[cfg(not(test))]
 use futures::channel::mpsc::channel;
 
-
 #[cfg(not(test))]
 use gio::prelude::*;
 #[cfg(not(test))]
@@ -114,7 +113,7 @@ fn main() {
         app.add_action(&quit_action);
         thread::spawn(||{ frontend_manager::run(to_cw) });
     });
-    // Get a glib-gio warning is activate is not handled.
+    // Get a glib-gio warning if activate is not handled.
     application.connect_activate(move |_| { });
     application.run(&[]);
 }

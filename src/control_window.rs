@@ -33,7 +33,7 @@ use glib;
 use gtk;
 use gtk::prelude::*;
 
-use channel_names;
+use channel_names::{channels_file_path, get_names};
 use control_window_button::ControlWindowButton;
 use frontend_manager::{FrontendId, Message};
 use transmitter_dialog;
@@ -45,8 +45,8 @@ pub struct ControlWindow {
     main_box: gtk::Box,
     frontends_box: gtk::Box,
     label: gtk::Label,
-    pub channel_names_store: gtk::ListStore, // The model for all the ComboBoxes in the ControlWindowButtons, FrontendWindows, etc.
-    pub channel_names_loaded: Cell<bool>,
+    pub channel_names_store: gtk::ListStore,
+    channel_names_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
 }
 
@@ -94,6 +94,7 @@ impl ControlWindow {
             channel_names_loaded: Cell::new(false),
             control_window_buttons: RefCell::new(Vec::new()),
         });
+        control_window.update_channels_store();
         epg_action.connect_activate({
             let c_w = control_window.clone();
             move |_, _| {
@@ -144,6 +145,29 @@ impl ControlWindow {
         control_window
     }
 
+    /// Transfer the list of channel names held by the control window into the selector box and set the default.
+    pub fn update_channels_store(&self) {
+        self.channel_names_store.clear();
+        match get_names() {
+            Some(mut channel_names) => {
+                channel_names.sort();
+                for name in channel_names {
+                    self.channel_names_store.insert_with_values(None, &[0], &[&name]);
+                };
+                self.channel_names_loaded.set(true);
+            },
+            None => {
+                self.channel_names_store.insert_with_values(None, &[0], &[&"No channels file."]);
+                self.channel_names_loaded.set(false);
+            }
+        }
+        for button in self.control_window_buttons.borrow().iter() {
+            button.reset_active_channel();
+        }
+    }
+
+    pub fn is_channels_store_loaded(&self) -> bool { self.channel_names_loaded.get() }
+
 }
 
 /// Ensure that the GStreamer dvbsrc channels file is present.
@@ -168,7 +192,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
             move |_| {
                 let output = process::Command::new("dvbv5-scan")
                     .arg("-o")
-                    .arg(channel_names::channels_file_path())
+                    .arg(channels_file_path())
                     .arg(p_t_t_f)
                     .output();
                 // TODO Show some form of activity during the scanning.
@@ -180,16 +204,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
             move |output| {
                 match output {
                     Ok(_) => {
-                        if let Some(mut channel_names) = channel_names::get_names() {
-                            channel_names.sort();
-                            c_w.channel_names_store.clear();
-                            for name in channel_names.iter() {
-                                c_w.channel_names_store.insert_with_values(None, &[0], &[&name]);
-                            }
-                        }
-                        for button in c_w.control_window_buttons.borrow().iter() {
-                            button.update_channel_store(&c_w);
-                        }
+                        c_w.update_channels_store();
                     },
                     Err(error) => {
                         let dialog = gtk::MessageDialog::new(
