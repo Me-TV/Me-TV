@@ -21,11 +21,12 @@
 
 use std::fs;
 use std::path::PathBuf;
-use std::sync::mpsc::Receiver;
 
 use std::os::unix::fs::FileTypeExt;
 
 use futures::channel::mpsc::Sender;
+
+use notify_daemon;
 
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.
@@ -111,26 +112,9 @@ pub fn search_and_add_adaptors(to_cw: &mut Sender<Message>) {
 }
 
 /// The entry point for the thread that is the front end manager process.
-pub fn run(from_in: Receiver<Message>, mut to_cw: Sender<Message>) {
+pub fn run(mut to_cw: Sender<Message>) {
     search_and_add_adaptors(&mut to_cw);
-    loop {
-        match from_in.recv() {
-            Ok(r) => {
-                match r {
-                  Message::FrontendAppeared{fei} => {
-                      to_cw.try_send(Message::FrontendAppeared{fei}).unwrap();
-                  },
-                  Message::FrontendDisappeared{fei} => {
-                      to_cw.try_send(Message::FrontendDisappeared{fei}).unwrap();
-                  },
-                }
-            },
-            Err(_) => {
-                println!("Frontend Manager got an Err, notify end of channel must have dropped.");
-                break;
-            },
-        }
-    }
+    notify_daemon::run(to_cw);
     println!("Frontend Manager terminated.");
 }
 

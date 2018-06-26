@@ -19,7 +19,9 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::sync::mpsc::{Sender, channel};
+use std::sync::mpsc::channel;
+
+use futures::channel::mpsc::Sender;
 
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 
@@ -49,7 +51,7 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
 }
 
 /// The function that drives the inotify daemon.
-pub fn run(to_fem: Sender<Message>) {
+pub fn run(mut to_cw: Sender<Message>) {
     let (transmit_end, receive_end) = channel();
     let mut watcher = raw_watcher(transmit_end).unwrap();
     watcher.watch("/dev", RecursiveMode::Recursive).unwrap();
@@ -63,7 +65,7 @@ pub fn run(to_fem: Sender<Message>) {
                         if path.contains("dvb") && path.contains("adapter") && path.contains("dvr") {
                             let path = path.replace("dvr", "frontend");
                             if let Some(fei) = frontend_id_from(&path) {
-                                to_fem.send(Message::FrontendAppeared{fei: fei}).unwrap();
+                                to_cw.try_send(Message::FrontendAppeared{fei: fei}).unwrap();
                             }
                         }
                     },
@@ -71,7 +73,7 @@ pub fn run(to_fem: Sender<Message>) {
                         let path = path.to_str().unwrap();
                         if path.contains("dvb") && path.contains("adapter") && path.contains("frontend") {
                             if let Some(fei) = frontend_id_from(&path) {
-                                to_fem.send(Message::FrontendDisappeared{fei: fei}).unwrap();
+                                to_cw.try_send(Message::FrontendDisappeared{fei: fei}).unwrap();
                             }
                         }
                     },
