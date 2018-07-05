@@ -45,7 +45,7 @@ pub struct ControlWindow {
     main_box: gtk::Box,
     frontends_box: gtk::Box,
     label: gtk::Label,
-    pub channel_names_store: gtk::ListStore,
+    pub channel_names_store: gtk::ListStore, // Used by ControlWindowButton and FrontendWindow.
     channel_names_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
 }

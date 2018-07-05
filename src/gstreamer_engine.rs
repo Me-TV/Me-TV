@@ -46,7 +46,7 @@ fn is_using_nouveau() -> bool {
 pub struct GStreamerEngine {
     playbin: gst::Element,
     video_element: gst::Element,
-    pub video_widget: gtk::Widget,
+    pub video_widget: gtk::Widget, // FrontendWindow uses this for the overlay.
 }
 
 impl GStreamerEngine {
