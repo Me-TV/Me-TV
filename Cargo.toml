@@ -5,7 +5,7 @@ authors = ["Russel Winder <russel@winder.org.uk>"]
 
 [dependencies]
 clap = "*"
-futures = "*"
+futures-preview = "*"
 #
 #gdk = "*"
 #gdk-pixbuf = "*"
