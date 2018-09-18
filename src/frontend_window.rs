@@ -116,7 +116,7 @@ impl FrontendWindow {
         fullscreen_toolbar.set_valign(gtk::Align::Start);
         fullscreen_toolbar.hide();
         video_overlay.add_overlay(&fullscreen_toolbar);
-        video_overlay.add_events(gdk::EventMask::POINTER_MOTION_MASK.bits() as i32);
+        video_overlay.add_events(gdk::EventMask::POINTER_MOTION_MASK);
         video_overlay.connect_motion_notify_event({
             let w = window.clone();
             let f_t = fullscreen_toolbar.clone();
@@ -135,7 +135,7 @@ impl FrontendWindow {
             }
         });
         window.add(&video_overlay);
-        window.add_events(gdk::EventMask::KEY_PRESS_MASK.bits() as i32);
+        window.add_events(gdk::EventMask::KEY_PRESS_MASK);
         window.connect_key_press_event({
             let w = window.clone();
             let f_t = fullscreen_toolbar.clone();
