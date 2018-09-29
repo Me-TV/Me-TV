@@ -26,7 +26,7 @@ use gio::prelude::*;
 use glib;
 use glib::prelude::*;
 use gtk;
-//use gdk::prelude::*;
+use gtk::prelude::*;
 
 use gst;
 use gst::prelude::*;
@@ -62,17 +62,26 @@ impl GStreamerEngine {
             let app = app_clone.borrow();
             match msg.view() {
                 gst::MessageView::Eos(..) => {
-                    println!("Got an EOS signal in GStreamer engine.");
-                    app.quit();
+                    let message_dialog = gtk::MessageDialog::new(
+                        Some(&app.get_windows()[0]),
+                        gtk::DialogFlags::MODAL,
+                        gtk::MessageType::Error,
+                        gtk::ButtonsType::Ok,
+                        "There was an end of stream in the GStreamer system"
+                    );
+                    message_dialog.run();
+                    message_dialog.destroy();
                 },
                 gst::MessageView::Error(err) => {
-                    println!(
-                        "Error from {:?}: {} ({:?})",
-                        err.get_src().map(|s| s.get_path_string()),
-                        err.get_error(),
-                        err.get_debug()
+                    let message_dialog = gtk::MessageDialog::new(
+                        Some(&app.get_windows()[0]),
+                        gtk::DialogFlags::MODAL,
+                        gtk::MessageType::Error,
+                        gtk::ButtonsType::Ok,
+                        &(String::from("There was an error in the GStreamer system.\n\n") + &format!("{}", err.get_error()))
                     );
-                    app.quit();
+                    message_dialog.run();
+                    message_dialog.destroy();
                 },
                 _ => (),
             };
