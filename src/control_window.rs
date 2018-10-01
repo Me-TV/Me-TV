@@ -176,52 +176,56 @@ impl ControlWindow {
 ///
 /// Currently try to use dvbv5-scan to create the file, or if it isn't present, try dvbscan or w_scan.
 fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
-    let path_to_transmitter_file = transmitter_dialog::present(Some(&control_window.window));
-    let dialog = gtk::MessageDialog::new(
-        Some(&control_window.window),
-        gtk::DialogFlags::MODAL,
-        gtk::MessageType::Info,
-        gtk::ButtonsType::Ok,
-        "Run dvbv5-scan, this may take a while.");
-    dialog.run();
-    let context = glib::MainContext::ref_thread_default();
-    context.block_on(
-        futures::future::lazy({
-            let p_t_t_f = path_to_transmitter_file.clone();
-            let d = dialog.clone();
-            move |_| {
-                let output = process::Command::new("dvbv5-scan")
-                    .arg("-o")
-                    .arg(channels_file_path())
-                    .arg(p_t_t_f)
-                    .output();
-                // TODO Show some form of activity during the scanning.
-                d.destroy();
-                output
-            }
-        }).then({
-            let c_w = control_window.clone();
-            move |output| {
-                match output {
-                    Ok(_) => {
-                        c_w.update_channels_store();
-                    },
-                    Err(error) => {
-                        let dialog = gtk::MessageDialog::new(
-                            Some(&c_w.window),
-                            gtk::DialogFlags::MODAL,
-                            gtk::MessageType::Info,
-                            gtk::ButtonsType::Ok,
-                            &format!("dvbv5-scan failed to generate a file.\n{:?}", error),
-                        );
-                        dialog.run();
-                        dialog.destroy();
-                    },
-                };
-                futures::future::ok::<(), ()>(())
-            }
-        })
-    ).unwrap();
+    match  transmitter_dialog::present(Some(&control_window.window)) {
+        Some(path_to_transmitter_file) => {
+            let dialog = gtk::MessageDialog::new(
+                Some(&control_window.window),
+                gtk::DialogFlags::MODAL,
+                gtk::MessageType::Info,
+                gtk::ButtonsType::Ok,
+                "Run dvbv5-scan, this may take a while.");
+            dialog.run();
+            let context = glib::MainContext::ref_thread_default();
+            context.block_on(
+                futures::future::lazy({
+                    let p_t_t_f = path_to_transmitter_file.clone();
+                    let d = dialog.clone();
+                    move |_| {
+                        let output = process::Command::new("dvbv5-scan")
+                            .arg("-o")
+                            .arg(channels_file_path())
+                            .arg(p_t_t_f)
+                            .output();
+                        // TODO Show some form of activity during the scanning.
+                        d.destroy();
+                        output
+                    }
+                }).then({
+                    let c_w = control_window.clone();
+                    move |output| {
+                        match output {
+                            Ok(_) => {
+                                c_w.update_channels_store();
+                            },
+                            Err(error) => {
+                                let dialog = gtk::MessageDialog::new(
+                                    Some(&c_w.window),
+                                    gtk::DialogFlags::MODAL,
+                                    gtk::MessageType::Info,
+                                    gtk::ButtonsType::Ok,
+                                    &format!("dvbv5-scan failed to generate a file.\n{:?}", error),
+                                );
+                                dialog.run();
+                                dialog.destroy();
+                            },
+                        };
+                        futures::future::ok::<(), ()>(())
+                    }
+                })
+            ).unwrap();
+        },
+        None => ()
+    }
 }
 
 /// Add a new frontend to this control window.
