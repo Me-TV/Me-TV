@@ -45,27 +45,33 @@ which will install the executable to $HOME/Built/bin.
 
 ## Setting up for watching DVB
 
-It is assumed you have GTK+3 3.10.0 or later and GStreamer 1.12.0 or later installed. It is also assumed you
-have the executable dvbv5-scan installed, but this is not totally necessary as there are workarounds.
+It is assumed you have GTK+3 3.10.0 or later and GStreamer 1.12.0 or later installed. Me TV is likely to
+behave bizarrely with earlier versions.
 
 Before being able to watch a television channel using Me TV you must have a channels file for the transmitter you
-are getting DVB signal from. This channels file is $HOME/.config/gstreamer-1.0/dvb-channels.conf.
+are getting DVB signal from. This channels file is $HOME/.config/gstreamer-1.0/dvb-channels.conf. It is
+assumed this file is in DVBv5 format, DVBv3 format files will cause an error.
 
-A way of creating this file from a running Me TV is available using the menu on the application window, currently it
-requires dvbv5-scan.
+A way of creating this file from a running Me TV is available using the menu on the application window,
+currently it requires the executable _dvbv5-scan_ be installed. On Debian Sid this is in package
+_dvb-tools_, whereas on Fedora Rawhide it is in the package _v4l-utils_ – for some reason Debian splits out
+the DVB tools from the V4L utils, whereas Fedora keeps them all together. For this to work you will not only
+need the executable installed but also the transmitter data files. These are in the package
+_dvb-scan-tables_ on both Debian and Fedora. However Debian installs them to /usr/share/dvb/dvb-t/ whereas
+Fedora installs them to /usr/share/dvbv5/dvb-t/.
 
-To have the channels file available before executing Me TV you can run dvbv5-scan manually. For example:
+To have the channels file available before executing Me TV you can run _dvbv5-scan_ manually. For example:
 
     dvbv5-scan --output=~/.config/gstreamer-1.0/dvb-channels.conf /usr/share/dvb/dvb-t/uk-CrystalPalace
 
-on a Debian system (Fedora puts the transmitter files in a different place) will do the right thing of you
-live in the Crystal Palace transmitter region in the UK. I suspect people will want to scan on their local
-transmitter, in this case you should replace the uk-CrystalPalace with the name appropriate for the location
-you are when you run Me TV.
+on a Debian system (remember Fedora puts the transmitter files in a slightly different place) will do the
+right thing of you live in the Crystal Palace transmitter region in the UK. I suspect people will want to
+scan on their local transmitter, in this case you should replace the uk-CrystalPalace with the name
+appropriate for the location you are when you run Me TV.
 
-If you do not have dvb5-scan installed then best advice is to install it, preferably using the Linux
-distribution package management. If that is not possible then dvbscan or w_scan can be used to create the
-needed file, but it must be in v5 format, not v3 format.
+If you do not have _dvb5-scan_ installed then best advice is to install it, preferably using the Linux
+distribution package management. If that is not possible then _dvbscan_ or _w\_scan_ can be used to create
+the needed file, but it must be in DVBv5 format, not DVBv3 format.
 
 ## Using Me TV
 
