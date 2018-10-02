@@ -66,7 +66,7 @@ impl GStreamerEngine {
                         Some(&app.get_windows()[0]),
                         gtk::DialogFlags::MODAL,
                         gtk::MessageType::Error,
-                        gtk::ButtonsType::Ok,
+                        gtk::ButtonsType::Ok,  // TODO Apparently use of this button type is discourage by the GNOME HIG
                         "There was an end of stream in the GStreamer system"
                     );
                     message_dialog.run();
@@ -77,7 +77,7 @@ impl GStreamerEngine {
                         Some(&app.get_windows()[0]),
                         gtk::DialogFlags::MODAL,
                         gtk::MessageType::Error,
-                        gtk::ButtonsType::Ok,
+                        gtk::ButtonsType::Ok,  // TODO Apparently use of this button type is discourage by the GNOME HIG
                         &(String::from("There was an error in the GStreamer system.\n\n") + &format!("{}", err.get_error()))
                     );
                     message_dialog.run();

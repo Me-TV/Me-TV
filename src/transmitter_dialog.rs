@@ -30,10 +30,10 @@ struct TransmitterSelector {
     dialog: gtk::Dialog,
 }
 
-/// Return the path to the directory of DVB-T transmitter files.
+/// Return the path to the directory of DVB-T transmitter files if present.
 /// On Fedora /usr/share/dvbv5/dvb-t
 /// On Debian /usr/share/dvb/dvb-t
-fn dvbt_transmitter_files_path() -> Option<path::PathBuf> {
+fn dvbt_transmitter_files_directory_path() -> Option<path::PathBuf> {
     let mut path = path::PathBuf::new();
     path.push("/usr");
     path.push("share");
@@ -47,11 +47,10 @@ fn dvbt_transmitter_files_path() -> Option<path::PathBuf> {
     else { None }
 }
 
-fn create(parent: Option<&gtk::ApplicationWindow>) -> Option<TransmitterSelector> {
-    let transmitter_files_path = match dvbt_transmitter_files_path() {
-        Some(transmitter_files_path) => transmitter_files_path,
-        None => return None
-    };
+/// Create a dialog to allow the user to select the transmitter file they wish to
+/// generate a channels file for – if a list of transmitter files is present in the
+/// directory presented as the location of them..
+fn create(parent: Option<&gtk::ApplicationWindow>, transmitter_files_directory_path: &path::Path) -> Option<TransmitterSelector> {
     let dialog = gtk::Dialog::new_with_buttons(
         Some("Me TV Transmitter Chooser"),
         parent,
@@ -60,7 +59,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> Option<TransmitterSelector
     );
     let label = gtk::Label::new("Select the transmitter\nyou get signal from.");
     let transmitter = gtk::ComboBoxText::new();
-    let mut transmitter_files = match fs::read_dir(transmitter_files_path) {
+    let mut transmitter_files = match fs::read_dir(transmitter_files_directory_path) {
         Ok(iterator) => iterator.map(|item| item.unwrap().file_name().to_str().unwrap().to_string()).collect::<Vec<String>>(),
         Err(_) => return None
     };
@@ -71,6 +70,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> Option<TransmitterSelector
     transmitter.set_active(0);
     let content_area = dialog.get_content_area();
     content_area.pack_start(&label, false, false, 10);
+    // TODO Make the ComboBoxText more easily scrollable?
     content_area.pack_start(&transmitter, false, false, 10);
     dialog.show_all();
     Some(TransmitterSelector {
@@ -79,14 +79,35 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> Option<TransmitterSelector
     })
 }
 
+/// Present a dialog to the user to allow them to select the transmitter file to
+/// use to scan to create a channels file.
+///
+/// Returns an `Option` with the path on success.
+///
+/// If there are problems finding a transmitter file, tell the user via message dialog
+/// and return `None`.
 pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<path::PathBuf> {
-    match create(parent) {
-        Some(dialog) => {
-            dialog.dialog.run();
-            let mut path = dvbt_transmitter_files_path().unwrap();
-            path.push(dialog.transmitter.get_active_text().unwrap());
-            dialog.dialog.destroy();
-            Some(path)
+    match dvbt_transmitter_files_directory_path() {
+        Some(transmitter_files_directory_path) =>  match create(parent, transmitter_files_directory_path.as_path()) {
+            Some(dialog) => {
+                dialog.dialog.run();
+                let mut path = transmitter_files_directory_path;
+                path.push(dialog.transmitter.get_active_text().unwrap());
+                dialog.dialog.destroy();
+                Some(path)
+            },
+            None => {
+                let dialog = gtk::MessageDialog::new(
+                    parent,
+                    gtk::DialogFlags::MODAL,
+                    gtk::MessageType::Error,
+                    gtk::ButtonsType::Ok,
+                    "There appear to be no transmitter files,\nperhaps the dtv-scan-tables package is not correctly installed."
+                );
+                dialog.run();
+                dialog.destroy();
+                None
+            }
         },
         None => {
             let dialog = gtk::MessageDialog::new(
@@ -94,7 +115,7 @@ pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<path::PathBuf>
                 gtk::DialogFlags::MODAL,
                 gtk::MessageType::Error,
                 gtk::ButtonsType::Ok,
-                "There appear to be no transmitter files ,\nperhaps the dvb-scan-tables package is not installed."
+                "There appear to be no transmitter files directory ,\nperhaps the dtv-scan-tables package is not installed."
             );
             dialog.run();
             dialog.destroy();

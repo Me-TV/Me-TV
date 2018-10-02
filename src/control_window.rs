@@ -171,8 +171,8 @@ impl ControlWindow {
 }
 
 /// Ensure that the GStreamer dvbsrc channels file is present.
-/// If the argument is `false` then exit if the file is present or try to create it if it isn't.
-/// If the argument is `true` then always try to recreate it.
+///
+///  If the transmitter files are not present this function will do nothing.
 ///
 /// Currently try to use dvbv5-scan to create the file, or if it isn't present, try dvbscan or w_scan.
 fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
@@ -182,49 +182,53 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                 Some(&control_window.window),
                 gtk::DialogFlags::MODAL,
                 gtk::MessageType::Info,
-                gtk::ButtonsType::Ok,
+                gtk::ButtonsType::OkCancel,   // TODO Apparently use of this button type is discourage by the GNOME HIG
                 "Run dvbv5-scan, this may take a while.");
-            dialog.run();
-            let context = glib::MainContext::ref_thread_default();
-            context.block_on(
-                futures::future::lazy({
-                    let p_t_t_f = path_to_transmitter_file.clone();
-                    let d = dialog.clone();
-                    move |_| {
-                        let output = process::Command::new("dvbv5-scan")
-                            .arg("-o")
-                            .arg(channels_file_path())
-                            .arg(p_t_t_f)
-                            .output();
-                        // TODO Show some form of activity during the scanning.
-                        d.destroy();
-                        output
-                    }
-                }).then({
-                    let c_w = control_window.clone();
-                    move |output| {
-                        match output {
-                            Ok(_) => {
-                                c_w.update_channels_store();
-                            },
-                            Err(error) => {
-                                let dialog = gtk::MessageDialog::new(
-                                    Some(&c_w.window),
-                                    gtk::DialogFlags::MODAL,
-                                    gtk::MessageType::Info,
-                                    gtk::ButtonsType::Ok,
-                                    &format!("dvbv5-scan failed to generate a file.\n{:?}", error),
-                                );
-                                dialog.run();
-                                dialog.destroy();
-                            },
-                        };
-                        futures::future::ok::<(), ()>(())
-                    }
-                })
-            ).unwrap();
+            let return_code = dialog.run();
+            if return_code == 0 {  // TODO  what is the respons ID for OK and for Cancel?
+                let context = glib::MainContext::ref_thread_default();
+                context.block_on(
+                    futures::future::lazy({
+                        let p_t_t_f = path_to_transmitter_file.clone();
+                        let d = dialog.clone();
+                        move |_| {
+                            let output = process::Command::new("dvbv5-scan")
+                                .arg("-o")
+                                .arg(channels_file_path())
+                                .arg(p_t_t_f)
+                                .output();
+                            // TODO Show some form of activity during the scanning.
+                            d.destroy();
+                            output
+                        }
+                    }).then({
+                        let c_w = control_window.clone();
+                        move |output| {
+                            match output {
+                                Ok(_) => {
+                                    c_w.update_channels_store();
+                                },
+                                Err(error) => {
+                                    let dialog = gtk::MessageDialog::new(
+                                        Some(&c_w.window),
+                                        gtk::DialogFlags::MODAL,
+                                        gtk::MessageType::Info,
+                                        gtk::ButtonsType::Ok,   // TODO Apparently use of this button type is discourage by the GNOME HIG
+                                        &format!("dvbv5-scan failed to generate a file.\n{:?}", error),
+                                    );
+                                    dialog.run();
+                                    dialog.destroy();
+                                },
+                            };
+                            futures::future::ok::<(), ()>(())
+                        }
+                    })
+                ).unwrap();
+            } else {
+                dialog.destroy();
+            }
         },
-        None => ()
+        None => ()  // User already informed of problem.
     }
 }
 
