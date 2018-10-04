@@ -35,12 +35,24 @@ use send_cell::SendCell;
 
 use preferences;
 
-// Cannot use GL stuff on Nouveau, so it is important to know f this is running on a Nouveau system.
+// Cannot use GL stuff on Nouveau, so it is important to know if this is running on a Nouveau system.
 // There is likely a much easier, and quicker, way of making this test.
 fn is_using_nouveau() -> bool {
     let lsmod_output = Command::new("lsmod").output().unwrap().stdout;
     let lsmod_output = String::from_utf8(lsmod_output).unwrap();
     lsmod_output.contains("nouveau")
+}
+
+fn display_an_error_dialog(parent: Option<&gtk::Window>, message: &str) {
+    let message_dialog = gtk::MessageDialog::new(
+        parent,
+        gtk::DialogFlags::MODAL,
+        gtk::MessageType::Error,
+        gtk::ButtonsType::Ok,  // TODO Apparently use of this button type is discourage by the GNOME HIG
+        message,
+    );
+    message_dialog.run();
+    message_dialog.destroy();
 }
 
 pub struct GStreamerEngine {
@@ -57,57 +69,78 @@ impl GStreamerEngine {
         // The compiler cannot determine that the bus watch callback will be executed by the same thread that
         // the gtk::Application object is created with, which must be the case, and so fails to compile unless we
         // use a SendCell.
-        let app_clone = SendCell::new(application.clone());
+        let application_clone = SendCell::new(application.clone());
+        let application_clone_for_bus_watch = SendCell::new(application.clone());
         bus.add_watch(move |_, msg| {
-            let app = app_clone.borrow();
+            let application_for_bus_watch = application_clone_for_bus_watch.borrow();
             match msg.view() {
                 gst::MessageView::Eos(..) => {
-                    let message_dialog = gtk::MessageDialog::new(
-                        Some(&app.get_windows()[0]),
-                        gtk::DialogFlags::MODAL,
-                        gtk::MessageType::Error,
-                        gtk::ButtonsType::Ok,  // TODO Apparently use of this button type is discourage by the GNOME HIG
+                    display_an_error_dialog(
+                        Some(&application_for_bus_watch.get_windows()[0]),
                         "There was an end of stream in the GStreamer system"
                     );
-                    message_dialog.run();
-                    message_dialog.destroy();
                 },
-                gst::MessageView::Error(err) => {
-                    let message_dialog = gtk::MessageDialog::new(
-                        Some(&app.get_windows()[0]),
-                        gtk::DialogFlags::MODAL,
-                        gtk::MessageType::Error,
-                        gtk::ButtonsType::Ok,  // TODO Apparently use of this button type is discourage by the GNOME HIG
-                        &(String::from("There was an error in the GStreamer system.\n\n") + &format!("{}", err.get_error()))
+                gst::MessageView::Error(error) => {
+                    display_an_error_dialog(
+                        Some(&application_for_bus_watch.get_windows()[0]),
+                        &(String::from("There was an error reported on the GStreamer bus.\n\n") + &format!("{}", error.get_error()))
                     );
-                    message_dialog.run();
-                    message_dialog.destroy();
                 },
                 _ => (),
             };
             glib::Continue(true)
         });
-        fn create_non_gl_element_and_widget() -> (gst::Element, gtk::Widget) {
-            let sink = gst::ElementFactory::make("gtksink", None).unwrap();
-            let widget = sink.get_property("widget").unwrap();
-            (sink, widget.get::<gtk::Widget>().unwrap())
-        }
+        let create_non_gl_element_and_widget = || {
+            match gst::ElementFactory::make("gtksink", None) {
+                Some(sink) =>{
+                    let widget = sink.get_property("widget").expect("Could not get 'widget' property.");
+                    (Some(sink), widget.get::<gtk::Widget>())
+                },
+                None => {
+                    display_an_error_dialog(
+                        Some(&application_clone.borrow().get_windows()[0]),
+                        "Could not create a 'gtksink'\n\nIs the gstreamer1.0-gtk3 package installed?"
+                    );
+                    (None, None)
+                }
+            }
+        };
         let (video_element, video_widget) = if is_using_nouveau() || !preferences::get_use_opengl() {
             create_non_gl_element_and_widget()
         } else {
-            if let Some(gtkglsink) = gst::ElementFactory::make("gtkglsink", None) {
-                let glsinkbin = gst::ElementFactory::make("glsinkbin", None).unwrap();
-                glsinkbin.set_property("sink", &gtkglsink.to_value()).unwrap();
-                let widget = gtkglsink.get_property("widget").unwrap();
-                (glsinkbin, widget.get::<gtk::Widget>().unwrap())
-            } else {
-                create_non_gl_element_and_widget()
+            match gst::ElementFactory::make("gtkglsink", None) {
+                Some(gtkglsink) => {
+                    match gst::ElementFactory::make("glsinkbin", None) {
+                        Some(glsinkbin) => {
+                            glsinkbin.set_property("sink", &gtkglsink.to_value()).expect("Could not set 'sink'property.");
+                            let widget = gtkglsink.get_property("widget").expect("Could not get 'widget' property.");
+                            (Some(glsinkbin), widget.get::<gtk::Widget>())
+                        },
+                        None => {
+                            display_an_error_dialog(
+                                Some(&application_clone.borrow().get_windows()[0]),
+                                "Could not create a 'glsinkbin'\n\nIs the gstreamer1.0-gl package installed?."
+                            );
+                            (None, None)
+                        }
+                    }
+                },
+                None => create_non_gl_element_and_widget()
             }
         };
+        if video_element.is_none() || video_widget.is_none() {
+            display_an_error_dialog(
+                Some(&application_clone.borrow().get_windows()[0]),
+                "Since the GStreamer system could not be initialised\nMe TV cannot work as required and so is quitting."
+            );
+            application_clone.borrow().quit(); // TODO Is it right to quit at this point?
+            assert_eq!("Why has the application not quit?", "");
+            // TODO Why is this not quitting but terminating due to teh assertion failure?
+        }
         let engine = GStreamerEngine {
             playbin,
-            video_element,
-            video_widget,
+            video_element: video_element.expect("'video_element' is not None so this cannot happen."),
+            video_widget: video_widget.expect("'video_widget is not None, this cannot happen."),
         };
         engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
         engine.video_element.set_property("force-aspect-ratio", &true.to_value()).expect("Could not set 'force-aspect-ration' property");
