@@ -22,6 +22,8 @@
 use gtk;
 use gtk::prelude::*;
 
+// TODO Explain why a ComboBoxText cannot be used?
+
 /// Me TV would have problems using ComboBoxText so use a ComboBox but in
 /// the knowledge it is always a single column of strings.
 pub type MeTVComboBoxText = gtk::ComboBox;
