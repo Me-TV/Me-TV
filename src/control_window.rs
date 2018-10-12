@@ -35,7 +35,9 @@ use gtk::prelude::*;
 
 use channel_names::{channels_file_path, get_names};
 use control_window_button::ControlWindowButton;
+use dialogs::display_an_error_dialog;
 use frontend_manager::{FrontendId, Message};
+use preferences;
 use transmitter_dialog;
 
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
@@ -98,34 +100,18 @@ impl ControlWindow {
         epg_action.connect_activate({
             let c_w = control_window.clone();
             move |_, _| {
-                let message = if c_w.control_window_buttons.borrow().is_empty() {
+                display_an_error_dialog(Some(&c_w.window), if c_w.control_window_buttons.borrow().is_empty() {
                     "No frontends, so no EPG."
                 } else {
                     "Should display the EPG window."
-                };
-                let dialog = gtk::MessageDialog::new(
-                    Some(&c_w.window),
-                    gtk::DialogFlags::MODAL,
-                    gtk::MessageType::Info,
-                    gtk::ButtonsType::Ok,
-                    message
-                );
-                dialog.run();
-                dialog.destroy();
+                });
             }
         });
         channels_file_action.connect_activate({
             let c_w = control_window.clone();
             move |_, _| {
                 if c_w.control_window_buttons.borrow().is_empty() {
-                    let dialog = gtk::MessageDialog::new(
-                        Some(&c_w.window),
-                        gtk::DialogFlags::MODAL,
-                        gtk::MessageType::Info,
-                        gtk::ButtonsType::Ok,
-                        "No frontends, so no tuning possible.");
-                    dialog.run();
-                    dialog.destroy();
+                    display_an_error_dialog(Some(&c_w.window),"No frontends, so no tuning possible.");
                 } else {
                     ensure_channel_file_present(&c_w);
                 }
@@ -136,8 +122,8 @@ impl ControlWindow {
             let c_w = control_window.clone();
             message_channel.for_each(move |message| {
                 match message {
-                    Message::FrontendAppeared { fei } => add_frontend(&c_w, fei.clone()),
-                    Message::FrontendDisappeared { fei } => remove_frontend(&c_w, fei.clone()),
+                    Message::FrontendAppeared { fei } => add_frontend(&c_w, &fei),
+                    Message::FrontendDisappeared { fei } => remove_frontend(&c_w, &fei),
                 }
                 Ok(())
             }).map(|_| ())
@@ -209,15 +195,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                                     c_w.update_channels_store();
                                 },
                                 Err(error) => {
-                                    let dialog = gtk::MessageDialog::new(
-                                        Some(&c_w.window),
-                                        gtk::DialogFlags::MODAL,
-                                        gtk::MessageType::Info,
-                                        gtk::ButtonsType::Ok,   // TODO Apparently use of this button type is discourage by the GNOME HIG
-                                        &format!("dvbv5-scan failed to generate a file.\n{:?}", error),
-                                    );
-                                    dialog.run();
-                                    dialog.destroy();
+                                    display_an_error_dialog(Some(&c_w.window), &format!("dvbv5-scan failed to generate a file.\n{:?}", error));
                                 },
                             };
                             futures::future::ok::<(), ()>(())
@@ -233,22 +211,58 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
 }
 
 /// Add a new frontend to this control window.
-fn add_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
+fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
     if control_window.main_box.get_children()[0] == control_window.label {
         control_window.main_box.remove(&control_window.label);
         control_window.main_box.pack_start(&control_window.frontends_box, true, true, 0);
     }
     let control_window_button = ControlWindowButton::new(control_window, fei);
+    let c_w_b = control_window_button.clone();
     control_window.frontends_box.pack_start(&control_window_button.widget, true, true, 0);
     control_window.control_window_buttons.borrow_mut().push(control_window_button);
     control_window.window.show_all();
+    // TODO Why is the FrontendWindow of the positioned before the ControlWindow when showing  a default channel.
+    let first_adapter_number = FrontendId{adapter: 0, frontend: 0};
+    if *fei == first_adapter_number {
+        if preferences::get_immediate_tv() {
+            if let Some(target_channel) = preferences::get_default_channel() {
+                if target_channel.is_empty() {
+                    display_an_error_dialog(Some(&c_w_b.control_window.window), "The default channel is the empty string and cannot be tuned to.");
+                } else {
+                    // Search channel_names_store and get the index of the channel.
+                    // then select the index and toggle the button. What to do if the channel cannot be found?
+                    if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
+                        loop {
+                            if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>() {
+                                if target_channel == channel_name {
+                                    match control_window.channel_names_store.get_path(&iterator) {
+                                        Some(mut tree_path) => {
+                                            let index = tree_path.get_indices_with_depth()[0];
+                                            c_w_b.channel_selector.set_active(index);
+                                            c_w_b.frontend_button.set_active(true);
+                                        },
+                                        None => panic!("Failed to get the path of the iterator."),
+                                    }
+                                    break;
+                                }
+                            }
+                            if !control_window.channel_names_store.iter_next(&iterator) {
+                                display_an_error_dialog(Some(&c_w_b.control_window.window), "The default channel could not be found for immediate TV display.");
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Remove the frontend from this control window.
-fn remove_frontend(control_window: &Rc<ControlWindow>, fei: FrontendId) {
+fn remove_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
     let mut remove_index = 0;
     for (index, control_window_button) in control_window.control_window_buttons.borrow().iter().enumerate() {
-        if control_window_button.frontend_id == fei {
+        if control_window_button.frontend_id == *fei {
             control_window.frontends_box.remove(&control_window_button.widget);
             remove_index = index;
             break;

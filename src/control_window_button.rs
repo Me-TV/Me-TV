@@ -27,6 +27,7 @@ use gtk::prelude::*;
 
 use channel_names::encode_to_mrl;
 use control_window::ControlWindow;
+use dialogs::display_an_error_dialog;
 use frontend_manager::FrontendId;
 use frontend_window::FrontendWindow;
 use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
@@ -50,8 +51,8 @@ impl ControlWindowButton {
     /// is a drop down list button to select the channel to tune the front end to.
     ///
     /// This function is executed in the GTK event loop thread.
-    pub fn new(control_window: &Rc<ControlWindow>, fei: FrontendId) -> Rc<ControlWindowButton> {
-        let frontend_id = fei;
+    pub fn new(control_window: &Rc<ControlWindow>, fei: &FrontendId) -> Rc<ControlWindowButton> {
+        let frontend_id = fei.clone();
         let frontend_button = gtk::ToggleButton::new_with_label(
             format!("adaptor{}\nfrontend{}", frontend_id.adapter, frontend_id.frontend).as_ref()
         );
@@ -78,14 +79,7 @@ impl ControlWindowButton {
                 if c_w_b.control_window.is_channels_store_loaded() {
                     Self::toggle_button(&c_w_b);
                 } else {
-                    let dialog = gtk::MessageDialog::new(
-                        Some(&c_w_b.control_window.window),
-                        gtk::DialogFlags::MODAL,
-                        gtk::MessageType::Info,
-                        gtk::ButtonsType::Ok,
-                        "No channel file, so no channel list, so cannot play a channel.");
-                    dialog.run();
-                    dialog.destroy();
+                    display_an_error_dialog(Some(&c_w_b.control_window.window), "No channel file, so no channel list, so cannot play a channel.");
                     //button.set_active(false); // TODO causes the reissuing of the signal. :-(
                 }
             }
@@ -94,7 +88,7 @@ impl ControlWindowButton {
     }
 
     /// Set the active channel to 0.
-    pub fn reset_active_channel(&self) {
+    pub fn reset_active_channel(&self) {  // Used in control_window.rs
         self.channel_selector.set_active(0);
         if let Some(ref frontend_window) = *self.frontend_window.borrow() {
             frontend_window.channel_selector.set_active(0);
@@ -117,7 +111,7 @@ impl ControlWindowButton {
     /// Toggle the button.
     ///
     /// This function is called after the change of state of the frontend_button.
-    fn toggle_button(control_window_button: &Rc<ControlWindowButton>) {
+    fn toggle_button(control_window_button: &Rc<ControlWindowButton>) { // Used in control_window.rs
         if control_window_button.frontend_button.get_active() {
             if control_window_button.control_window.is_channels_store_loaded() && control_window_button.channel_selector.get_active() >= 0 {
                 let frontend_window = FrontendWindow::new(&control_window_button);
@@ -135,7 +129,7 @@ impl ControlWindowButton {
     }
 
     /// Callback for an observed channel change.
-    pub fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_index: i32) {
+    pub fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_index: i32) { // Used in frontend_window.rs
         let status = control_window_button.frontend_button.get_active();
         if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
             if status {

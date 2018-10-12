@@ -33,6 +33,7 @@ use gst::prelude::*;
 
 use send_cell::SendCell;
 
+use dialogs::display_an_error_dialog;
 use preferences;
 
 // Cannot use GL stuff on Nouveau, so it is important to know if this is running on a Nouveau system.
@@ -41,18 +42,6 @@ fn is_using_nouveau() -> bool {
     let lsmod_output = Command::new("lsmod").output().unwrap().stdout;
     let lsmod_output = String::from_utf8(lsmod_output).unwrap();
     lsmod_output.contains("nouveau")
-}
-
-fn display_an_error_dialog(parent: Option<&gtk::Window>, message: &str) {
-    let message_dialog = gtk::MessageDialog::new(
-        parent,
-        gtk::DialogFlags::MODAL,
-        gtk::MessageType::Error,
-        gtk::ButtonsType::Ok,  // TODO Apparently use of this button type is discourage by the GNOME HIG
-        message,
-    );
-    message_dialog.run();
-    message_dialog.destroy();
 }
 
 pub struct GStreamerEngine {

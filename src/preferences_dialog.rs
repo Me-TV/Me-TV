@@ -45,6 +45,31 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
         move |button| preferences::set_use_opengl(button.get_active(), true)
     );
     content_area.pack_start(&use_opengl_button, false, false, 10);
+
+    let immediate_tv_button = gtk::CheckButton::new_with_label("Start TV immediately if possible.");
+    immediate_tv_button.set_active(preferences::get_immediate_tv());
+    immediate_tv_button.connect_toggled(
+        move |button| preferences::set_immediate_tv(button.get_active(), true)
+    );
+    content_area.pack_start(&immediate_tv_button, false, false, 10);
+
+    let default_channel_box = gtk::Box::new(gtk::Orientation::Vertical, 5);
+    let default_channel_label = gtk::Label::new("Default channel");
+    let default_channel_entry = gtk::Entry::new();
+    default_channel_entry.set_text(
+        &match preferences::get_default_channel() {
+            Some(channel) => channel,
+            None => String::from(""),
+        }
+    );
+    // TODO Is activate the right signal to use here?
+    default_channel_entry.connect_activate(
+        move |text| preferences::set_default_channel(text.get_text().unwrap(), true)
+    );
+    default_channel_box.pack_start(&default_channel_label, false, false, 5);
+    default_channel_box.pack_start(&default_channel_entry, false,false, 5);
+    content_area.pack_start(&default_channel_box, false, false, 20);
+
     dialog.show_all();
     dialog
 }

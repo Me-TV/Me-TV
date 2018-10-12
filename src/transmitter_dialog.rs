@@ -25,6 +25,8 @@ use std::path;
 use gtk;
 use gtk::prelude::*;
 
+use dialogs::display_an_error_dialog;
+
 struct TransmitterSelector {
     transmitter: gtk::ComboBoxText,
     dialog: gtk::Dialog,
@@ -97,28 +99,12 @@ pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<path::PathBuf>
                 Some(path)
             },
             None => {
-                let dialog = gtk::MessageDialog::new(
-                    parent,
-                    gtk::DialogFlags::MODAL,
-                    gtk::MessageType::Error,
-                    gtk::ButtonsType::Ok,
-                    "There appear to be no transmitter files,\nperhaps the dtv-scan-tables package is not correctly installed."
-                );
-                dialog.run();
-                dialog.destroy();
+                display_an_error_dialog(parent, "There appear to be no transmitter files,\nperhaps the dtv-scan-tables package is not correctly installed.");
                 None
             }
         },
         None => {
-            let dialog = gtk::MessageDialog::new(
-                parent,
-                gtk::DialogFlags::MODAL,
-                gtk::MessageType::Error,
-                gtk::ButtonsType::Ok,
-                "There appear to be no transmitter files directory ,\nperhaps the dtv-scan-tables package is not installed."
-            );
-            dialog.run();
-            dialog.destroy();
+            display_an_error_dialog(parent, "There appear to be no transmitter files directory ,\nperhaps the dtv-scan-tables package is not installed.");
             None
         }
     }
