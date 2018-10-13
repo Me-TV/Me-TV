@@ -32,6 +32,7 @@ use xdg;
 struct Preferences {
     use_opengl: bool,
     immediate_tv: bool,
+    use_last_channel: bool,
     default_channel: String,
     last_channel: String,
 }
@@ -40,6 +41,7 @@ lazy_static! {
 static ref PREFERENCES: Mutex<RefCell<Preferences>> = Mutex::new(RefCell::new(Preferences{
     use_opengl: true,
     immediate_tv: false,
+    use_last_channel: false,
     default_channel: String::from(""),
     last_channel: String::from(""),
 }));
@@ -95,9 +97,6 @@ pub fn init() {
     }
 }
 
-// TODO There must be a generic way of writing all these getters and setters,
-// or, as a last resort, write a couple of macros.
-
 macro_rules! create_getter {
     ($function_name:ident, $field_name:ident, $return_type:ty, $default_value:expr) => {
         pub fn $function_name() -> $return_type {
@@ -141,11 +140,18 @@ create_getter!(get_use_opengl, use_opengl, bool, true);
 create_setter!(set_use_opengl, use_opengl, bool);
 
 /// Getter for the current state of the `immediate_tv` preference.
-create_getter!(get_immediate_tv, immediate_tv, bool, true);
+create_getter!(get_immediate_tv, immediate_tv, bool, false);
 
 /// Setter for the `immediate_tv` preference. If `write_back` is true the
 /// current `Preferences` instance  is written to file.
 create_setter!(set_immediate_tv, immediate_tv, bool);
+
+/// Getter for the current state of the `use_last_channel` preference.
+create_getter!(get_use_last_channel, use_last_channel, bool, false);
+
+/// Setter for the `use_last_channel` preference. If `write_back` is true the
+/// current `Preferences` instance  is written to file.
+create_setter!(set_use_last_channel, use_last_channel, bool);
 
 /// Getter for the current state of the `default_channel` preference.
 create_option_getter!(get_default_channel, default_channel, String, None);

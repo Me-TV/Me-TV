@@ -30,6 +30,7 @@ use channel_names::encode_to_mrl;
 use control_window_button::ControlWindowButton;
 use gstreamer_engine::GStreamerEngine;
 use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
+use preferences;
 
 pub struct FrontendWindow {
     control_window_button: Rc<ControlWindowButton>,
@@ -147,7 +148,9 @@ impl FrontendWindow {
                 Inhibit(false)
             }
         });
-        engine.set_mrl(&encode_to_mrl(&control_window_button.channel_selector.get_active_text().unwrap()));
+        let channel_name = control_window_button.channel_selector.get_active_text().unwrap();
+        engine.set_mrl(&encode_to_mrl(&channel_name));
+        preferences::set_last_channel(channel_name, true);
         engine.play();
         window.show();
         let application = control_window_button.control_window.window.get_application().unwrap();

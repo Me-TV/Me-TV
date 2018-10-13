@@ -31,6 +31,7 @@ use dialogs::display_an_error_dialog;
 use frontend_manager::FrontendId;
 use frontend_window::FrontendWindow;
 use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
+use preferences;
 
 /// A `ControlWindowButton` is a `gtk::Box` but there is no inheritance so use
 /// a bit of composition.
@@ -136,7 +137,9 @@ impl ControlWindowButton {
                 frontend_window.engine.stop();
             }
             control_window_button.set_channel_index(channel_index);
-            frontend_window.engine.set_mrl(&encode_to_mrl(&control_window_button.channel_selector.get_active_text().unwrap()));
+            let channel_name = control_window_button.channel_selector.get_active_text().unwrap();
+            frontend_window.engine.set_mrl(&encode_to_mrl(&channel_name));
+            preferences::set_last_channel(channel_name, true);
             if status {
                 // TODO Must handle not being able to tune to a channel better than panicking.
                 frontend_window.engine.play();
