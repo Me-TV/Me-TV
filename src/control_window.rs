@@ -164,14 +164,15 @@ impl ControlWindow {
 fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
     match  transmitter_dialog::present(Some(&control_window.window)) {
         Some(path_to_transmitter_file) => {
+            //  TODO Turn this into a dialog that follows the GNOME HIG. Probably best to create a custom dialog.
             let dialog = gtk::MessageDialog::new(
                 Some(&control_window.window),
                 gtk::DialogFlags::MODAL,
                 gtk::MessageType::Info,
-                gtk::ButtonsType::OkCancel,   // TODO Apparently use of this button type is discourage by the GNOME HIG
+                gtk::ButtonsType::OkCancel,   // TODO This button type is discourage by the GNOME HIG, incorrect button placements.
                 "Run dvbv5-scan, this may take a while.");
             let return_code = dialog.run();
-            if return_code == 0 {  // TODO  what is the respons ID for OK and for Cancel?
+            if return_code == 0 {  // TODO  what is the response ID for OK and for Cancel?
                 let context = glib::MainContext::ref_thread_default();
                 context.block_on(
                     futures::future::lazy({
@@ -191,12 +192,8 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                         let c_w = control_window.clone();
                         move |output| {
                             match output {
-                                Ok(_) => {
-                                    c_w.update_channels_store();
-                                },
-                                Err(error) => {
-                                    display_an_error_dialog(Some(&c_w.window), &format!("dvbv5-scan failed to generate a file.\n{:?}", error));
-                                },
+                                Ok(_) => c_w.update_channels_store(),
+                                Err(error) => display_an_error_dialog(Some(&c_w.window), &format!("dvbv5-scan failed to generate a file.\n{:?}", error)),
                             };
                             futures::future::ok::<(), ()>(())
                         }
@@ -221,7 +218,7 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
     control_window.frontends_box.pack_start(&control_window_button.widget, true, true, 0);
     control_window.control_window_buttons.borrow_mut().push(control_window_button);
     control_window.window.show_all();
-    // TODO Why is the FrontendWindow of the positioned before the ControlWindow when showing  a default channel.
+    // TODO Why is the FrontendWindow positioned before the ControlWindow when showing  a default channel.
     let first_adapter_number = FrontendId{adapter: 0, frontend: 0};
     if *fei == first_adapter_number {
         if preferences::get_immediate_tv() {
@@ -229,8 +226,6 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                 if target_channel.is_empty() {
                     display_an_error_dialog(Some(&c_w_b.control_window.window), "The default channel is the empty string and cannot be tuned to.");
                 } else {
-                    // Search channel_names_store and get the index of the channel.
-                    // then select the index and toggle the button. What to do if the channel cannot be found?
                     if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
                         loop {
                             if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>() {
