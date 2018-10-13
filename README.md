@@ -13,29 +13,35 @@ Me TV is a digital television (DVB – digital video broadcast) viewer based on 
 ## Reporting Issues
 
 [Me TV Home Page on Launchpad](http://launchpad.net/me-tv) remains the home page for Me TV versions 1.x and
-2.x. This GitHub repository is for development of version 3.x – to gain access to the
+2.x. This GitHub repository is for development and release of version 3.x – to gain access to the
 variety of CI resources, and the like, which work with Git (especially GitHub, but also GitLab and BitBucket) but not
 with Bazaar and Launchpad. So, if you have questions, bug reports, issues, etc. on Me TV versions 1.x and
 2.x, please go to the [Me TV Home Page on Launchpad](http://launchpad.net/me-tv).
 
-Repository forking, bug reports, and pull requests, for this rewrite (version 3.x) should all happen here on
-GitHub.
+Anything to do with Me TV 3 such as repository forking, bug reports, pull requests, etc. should happen here
+on GitHub.
 
 ## Building
 
-Assuming you have taken a clone of this repository, or downloaded a release tarball, you will need to compile
-the project.  This being a Rust program all build is handled using Cargo.
+_It is assumed you have GTK+3 3.10.0 or later and GStreamer 1.12.0 or later already installed._
+
+You need to either take a clone of this repository, or download a release tarball.  You will then need to
+build the executable. This being a Rust program all build is handled using Cargo. Rust and Cargo may be
+packaged for your operating system, but most people use [Rustup](https://rustup.rs/) to install Rust and
+Cargo so as to stay up to date with both. Once you have Rust and Cargo installed, by whatever means, then in
+the directory of the Me TV project, typing the command:
 
     cargo build
 
-will create a debug build, add the `--release` option to get a release build.
+will create a debug build, add the `--release` option to the command line to get a release build.
 
-Of course there is always:
+Of course there is always the option of typing:
 
     cargo run
 
-to build and run. Again the `--release` option is available – but see below about creating the channels
-configuration file, which must happen before you can watch television channels using Me TV.
+to build and also run the program if the build is successful. Again the `--release` option is available on
+this command line – but see below about creating the channels configuration file, which must happen before
+you can watch television using Me TV.
 
 If you want to install, then as an example:
 
@@ -45,18 +51,16 @@ which will install the executable to $HOME/Built/bin.
 
 ## Setting up for watching DVB
 
-It is assumed you have GTK+3 3.10.0 or later and GStreamer 1.12.0 or later installed. Me TV is likely to
-behave bizarrely with earlier versions.
-
-Before being able to watch a television channel using Me TV you must have a channels file for the transmitter you
-are getting DVB signal from. This channels file is $HOME/.config/gstreamer-1.0/dvb-channels.conf. It is
-assumed this file is in DVBv5 format, DVBv3 format files will cause an error.
+Before being able to watch a television channel using Me TV, you must have a channels file for the
+transmitter you are getting DVB signal from. This channels file is
+$HOME/.config/gstreamer-1.0/dvb-channels.conf. It is assumed this file is in DVBv5 format, DVBv3 format
+files will cause an error.
 
 A way of creating this file from a running Me TV is available using the menu on the application window,
 currently it requires the executable _dvbv5-scan_ be installed. On Debian Sid this is in package
 _dvb-tools_, whereas on Fedora Rawhide it is in the package _v4l-utils_ – for some reason Debian splits out
-the DVB tools from the V4L utils, whereas Fedora keeps them all together. For this to work you will not only
-need the executable installed but also the transmitter data files. These are in the package
+the DVB tools from the V4L utils, whereas Fedora keeps them all together. To create the channels file you
+will not only need _dvbv5-scan_ installed but also the transmitter data files. These are in the package
 _dvb-scan-tables_ on both Debian and Fedora. However Debian installs them to /usr/share/dvb/dvb-t/ whereas
 Fedora installs them to /usr/share/dvbv5/dvb-t/.
 
@@ -66,7 +70,7 @@ To have the channels file available before executing Me TV you can run _dvbv5-sc
 
 on a Debian system (remember Fedora puts the transmitter files in a slightly different place) will do the
 right thing of you live in the Crystal Palace transmitter region in the UK. I suspect people will want to
-scan on their local transmitter, in this case you should replace the uk-CrystalPalace with the name
+scan on their local transmitter, in which case you should replace the uk-CrystalPalace with the name
 appropriate for the location you are when you run Me TV.
 
 If you do not have _dvb5-scan_ installed then best advice is to install it, preferably using the Linux
