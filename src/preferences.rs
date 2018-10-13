@@ -33,6 +33,7 @@ struct Preferences {
     use_opengl: bool,
     immediate_tv: bool,
     default_channel: String,
+    last_channel: String,
 }
 
 lazy_static! {
@@ -40,6 +41,7 @@ static ref PREFERENCES: Mutex<RefCell<Preferences>> = Mutex::new(RefCell::new(Pr
     use_opengl: true,
     immediate_tv: false,
     default_channel: String::from(""),
+    last_channel: String::from(""),
 }));
 }
 
@@ -93,65 +95,69 @@ pub fn init() {
     }
 }
 
-/// Getter for the current state of the `use_opengl` preference.
-pub fn get_use_opengl() -> bool {
-    match PREFERENCES.lock() {
-        Ok(preferences) => preferences.borrow().use_opengl,
-        Err(_) => true,
+// TODO There must be a generic way of writing all these getters and setters,
+// or, as a last resort, write a couple of macros.
+
+macro_rules! create_getter {
+    ($function_name:ident, $field_name:ident, $return_type:ty, $default_value:expr) => {
+        pub fn $function_name() -> $return_type {
+            match PREFERENCES.lock() {
+               Ok(preferences) => preferences.borrow().$field_name,
+               Err(_) => $default_value,
+            }
+        }
     }
 }
+
+macro_rules! create_option_getter {
+    ($function_name:ident, $field_name:ident, $return_type:ty, $default_value:expr) => {
+        pub fn $function_name() -> Option<$return_type> {
+            match PREFERENCES.lock() {
+               Ok(preferences) => Some(preferences.borrow().$field_name.clone()),
+               Err(_) => $default_value,
+            }
+        }
+    }
+}
+
+macro_rules! create_setter {
+    ($function_name:ident, $field_name:ident, $parameter_type:ty) => {
+        pub fn $function_name(new_value: $parameter_type, write_back: bool) {
+            if let Ok(preferences) = PREFERENCES.lock() {
+                let mut new_preferences = preferences.borrow().clone();
+                new_preferences.$field_name = new_value;
+                preferences.replace(new_preferences);
+            }
+            if write_back { write_preferences(); }
+        }
+    }
+}
+
+/// Getter for the current state of the `use_opengl` preference.
+create_getter!(get_use_opengl, use_opengl, bool, true);
 
 /// Setter for the `use_opengl` preference. If `write_back` is true the
 /// current `Preferences` instance  is written to file.
-pub fn set_use_opengl(use_opengl: bool, write_back: bool) {
-    if let Ok(preferences) = PREFERENCES.lock() {
-        let mut new_preferences = preferences.borrow().clone();
-        new_preferences.use_opengl = use_opengl;
-        preferences.replace(new_preferences);
-    }
-    if write_back {
-        write_preferences();
-    }
-}
+create_setter!(set_use_opengl, use_opengl, bool);
 
 /// Getter for the current state of the `immediate_tv` preference.
-pub fn get_immediate_tv() -> bool {
-    match PREFERENCES.lock() {
-        Ok(preferences) => preferences.borrow().immediate_tv,
-        Err(_) => true,
-    }
-}
+create_getter!(get_immediate_tv, immediate_tv, bool, true);
 
 /// Setter for the `immediate_tv` preference. If `write_back` is true the
 /// current `Preferences` instance  is written to file.
-pub fn set_immediate_tv(immediate_tv: bool, write_back: bool) {
-    if let Ok(preferences) = PREFERENCES.lock() {
-        let mut new_preferences = preferences.borrow().clone();
-        new_preferences.immediate_tv = immediate_tv;
-        preferences.replace(new_preferences);
-    }
-    if write_back {
-        write_preferences();
-    }
-}
+create_setter!(set_immediate_tv, immediate_tv, bool);
 
 /// Getter for the current state of the `default_channel` preference.
-pub fn get_default_channel() -> Option<String> {
-    match PREFERENCES.lock() {
-        Ok(preferences) => Some(preferences.borrow().default_channel.clone()),
-        Err(_) => None,
-    }
-}
+create_option_getter!(get_default_channel, default_channel, String, None);
 
 /// Setter for the `default_channel` preference. If `write_back` is true the
 /// current `Preferences` instance  is written to file.
-pub fn set_default_channel(default_channel: String, write_back: bool) {
-    if let Ok(preferences) = PREFERENCES.lock() {
-        let mut new_preferences = preferences.borrow().clone();
-        new_preferences.default_channel = default_channel;
-        preferences.replace(new_preferences);
-    }
-    if write_back {
-        write_preferences();
-    }
-}
+create_setter!(set_default_channel, default_channel, String);
+
+/// Getter for the current state of the `last_channel` preference.
+create_option_getter!(get_last_channel, last_channel, String, None);
+
+/// Setter for the `last_channel` preference. If `write_back` is true the
+/// current `Preferences` instance  is written to file.
+create_setter!(set_last_channel, last_channel, String);
+
