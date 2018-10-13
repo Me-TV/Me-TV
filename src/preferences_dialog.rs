@@ -32,30 +32,20 @@ lazy_static! {
 }
 
 fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
-    let dialog = gtk::Dialog::new_with_buttons(
-        Some("Me TV Preferences"),
-        parent,
-        gtk::DialogFlags::DESTROY_WITH_PARENT,
-        &[],
-    );
-    let content_area = dialog.get_content_area();
-    let use_opengl_button = gtk::CheckButton::new_with_label("Use OpenGL if possible");
+    let menu_builder = gtk::Builder::new_from_string(include_str!("resources/preferences_dialog.glade.xml"));
+    let use_opengl_button = menu_builder.get_object::<gtk::CheckButton>("use_opengl").unwrap();
     use_opengl_button.set_active(preferences::get_use_opengl());
     use_opengl_button.connect_toggled(
         move |button| preferences::set_use_opengl(button.get_active(), true)
     );
-    content_area.pack_start(&use_opengl_button, false, false, 10);
-
-    let immediate_tv_button = gtk::CheckButton::new_with_label("Start TV immediately if possible.");
+    let immediate_tv_button = menu_builder.get_object::<gtk::CheckButton>("immediate_tv").unwrap();
     immediate_tv_button.set_active(preferences::get_immediate_tv());
     immediate_tv_button.connect_toggled(
         move |button| preferences::set_immediate_tv(button.get_active(), true)
     );
-    content_area.pack_start(&immediate_tv_button, false, false, 10);
-
-    let default_channel_box = gtk::Box::new(gtk::Orientation::Vertical, 5);
-    let default_channel_label = gtk::Label::new("Default channel");
-    let default_channel_entry = gtk::Entry::new();
+    let  use_last_channel_button = menu_builder.get_object::<gtk::RadioButton>("last_channel").unwrap();
+    let  use_default_channel_button = menu_builder.get_object::<gtk::RadioButton>("default_channel").unwrap();
+    let default_channel_entry = menu_builder.get_object::<gtk::Entry>("channel_name").unwrap();
     default_channel_entry.set_text(
         &match preferences::get_default_channel() {
             Some(channel) => channel,
@@ -66,12 +56,9 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Dialog {
     default_channel_entry.connect_activate(
         move |text| preferences::set_default_channel(text.get_text().unwrap(), true)
     );
-    default_channel_box.pack_start(&default_channel_label, false, false, 5);
-    default_channel_box.pack_start(&default_channel_entry, false,false, 5);
-    content_area.pack_start(&default_channel_box, false, false, 20);
-
-    dialog.show_all();
-    dialog
+    let preferences_dialog = menu_builder.get_object::<gtk::Dialog>("preferences_dialog").unwrap();
+    preferences_dialog.show_all();
+    preferences_dialog
 }
 
 /// Display a preferences dialog in a non-modal way, but only if one is not already being displayed.
