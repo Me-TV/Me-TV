@@ -58,7 +58,8 @@ _In order for GStreamer to work at run time, you have to have many of the plugin
 good, bad, and ugly plugin packages. Currently the DVB plugin is in the bad package – it started there for
 historical reasons, and although it is not now bad, it is good, it has never migrated to the good
 package. So to run Me TV on Debian you need the packages gstreamer1.0-plugins-base,
-gstreamer1.0-plugins-good, and gstreamer1.0-plugins-bad._
+gstreamer1.0-plugins-good, and gstreamer1.0-plugins-bad. On Debian the GStreamer GTK and OpenGL plugins have
+been separated out, so you will also need to install gstreamer1.0-gtk3 and gstreamer1.0-gl._
 
 Before being able to watch a television channel using Me TV, you must have a channels file for the
 transmitter you are getting DVB signal from. This channels file is
