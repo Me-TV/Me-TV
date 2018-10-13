@@ -25,6 +25,9 @@ on GitHub.
 
 _It is assumed you have GTK+3 3.10.0 or later and GStreamer 1.12.0 or later already installed._
 
+_For building Me TV you need the development packages installed, not just the library packages. So on Debian the
+libgtk-3-dev and the libgstreamer1.0-dev packages._
+
 You need to either take a clone of this repository, or download a release tarball.  You will then need to
 build the executable. This being a Rust program all build is handled using Cargo. Rust and Cargo may be
 packaged for your operating system, but most people use [Rustup](https://rustup.rs/) to install Rust and
@@ -50,6 +53,12 @@ If you want to install, then as an example:
 which will install the executable to $HOME/Built/bin.
 
 ## Setting up for watching DVB
+
+_In order for GStreamer to work at run time, you have to have many of the plugins installed. There are base,
+good, bad, and ugly plugin packages. Currently the DVB plugin is in the bad package – it started there for
+historical reasons, and although it is not now bad, it is good, it has never migrated to the good
+package. So to run Me TV on Debian you need the packages gstreamer1.0-plugins-base,
+gstreamer1.0-plugins-good, and gstreamer1.0-plugins-bad._
 
 Before being able to watch a television channel using Me TV, you must have a channels file for the
 transmitter you are getting DVB signal from. This channels file is
