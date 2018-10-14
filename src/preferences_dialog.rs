@@ -66,6 +66,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Window {
         move |text| preferences::set_default_channel(text.get_text().unwrap(), true)
     );
     let preferences_dialog = menu_builder.get_object::<gtk::Window>("preferences_dialog").unwrap();
+    preferences_dialog.set_transient_for(parent);
     preferences_dialog.show_all();
     preferences_dialog
 }
