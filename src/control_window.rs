@@ -222,33 +222,39 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
     let first_adapter_number = FrontendId{adapter: 0, frontend: 0};
     if *fei == first_adapter_number {
         if preferences::get_immediate_tv() {
-            if let Some(target_channel) = preferences::get_default_channel() {
-                if target_channel.is_empty() {
-                    display_an_error_dialog(Some(&c_w_b.control_window.window), "The default channel is the empty string and cannot be tuned to.");
-                } else {
-                    if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
-                        loop {
-                            if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>() {
-                                if target_channel == channel_name {
-                                    match control_window.channel_names_store.get_path(&iterator) {
-                                        Some(mut tree_path) => {
-                                            let index = tree_path.get_indices_with_depth()[0];
-                                            c_w_b.channel_selector.set_active(index);
-                                            c_w_b.frontend_button.set_active(true);
-                                        },
-                                        None => panic!("Failed to get the path of the iterator."),
+            let tune_to_channel  = |target_channel_name_option: Option<String>|{
+                match target_channel_name_option {
+                    Some(target_channel_name) => {
+                        if target_channel_name.is_empty() {
+                            display_an_error_dialog(Some(&c_w_b.control_window.window), "The channel is the empty string and cannot be tuned to.");
+                        } else {
+                            if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
+                                loop {
+                                    if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>() {
+                                        if target_channel_name == channel_name {
+                                            match control_window.channel_names_store.get_path(&iterator) {
+                                                Some(mut tree_path) => {
+                                                    let index = tree_path.get_indices_with_depth()[0];
+                                                    c_w_b.channel_selector.set_active(index);
+                                                    c_w_b.frontend_button.set_active(true);
+                                                },
+                                                None => panic!("Failed to get the path of the iterator."),
+                                            }
+                                            break;
+                                        }
                                     }
-                                    break;
+                                    if !control_window.channel_names_store.iter_next(&iterator) {
+                                        display_an_error_dialog(Some(&c_w_b.control_window.window), &format!("The channel {} could not be found for immediate TV display.", target_channel_name));
+                                        break;
+                                    }
                                 }
                             }
-                            if !control_window.channel_names_store.iter_next(&iterator) {
-                                display_an_error_dialog(Some(&c_w_b.control_window.window), "The default channel could not be found for immediate TV display.");
-                                break;
-                            }
                         }
-                    }
+                    },
+                    None => display_an_error_dialog(Some(&c_w_b.control_window.window), "There was no channel to tune to."),
                 }
-            }
+            };
+            tune_to_channel(if preferences::get_use_last_channel() { preferences::get_last_channel() } else { preferences::get_default_channel() });
         }
     }
 }
