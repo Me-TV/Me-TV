@@ -44,16 +44,16 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Window {
         move |button| preferences::set_immediate_tv(button.get_active(), true)
     );
     let  use_last_channel_button = menu_builder.get_object::<gtk::RadioButton>("last_channel").unwrap();
-    use_last_channel_button.connect_clicked(
-        move |_| preferences::set_use_last_channel(true, true)
-    );
     let  use_default_channel_button = menu_builder.get_object::<gtk::RadioButton>("default_channel").unwrap();
-    use_default_channel_button.connect_clicked(
-        move |_| preferences::set_use_last_channel(false, true)
-    );
     use_default_channel_button.join_group(Some(&use_last_channel_button));
     if preferences::get_use_last_channel() { use_last_channel_button.set_active(true); }
     else { use_default_channel_button.set_active(true); }
+    use_last_channel_button.connect_clicked(
+        move |_| preferences::set_use_last_channel(true, true)
+    );
+    use_default_channel_button.connect_clicked(
+        move |_| preferences::set_use_last_channel(false, true)
+    );
     let default_channel_entry = menu_builder.get_object::<gtk::Entry>("channel_name").unwrap();
     default_channel_entry.set_text(
         &match preferences::get_default_channel() {
