@@ -25,13 +25,16 @@ use std::sync::Mutex;
 use gtk;
 use gtk::prelude::*;
 
+use control_window::ControlWindow;
+use metvcomboboxtext::MeTVComboBoxText;
+use metvcomboboxtext::MeTVComboBoxTextExt;
 use preferences;
 
 lazy_static! {
     static ref PREFERENCES: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
 }
 
-fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Window {
+fn create(control_window: &ControlWindow) -> gtk::Window {
     let menu_builder = gtk::Builder::new_from_string(include_str!("resources/preferences_dialog.glade.xml"));
     let use_opengl_button = menu_builder.get_object::<gtk::CheckButton>("use_opengl").unwrap();
     use_opengl_button.set_active(preferences::get_use_opengl());
@@ -54,28 +57,27 @@ fn create(parent: Option<&gtk::ApplicationWindow>) -> gtk::Window {
     use_default_channel_button.connect_clicked(
         move |_| preferences::set_use_last_channel(false, true)
     );
-    let default_channel_entry = menu_builder.get_object::<gtk::Entry>("channel_name").unwrap();
-    default_channel_entry.set_text(
-        &match preferences::get_default_channel() {
-            Some(channel) => channel,
-            None => String::from(""),
+    let mut default_channel_selector = menu_builder.get_object::<MeTVComboBoxText>("channel_name").unwrap();
+    default_channel_selector.set_new_model(&control_window.channel_names_store);
+    if let Some(channel_name) = preferences::get_default_channel() {
+        if ! default_channel_selector.set_active_text(channel_name) {
+            panic!("Could not set the default channel.");
         }
-    );
-    // TODO Is activate the right signal to use here?
-    default_channel_entry.connect_activate(
-        move |text| preferences::set_default_channel(text.get_text().unwrap(), true)
+    }
+    default_channel_selector.connect_changed(
+        move |selector: &MeTVComboBoxText| preferences::set_default_channel(selector.get_active_text().unwrap(), true)
     );
     let preferences_dialog = menu_builder.get_object::<gtk::Window>("preferences_dialog").unwrap();
-    preferences_dialog.set_transient_for(parent);
+    preferences_dialog.set_transient_for(&control_window.window);
     preferences_dialog.show_all();
     preferences_dialog
 }
 
 /// Display a preferences dialog in a non-modal way, but only if one is not already being displayed.
-pub fn present(parent: Option<&gtk::ApplicationWindow>) {
+pub fn present(control_window: &ControlWindow) {
     if let Ok(active) = PREFERENCES.lock() {
         if ! active.get() {
-            let dialog = create(parent);
+            let dialog = create(control_window);
             dialog.connect_destroy(move |d| {
                 if let Ok(active) = PREFERENCES.lock() {
                     d.destroy();

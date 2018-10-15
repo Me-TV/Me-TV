@@ -22,27 +22,30 @@
 use gtk;
 use gtk::prelude::*;
 
-// TODO Explain why a ComboBoxText cannot be used?
-
-/// Me TV would have problems using ComboBoxText so use a ComboBox but in
-/// the knowledge it is always a single column of strings.
+/// An application specific version of a `ComboBoxText`.
+///
+/// `ComboBoxText` does not seem to allow for using a ready-made model.
+/// Since the idea in this application is to have many rendering of the same model,
+/// the list of available channels, `ComboBox` has to be used. However make it as
+/// much like a ComboBoxText as possible by providing this abstraction.
 pub type MeTVComboBoxText = gtk::ComboBox;
 
 pub trait MeTVComboBoxTextExt {
-    fn new_with_core_model(model: &gtk::ListStore) -> MeTVComboBoxText;
-    fn set_with_core_model(&mut self, model: &gtk::ListStore);
+    fn new_with_model(model: &gtk::ListStore) -> MeTVComboBoxText;
+    fn set_new_model(&mut self, model: &gtk::ListStore);
     fn get_active_text(&self) -> Option<String>;
+    fn set_active_text(&mut self, name: String) -> bool;
 }
 
-impl MeTVComboBoxTextExt  for MeTVComboBoxText {
+impl MeTVComboBoxTextExt for MeTVComboBoxText {
 
-    fn new_with_core_model(model: &gtk::ListStore) -> MeTVComboBoxText {
+    fn new_with_model(model: &gtk::ListStore) -> MeTVComboBoxText {
         let mut combobox = gtk::ComboBox::new();
-        combobox.set_with_core_model(model);
+        combobox.set_new_model(model);
         combobox
     }
 
-    fn set_with_core_model(&mut self, model: &gtk::ListStore) {
+    fn set_new_model(&mut self, model: &gtk::ListStore) {
         self.set_model(model);
         let renderer = gtk::CellRendererText::new();
         self.pack_start(&renderer, true);
@@ -60,8 +63,34 @@ impl MeTVComboBoxTextExt  for MeTVComboBoxText {
                     None => None,
                 }
             },
-            None => None,
+            None => panic!("Could not get the model."),
         }
+    }
+
+    fn set_active_text(&mut self, target_name: String) -> bool {
+        match self.get_model() {
+            Some(model) => {
+                match model.get_iter_first() {
+                    Some(iterator) => {
+                        loop {
+                            if let Some(name) = model.get_value(&iterator, 0).get::<String>() {
+                                if target_name == name {
+                                    self.set_active_iter(Some(&iterator));
+                                    return true;
+                                }
+                            } else {
+                                break
+                            }
+                            if ! model.iter_next(&iterator) { break }
+                        };
+                        false
+                    },
+                    None => panic!("Could not get an iterator."),
+                }
+            },
+            None => panic!("Could not get the model.")
+        }
+
     }
 
 }
@@ -81,16 +110,18 @@ mod tests {
     }
 
     #[test]
-    fn get_active_text() {
-        gtk::init().unwrap();
+    fn various_tests() {
+        match gtk::init() {
+            Ok(_) => (),
+            Err(_) => panic!("Could not initialise GTK"),
+        }
         let store = gtk::ListStore::new(&[String::static_type()]);
-        let thingy = MeTVComboBoxText::new();
-        thingy.set_model(&store);
+        let mut thingy = MeTVComboBoxText::new_with_model(&store);
         thingy.set_active(1); // TODO Should this fail in some way?
         assert_eq!(thingy.get_active_text(), None);
 
         let store = create_test_model();
-        thingy.set_model(&store);
+        thingy.set_new_model(&store);
         thingy.set_active(0);
         assert_eq!(thingy.get_active_text().unwrap(), "fred");
 
@@ -99,6 +130,16 @@ mod tests {
 
         thingy.set_active(1);
         assert_eq!(thingy.get_active_text().unwrap(), "jane");
+
+        let mut another_thingy = MeTVComboBoxText::new_with_model(&store);
+
+        let target = "jo".to_string();
+        assert_eq!(another_thingy.set_active_text(target.clone()), true);
+        assert_eq!(another_thingy.get_active_text().unwrap(), target);
+
+        let target = "jane".to_string();
+        assert_eq!(another_thingy.set_active_text(target.clone()), true);
+        assert_eq!(another_thingy.get_active_text().unwrap(), target);
     }
 
 }
