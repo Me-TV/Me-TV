@@ -572,7 +572,7 @@ dependencies = [
 
 [[package]]
 name = "me-tv"
-version = "3.0.1"
+version = "3.0.2"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-preview 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
