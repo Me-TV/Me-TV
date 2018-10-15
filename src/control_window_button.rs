@@ -57,7 +57,7 @@ impl ControlWindowButton {
         let frontend_button = gtk::ToggleButton::new_with_label(
             format!("adaptor{}\nfrontend{}", frontend_id.adapter, frontend_id.frontend).as_ref()
         );
-        let channel_selector = MeTVComboBoxText::new_with_model(&control_window.channel_names_store);
+        let channel_selector = MeTVComboBoxText::new_and_set_model(&control_window.channel_names_store);
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);

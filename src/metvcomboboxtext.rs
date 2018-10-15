@@ -31,7 +31,7 @@ use gtk::prelude::*;
 pub type MeTVComboBoxText = gtk::ComboBox;
 
 pub trait MeTVComboBoxTextExt {
-    fn new_with_model(model: &gtk::ListStore) -> MeTVComboBoxText;
+    fn new_and_set_model(model: &gtk::ListStore) -> MeTVComboBoxText;
     fn set_new_model(&mut self, model: &gtk::ListStore);
     fn get_active_text(&self) -> Option<String>;
     fn set_active_text(&mut self, name: String) -> bool;
@@ -39,7 +39,7 @@ pub trait MeTVComboBoxTextExt {
 
 impl MeTVComboBoxTextExt for MeTVComboBoxText {
 
-    fn new_with_model(model: &gtk::ListStore) -> MeTVComboBoxText {
+    fn new_and_set_model(model: &gtk::ListStore) -> MeTVComboBoxText {
         let mut combobox = gtk::ComboBox::new();
         combobox.set_new_model(model);
         combobox
@@ -116,7 +116,7 @@ mod tests {
             Err(_) => panic!("Could not initialise GTK"),
         }
         let store = gtk::ListStore::new(&[String::static_type()]);
-        let mut thingy = MeTVComboBoxText::new_with_model(&store);
+        let mut thingy = MeTVComboBoxText::new_and_set_model(&store);
         thingy.set_active(1); // TODO Should this fail in some way?
         assert_eq!(thingy.get_active_text(), None);
 
@@ -131,7 +131,7 @@ mod tests {
         thingy.set_active(1);
         assert_eq!(thingy.get_active_text().unwrap(), "jane");
 
-        let mut another_thingy = MeTVComboBoxText::new_with_model(&store);
+        let mut another_thingy = MeTVComboBoxText::new_and_set_model(&store);
 
         let target = "jo".to_string();
         assert_eq!(another_thingy.set_active_text(target.clone()), true);

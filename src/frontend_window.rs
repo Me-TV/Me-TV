@@ -71,7 +71,7 @@ impl FrontendWindow {
             let w = window.clone();
             move |_| { w.fullscreen(); }
         });
-        let channel_selector = MeTVComboBoxText::new_with_model(&control_window_button.control_window.channel_names_store);
+        let channel_selector = MeTVComboBoxText::new_and_set_model(&control_window_button.control_window.channel_names_store);
         channel_selector.set_active(control_window_button.channel_selector.get_active());
         channel_selector.connect_changed({
             let c_w_b = control_window_button.clone();
