@@ -228,6 +228,7 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                         if target_channel_name.is_empty() {
                             display_an_error_dialog(Some(&c_w_b.control_window.window), "The channel is the empty string and cannot be tuned to.");
                         } else {
+                            // TODO What to do if None is returned?
                             if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
                                 loop {
                                     if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>() {
