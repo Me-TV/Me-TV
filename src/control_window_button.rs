@@ -57,11 +57,11 @@ impl ControlWindowButton {
         let frontend_button = gtk::ToggleButton::new_with_label(
             format!("adaptor{}\nfrontend{}", frontend_id.adapter, frontend_id.frontend).as_ref()
         );
-        let channel_selector = MeTVComboBoxText::new_with_core_model(&control_window.channel_names_store);
+        let channel_selector = MeTVComboBoxText::new_with_model(&control_window.channel_names_store);
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
-        let cwb = Rc::new(ControlWindowButton {
+        let control_window_button = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             frontend_id,
             widget,
@@ -69,23 +69,22 @@ impl ControlWindowButton {
             channel_selector,
             frontend_window: RefCell::new(None),
         });
-        cwb.reset_active_channel();
-        cwb.channel_selector.connect_changed({
-            let c_w_b = cwb.clone();
+        control_window_button.reset_active_channel();
+        control_window_button.channel_selector.connect_changed({
+            let c_w_b = control_window_button.clone();
             move |_| Self::on_channel_changed(&c_w_b, c_w_b.channel_selector.get_active())
         });
-        cwb.frontend_button.connect_toggled({
-            let c_w_b = cwb.clone();
+        control_window_button.frontend_button.connect_toggled({
+            let c_w_b = control_window_button.clone();
             move |_| {
                 if c_w_b.control_window.is_channels_store_loaded() {
                     Self::toggle_button(&c_w_b);
                 } else {
                     display_an_error_dialog(Some(&c_w_b.control_window.window), "No channel file, so no channel list, so cannot play a channel.");
-                    //button.set_active(false); // TODO causes the reissuing of the signal. :-(
                 }
             }
         });
-        cwb
+        control_window_button
     }
 
     /// Set the active channel to 0.
