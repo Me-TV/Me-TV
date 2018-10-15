@@ -97,7 +97,7 @@ fn main() {
         let preferences_action = gio::SimpleAction::new("preferences", None);
         preferences_action.connect_activate({
             let c_w = control_window.clone();
-            move |_, _| preferences_dialog::present(Some(&c_w.window))
+            move |_, _| preferences_dialog::present(&c_w)
         });
         app.add_action(&preferences_action);
         let about_action = gio::SimpleAction::new("about", None);
