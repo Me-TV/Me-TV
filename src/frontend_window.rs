@@ -71,7 +71,7 @@ impl FrontendWindow {
             let w = window.clone();
             move |_| { w.fullscreen(); }
         });
-        let channel_selector = MeTVComboBoxText::new_with_core_model(&control_window_button.control_window.channel_names_store);
+        let channel_selector = MeTVComboBoxText::new_with_model(&control_window_button.control_window.channel_names_store);
         channel_selector.set_active(control_window_button.channel_selector.get_active());
         channel_selector.connect_changed({
             let c_w_b = control_window_button.clone();
@@ -92,8 +92,8 @@ impl FrontendWindow {
             }
         });
         let fullscreen_volume_button = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
-        let mut fullscreen_channel_selector: MeTVComboBoxText = fullscreen_toolbar_builder.get_object::<gtk::ComboBox>("fullscreen_channel_selector").unwrap();
-        fullscreen_channel_selector.set_with_core_model(&control_window_button.control_window.channel_names_store);
+        let mut fullscreen_channel_selector = fullscreen_toolbar_builder.get_object::<MeTVComboBoxText>("fullscreen_channel_selector").unwrap();
+        fullscreen_channel_selector.set_new_model(&control_window_button.control_window.channel_names_store);
         fullscreen_channel_selector.set_active(control_window_button.channel_selector.get_active());
         fullscreen_channel_selector.connect_changed({
             let c_w_b = control_window_button.clone();
