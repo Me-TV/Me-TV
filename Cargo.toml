@@ -13,8 +13,8 @@ futures-preview = "*"
 #gdk = "*"
 #gdk-pixbuf = "*"
 #gio = "*"
-#glib = {version="*", features=["v2_40"]}
-#gtk = {version="*", features=["v3_10"]}
+#glib = {version="*", features=["v2_48"]}
+#gtk = {version="*", features=["v3_18"]}
 #
 gdk = {git="https://github.com/gtk-rs/gdk.git"}
 gdk-pixbuf = {git="https://github.com/gtk-rs/gdk-pixbuf.git"}
