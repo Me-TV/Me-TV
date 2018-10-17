@@ -1,6 +1,7 @@
-language: rust
-
 sudo: true
+dist: xenial
+
+language: rust
 
 before_script:
   - sudo apt-get -qq update
