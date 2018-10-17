@@ -23,7 +23,7 @@ on GitHub.
 
 ## Building
 
-_It is assumed you have GTK+3 3.10.0 or later and GStreamer 1.12.0 or later already installed._
+_It is assumed you have GTK+3 3.18.0 or later and GStreamer 1.12.0 or later already installed._
 
 _For building Me TV you need the development packages installed, not just the library packages. So on Debian the
 libgtk-3-dev and the libgstreamer1.0-dev packages._
