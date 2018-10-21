@@ -69,7 +69,10 @@ impl FrontendWindow {
         fullscreen_button.set_image(&gtk::Image::new_from_icon_name("view-fullscreen-symbolic", gtk::IconSize::Button.into()));
         fullscreen_button.connect_clicked({
             let w = window.clone();
-            move |_| { w.fullscreen(); }
+            move |_| {
+                Self::hide_cursor(&w);
+                w.fullscreen();
+            }
         });
         let channel_selector = MeTVComboBoxText::new_and_set_model(&control_window_button.control_window.channel_names_store);
         channel_selector.set_active(control_window_button.channel_selector.get_active());
@@ -89,6 +92,7 @@ impl FrontendWindow {
             move |_| {
                 f_t.hide();
                 w.unfullscreen();
+                Self::show_cursor(&w);
             }
         });
         let fullscreen_volume_button = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
@@ -124,11 +128,20 @@ impl FrontendWindow {
             move |_, _| {
                 if w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
                     f_t.show();
+                    Self::show_cursor(&w);
                 }
+                // TODO Need to handle the control bar timeout better.
+                //  If any of the widgets on the control bar are active then there should
+                //  should be no hiding of the control bar. Should rehide mouse after activity.
+                //
+                // See  https://github.com/Me-TV/Me-TV/issues/19
+                //  and https://github.com/Me-TV/Me-TV/issues/18
                 gtk::timeout_add_seconds(5, {
+                    let ww = w.clone();
                     let ft = f_t.clone();
                     move || {
                         ft.hide();
+                        Self::hide_cursor(&ww);
                         Continue(false)
                     }
                 });
@@ -144,6 +157,7 @@ impl FrontendWindow {
                 if key.get_keyval() == gdk::enums::key::Escape {
                     f_t.hide();
                     w.unfullscreen();
+                    Self::show_cursor(&w);
                 }
                 Inhibit(false)
             }
@@ -193,5 +207,13 @@ impl FrontendWindow {
         }
         self.window.hide();
         self.engine.stop();
+    }
+
+    fn hide_cursor(window: &gtk::ApplicationWindow) {
+        window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "none")));
+    }
+
+    fn show_cursor(window: &gtk::ApplicationWindow) {
+        window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "default")));
     }
 }
