@@ -21,6 +21,8 @@
 
 use std::rc::Rc;
 
+use glib;
+use glib::prelude::*;
 use gdk;
 use gdk::prelude::*;
 use gtk;
@@ -70,7 +72,7 @@ impl FrontendWindow {
         fullscreen_button.connect_clicked({
             let w = window.clone();
             move |_| {
-                Self::hide_cursor(&w);
+                hide_cursor(&w);
                 w.fullscreen();
             }
         });
@@ -92,7 +94,7 @@ impl FrontendWindow {
             move |_| {
                 f_t.hide();
                 w.unfullscreen();
-                Self::show_cursor(&w);
+                show_cursor(&w);
             }
         });
         let fullscreen_volume_button = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
@@ -123,27 +125,38 @@ impl FrontendWindow {
         video_overlay.add_overlay(&fullscreen_toolbar);
         video_overlay.add_events(gdk::EventMask::POINTER_MOTION_MASK);
         video_overlay.connect_motion_notify_event({
-            let w = window.clone();
+            let a_w = window.clone();
             let f_t = fullscreen_toolbar.clone();
+            let f_c_s = fullscreen_channel_selector.clone();
+            let f_v_b = fullscreen_volume_button.clone();
             move |_, _| {
-                if w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
+                if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
                     f_t.show();
-                    Self::show_cursor(&w);
+                    show_cursor(&a_w);
                 }
-                // TODO Need to handle the control bar timeout better.
-                //  If any of the widgets on the control bar are active then there should
-                //  should be no hiding of the control bar. Should rehide mouse after activity.
-                //
-                // See  https://github.com/Me-TV/Me-TV/issues/19
-                //  and https://github.com/Me-TV/Me-TV/issues/18
-                gtk::timeout_add_seconds(5, {
-                    let ww = w.clone();
-                    let ft = f_t.clone();
-                    move || {
+                // TODO Need to handle the control bar timeout better. See  https://github.com/Me-TV/Me-TV/issues/19
+                fn timeout_check(aw: &gtk::ApplicationWindow, ft: &gtk::Toolbar, fcs: &MeTVComboBoxText, fvb: &gtk::VolumeButton) -> glib::Continue {
+                    // TODO This doesn't appear to do what the label indicates it might do. :-(
+                    if fcs.has_focus() || fcs.is_focus() || fvb.has_focus() || fvb.is_focus() {
+                        gtk::timeout_add_seconds(5, {
+                            let aw_ = aw.clone();
+                            let ft_ = ft.clone();
+                            let fcs_ = fcs.clone();
+                            let fvb_ = fvb.clone();
+                            move ||{ timeout_check(&aw_, &ft_, &fcs_, &fvb_) }
+                        });
+                    } else {
                         ft.hide();
-                        Self::hide_cursor(&ww);
-                        Continue(false)
+                        hide_cursor(&aw);
                     }
+                    Continue(false)
+                };
+                gtk::timeout_add_seconds(5, {
+                    let aw = a_w.clone();
+                    let ft = f_t.clone();
+                    let fcs = f_c_s.clone();
+                    let fvb = f_v_b.clone();
+                    move || { timeout_check(&aw, &ft, &fcs, &fvb) }
                 });
                 Inhibit(false)
             }
@@ -157,7 +170,7 @@ impl FrontendWindow {
                 if key.get_keyval() == gdk::enums::key::Escape {
                     f_t.hide();
                     w.unfullscreen();
-                    Self::show_cursor(&w);
+                    show_cursor(&w);
                 }
                 Inhibit(false)
             }
@@ -209,11 +222,12 @@ impl FrontendWindow {
         self.engine.stop();
     }
 
-    fn hide_cursor(window: &gtk::ApplicationWindow) {
-        window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "none")));
-    }
+}
 
-    fn show_cursor(window: &gtk::ApplicationWindow) {
-        window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "default")));
-    }
+fn hide_cursor(window: &gtk::ApplicationWindow) {
+    window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "none")));
+}
+
+fn show_cursor(window: &gtk::ApplicationWindow) {
+    window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "default")));
 }
