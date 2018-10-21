@@ -72,7 +72,7 @@ impl GStreamerEngine {
                 gst::MessageView::Error(error) => {
                     display_an_error_dialog(
                         Some(&application_for_bus_watch.get_windows()[0]),
-                        &(String::from("There was an error reported on the GStreamer bus.\n\n") + &format!("{}", error.get_error()))
+                        &format!("There was an error reported on the GStreamer bus.\n\n'{}'\n\nBest bet is to close this channel window and start a new one from the control window.", error.get_error())
                     );
                 },
                 _ => (),
