@@ -133,31 +133,33 @@ impl FrontendWindow {
                 if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
                     f_t.show();
                     show_cursor(&a_w);
+                    // TODO Need to handle the control bar timeout better. See  https://github.com/Me-TV/Me-TV/issues/19
+                    fn timeout_check(aw: &gtk::ApplicationWindow, ft: &gtk::Toolbar, fcs: &MeTVComboBoxText, fvb: &gtk::VolumeButton) -> glib::Continue {
+                        // TODO This doesn't appear to do what the label indicates it might do. :-(
+                        if fcs.has_focus() || fcs.is_focus() || fvb.has_focus() || fvb.is_focus() {
+                            gtk::timeout_add_seconds(5, {
+                                let aw_ = aw.clone();
+                                let ft_ = ft.clone();
+                                let fcs_ = fcs.clone();
+                                let fvb_ = fvb.clone();
+                                move || { timeout_check(&aw_, &ft_, &fcs_, &fvb_) }
+                            });
+                        } else {
+                            if aw.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
+                                ft.hide();
+                                hide_cursor(&aw);
+                            }
+                        }
+                        Continue(false)
+                    };
+                    gtk::timeout_add_seconds(5, {
+                        let aw = a_w.clone();
+                        let ft = f_t.clone();
+                        let fcs = f_c_s.clone();
+                        let fvb = f_v_b.clone();
+                        move || { timeout_check(&aw, &ft, &fcs, &fvb) }
+                    });
                 }
-                // TODO Need to handle the control bar timeout better. See  https://github.com/Me-TV/Me-TV/issues/19
-                fn timeout_check(aw: &gtk::ApplicationWindow, ft: &gtk::Toolbar, fcs: &MeTVComboBoxText, fvb: &gtk::VolumeButton) -> glib::Continue {
-                    // TODO This doesn't appear to do what the label indicates it might do. :-(
-                    if fcs.has_focus() || fcs.is_focus() || fvb.has_focus() || fvb.is_focus() {
-                        gtk::timeout_add_seconds(5, {
-                            let aw_ = aw.clone();
-                            let ft_ = ft.clone();
-                            let fcs_ = fcs.clone();
-                            let fvb_ = fvb.clone();
-                            move ||{ timeout_check(&aw_, &ft_, &fcs_, &fvb_) }
-                        });
-                    } else {
-                        ft.hide();
-                        hide_cursor(&aw);
-                    }
-                    Continue(false)
-                };
-                gtk::timeout_add_seconds(5, {
-                    let aw = a_w.clone();
-                    let ft = f_t.clone();
-                    let fcs = f_c_s.clone();
-                    let fvb = f_v_b.clone();
-                    move || { timeout_check(&aw, &ft, &fcs, &fvb) }
-                });
                 Inhibit(false)
             }
         });
