@@ -122,9 +122,9 @@ impl GStreamerEngine {
                 Some(&application_clone.borrow().get_windows()[0]),
                 "Since the GStreamer system could not be initialised\nMe TV cannot work as required and so is quitting."
             );
-            application_clone.borrow().quit(); // TODO Is it right to quit at this point?
+            application_clone.borrow().quit();
             assert_eq!("Why has the application not quit?", "");
-            // TODO Why is this not quitting but terminating due to teh assertion failure?
+            // TODO Why is this not quitting but terminating due to the assertion failure?
         }
         let engine = GStreamerEngine {
             playbin,

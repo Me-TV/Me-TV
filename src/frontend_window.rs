@@ -19,9 +19,11 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::cell::Cell;
 use std::rc::Rc;
+use std::sync::Mutex;
 
-use glib;
+// use glib;
 use glib::prelude::*;
 use gdk;
 use gdk::prelude::*;
@@ -33,6 +35,8 @@ use control_window_button::ControlWindowButton;
 use gstreamer_engine::GStreamerEngine;
 use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
 use preferences;
+
+lazy_static! { static ref TIMEOUT_COUNT: Mutex<Cell<u32>> = Mutex::new(Cell::new(0)); }
 
 pub struct FrontendWindow {
     control_window_button: Rc<ControlWindowButton>,
@@ -87,6 +91,9 @@ impl FrontendWindow {
         let volume_button = gtk::VolumeButton::new();
         let fullscreen_toolbar_builder = gtk::Builder::new_from_string(include_str!("resources/frontend_window_fullscreen_toolbar.glade.xml"));
         let fullscreen_toolbar = fullscreen_toolbar_builder.get_object::<gtk::Toolbar>("fullscreen_control_toolbar").unwrap();
+        fullscreen_toolbar.set_halign(gtk::Align::Baseline);
+        fullscreen_toolbar.set_valign(gtk::Align::Start);
+        fullscreen_toolbar.hide();
         let fullscreen_unfullscreen_button = fullscreen_toolbar_builder.get_object::<gtk::Button>("fullscreen_unfullscreen_button").unwrap();
         fullscreen_unfullscreen_button.connect_clicked({
             let w = window.clone();
@@ -119,50 +126,7 @@ impl FrontendWindow {
         let video_overlay = gtk::Overlay::new();
         video_overlay.add(&engine.video_widget);
         video_overlay.show_all();
-        fullscreen_toolbar.set_halign(gtk::Align::Baseline);
-        fullscreen_toolbar.set_valign(gtk::Align::Start);
-        fullscreen_toolbar.hide();
         video_overlay.add_overlay(&fullscreen_toolbar);
-        video_overlay.add_events(gdk::EventMask::POINTER_MOTION_MASK);
-        video_overlay.connect_motion_notify_event({
-            let a_w = window.clone();
-            let f_t = fullscreen_toolbar.clone();
-            let f_c_s = fullscreen_channel_selector.clone();
-            let f_v_b = fullscreen_volume_button.clone();
-            move |_, _| {
-                if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
-                    f_t.show();
-                    show_cursor(&a_w);
-                    // TODO Need to handle the control bar timeout better. See  https://github.com/Me-TV/Me-TV/issues/19
-                    fn timeout_check(aw: &gtk::ApplicationWindow, ft: &gtk::Toolbar, fcs: &MeTVComboBoxText, fvb: &gtk::VolumeButton) -> glib::Continue {
-                        // TODO This doesn't appear to do what the label indicates it might do. :-(
-                        if fcs.has_focus() || fcs.is_focus() || fvb.has_focus() || fvb.is_focus() {
-                            gtk::timeout_add_seconds(5, {
-                                let aw_ = aw.clone();
-                                let ft_ = ft.clone();
-                                let fcs_ = fcs.clone();
-                                let fvb_ = fvb.clone();
-                                move || { timeout_check(&aw_, &ft_, &fcs_, &fvb_) }
-                            });
-                        } else {
-                            if aw.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
-                                ft.hide();
-                                hide_cursor(&aw);
-                            }
-                        }
-                        Continue(false)
-                    };
-                    gtk::timeout_add_seconds(5, {
-                        let aw = a_w.clone();
-                        let ft = f_t.clone();
-                        let fcs = f_c_s.clone();
-                        let fvb = f_v_b.clone();
-                        move || { timeout_check(&aw, &ft, &fcs, &fvb) }
-                    });
-                }
-                Inhibit(false)
-            }
-        });
         window.add(&video_overlay);
         window.add_events(gdk::EventMask::KEY_PRESS_MASK);
         window.connect_key_press_event({
@@ -173,6 +137,42 @@ impl FrontendWindow {
                     f_t.hide();
                     w.unfullscreen();
                     show_cursor(&w);
+                }
+                Inhibit(false)
+            }
+        });
+        window.add_events(gdk::EventMask::POINTER_MOTION_MASK);
+        window.connect_motion_notify_event({
+            let a_w = window.clone();
+            let f_t = fullscreen_toolbar.clone();
+            move |_, _| {
+                show_cursor(&a_w);
+                if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
+                    f_t.show();
+                    gtk::timeout_add_seconds(5, {
+                        if let Ok(timeout_count) = TIMEOUT_COUNT.lock() {
+                            timeout_count.set(timeout_count.get() + 1);
+                        }
+                        let aw = a_w.clone();
+                        let ft = f_t.clone();
+                        move || {
+                            let mut value = 0;
+                            if let Ok(timeout_count) = TIMEOUT_COUNT.lock() {
+                                value = timeout_count.get();
+                                if value > 0 {
+                                    value = value - 1;
+                                    timeout_count.set(value);
+                                }
+                            }
+                            if value == 0 {
+                                if aw.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
+                                    ft.hide();
+                                    hide_cursor(&aw);
+                                }
+                            }
+                            Continue(false)
+                        }
+                    });
                 }
                 Inhibit(false)
             }
