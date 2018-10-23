@@ -416,7 +416,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.13.0"
-source = "git+https://github.com/sdroege/gstreamer-rs.git#fd2776f0b0c25b58fdbabd0dac004d78b4474994"
+source = "git+https://github.com/sdroege/gstreamer-rs.git#ff6b09d3019116da27674c490409c1abe99e5737"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -572,7 +572,7 @@ dependencies = [
 
 [[package]]
 name = "me-tv"
-version = "3.0.3-snapshot"
+version = "3.0.3"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-preview 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
