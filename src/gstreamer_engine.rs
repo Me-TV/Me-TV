@@ -61,7 +61,6 @@ impl GStreamerEngine {
                 let playbin = values[0].get::<gst::Element>().expect("Could not retrieve a handle on the playbin Element");
                 let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
                 if element.get_type().name() == "GstDvbSrc" {
-                    // TODO There must be an easier way of doing this.
                     let adapter_number = element
                         .get_property("adapter").expect("Could not retrieve adapter number Value")
                         .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
@@ -69,11 +68,9 @@ impl GStreamerEngine {
                         .get_property("frontend").expect("Could not retrieve frontend number Value.")
                         .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
                     if adapter_number != fei.adapter {
-                        println!("Setting adapter from {} to {}.", &adapter_number, &fei.adapter);
                         element.set_property("adapter", &(fei.adapter as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
                     }
                     if frontend_number != fei.frontend {
-                        println!("Setting frontend from {} to {}.", &frontend_number, &fei.frontend);
                         element.set_property("frontend", &(fei.frontend as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
                     }
                 }
