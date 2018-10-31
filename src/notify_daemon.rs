@@ -42,8 +42,8 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
     let regex = Regex::new(r"/dev/dvb/adapter([0-9]+)/frontend([0-9]+)").unwrap();
     if regex.is_match(&path) {
         let captures = regex.captures(path).unwrap();
-        let adapter_number = u16::from_str_radix(&captures[1], 10).unwrap();
-        let frontend_number= u16::from_str_radix(&captures[2], 10).unwrap();
+        let adapter_number = u8::from_str_radix(&captures[1], 10).unwrap();
+        let frontend_number= u8::from_str_radix(&captures[2], 10).unwrap();
         Some(FrontendId{adapter: adapter_number, frontend: frontend_number})
     } else {
         None
