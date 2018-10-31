@@ -32,8 +32,8 @@ use notify_daemon;
 /// available on the system.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrontendId {
-    pub adapter: u16,
-    pub frontend: u16,
+    pub adapter: u8,
+    pub frontend: u8,
 }
 
 /// An enumeration of all the message types that  can be sent by
@@ -47,7 +47,7 @@ pub enum Message {
 pub fn dvb_base_path() -> PathBuf { PathBuf::from("/dev/dvb") }
 
 /// Return the path to the adapter director for a given adapter.
-pub fn adapter_path(id: u16) -> PathBuf {
+pub fn adapter_path(id: u8) -> PathBuf {
     let mut result = dvb_base_path();
     result.push("adapter".to_string() + &id.to_string());
     result
@@ -76,7 +76,7 @@ pub fn dvr_path(fei: &FrontendId) -> PathBuf {
 
 /// Process a newly present adapter to inform the control window of all the frontends
 /// newly accessible.
-fn add_frontends(to_cw: &mut Sender<Message>, id: u16) {
+fn add_frontends(to_cw: &mut Sender<Message>, id: u8) {
     let mut fei = FrontendId{adapter: id, frontend: 0};
     loop {
         // TODO Is it worth doing the check for special file or just check for existence.
