@@ -60,18 +60,20 @@ impl GStreamerEngine {
             move |values| {
                 let playbin = values[0].get::<gst::Element>().expect("Could not retrieve a handle on the playbin Element");
                 let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
-                if element.get_type().name() == "GstDvbSrc" {
-                    let adapter_number = element
-                        .get_property("adapter").expect("Could not retrieve adapter number Value")
-                        .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
-                    let frontend_number = element
-                        .get_property("frontend").expect("Could not retrieve frontend number Value.")
-                        .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
-                    if adapter_number != fei.adapter {
-                        element.set_property("adapter", &(fei.adapter as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
-                    }
-                    if frontend_number != fei.frontend {
-                        element.set_property("frontend", &(fei.frontend as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
+                if let Some(element_factory) = element.get_factory() {
+                    if element_factory.get_name() == "dvbsrc" {
+                        let adapter_number = element
+                            .get_property("adapter").expect("Could not retrieve adapter number Value")
+                            .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
+                        let frontend_number = element
+                            .get_property("frontend").expect("Could not retrieve frontend number Value.")
+                            .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
+                        if adapter_number != fei.adapter {
+                            element.set_property("adapter", &(fei.adapter as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
+                        }
+                        if frontend_number != fei.frontend {
+                            element.set_property("frontend", &(fei.frontend as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
+                        }
                     }
                 }
                 None
