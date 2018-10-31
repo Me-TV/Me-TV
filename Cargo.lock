@@ -433,7 +433,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-sys"
 version = "0.7.0"
-source = "git+https://github.com/sdroege/gstreamer-sys#f9ff027a64350d9c86eba14b6f2d5132703b05d3"
+source = "git+https://github.com/sdroege/gstreamer-sys#bfba540f71de938251e762e185802ece80a5c59f"
 dependencies = [
  "glib-sys 0.7.0 (git+https://github.com/gtk-rs/sys)",
  "gobject-sys 0.7.0 (git+https://github.com/gtk-rs/sys)",
