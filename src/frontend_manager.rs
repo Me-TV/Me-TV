@@ -123,25 +123,25 @@ mod tests {
     use super::*;
 
     quickcheck! {
-        fn adapter_path_is_correct(id: u16) -> bool {
+        fn adapter_path_is_correct(id: u8) -> bool {
             adapter_path(id).to_str().unwrap() == format!("/dev/dvb/adapter{}", id)
         }
     }
 
     quickcheck! {
-        fn frontend_path_is_correct(a: u16, f: u16) -> bool {
+        fn frontend_path_is_correct(a: u8, f: u8) -> bool {
             frontend_path(&FrontendId{adapter: a, frontend: f}).to_str().unwrap() == format!("/dev/dvb/adapter{}/frontend{}", a, f)
         }
     }
 
     quickcheck! {
-        fn demux_path_is_correct(a: u16, f: u16) -> bool {
+        fn demux_path_is_correct(a: u8, f: u8) -> bool {
             demux_path(&FrontendId{adapter: a, frontend: f}).to_str().unwrap() == format!("/dev/dvb/adapter{}/demux{}", a, f)
         }
     }
 
     quickcheck! {
-        fn dvr_path_is_correct(a: u16, f: u16) -> bool {
+        fn dvr_path_is_correct(a: u8, f: u8) -> bool {
             dvr_path(&FrontendId{adapter: a, frontend: f}).to_str().unwrap() == format!("/dev/dvb/adapter{}/dvr{}", a, f)
         }
     }

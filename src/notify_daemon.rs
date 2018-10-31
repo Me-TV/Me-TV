@@ -91,13 +91,13 @@ mod tests {
     use super::*;
 
     quickcheck! {
-        fn check_frontend_id_from_with_correct_structure(adapter: u16, frontend: u16) -> bool {
+        fn check_frontend_id_from_with_correct_structure(adapter: u8, frontend: u8) -> bool {
             Some(FrontendId{adapter: adapter, frontend: frontend}) == frontend_id_from(&format!("/dev/dvb/adapter{}/frontend{}", adapter, frontend))
         }
     }
 
     quickcheck! {
-        fn check_frontend_id_from_with_incorrect_structure(prefix: String, postfix: String, adapter: u16, frontend: u16) -> bool {
+        fn check_frontend_id_from_with_incorrect_structure(prefix: String, postfix: String, adapter: u8, frontend: u8) -> bool {
             None == frontend_id_from(&format!("{}/adapter{}/frontend{}{}", prefix, adapter, frontend, postfix))
          }
     }
