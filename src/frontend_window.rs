@@ -58,7 +58,7 @@ impl FrontendWindow {
 
     pub fn new(control_window_button: &Rc<ControlWindowButton>) -> Rc<FrontendWindow> {
         let application = control_window_button.control_window.window.get_application().unwrap();
-        let engine = GStreamerEngine::new(&application);
+        let engine = GStreamerEngine::new(&application, &control_window_button.frontend_id);
         let window = gtk::ApplicationWindow::new(&application);
         window.set_title("Me TV");
         window.set_default_size(480, 270);
@@ -145,6 +145,8 @@ impl FrontendWindow {
         window.connect_motion_notify_event({
             let a_w = window.clone();
             let f_t = fullscreen_toolbar.clone();
+            // TODO Why is there no mouse motion event triggered when moving the mouse
+            // over the channel list ComboBox drop down.
             move |_, _| {
                 show_cursor(&a_w);
                 if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {

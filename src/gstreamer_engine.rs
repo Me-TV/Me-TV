@@ -34,6 +34,7 @@ use gst::prelude::*;
 use send_cell::SendCell;
 
 use dialogs::display_an_error_dialog;
+use frontend_manager::FrontendId;
 use preferences;
 
 // Cannot use GL stuff on Nouveau, so it is important to know if this is running on a Nouveau system.
@@ -52,8 +53,33 @@ pub struct GStreamerEngine {
 
 impl GStreamerEngine {
 
-    pub fn new(application: &gtk::Application) -> GStreamerEngine {
+    pub fn new(application: &gtk::Application, frontend_id: &FrontendId) -> GStreamerEngine {
         let playbin = gst::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
+        playbin.connect("element-setup",  false, {
+            let fei = frontend_id.clone();
+            move |values| {
+                let playbin = values[0].get::<gst::Element>().expect("Could not retrieve a handle on the playbin Element");
+                let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
+                if element.get_type().name() == "GstDvbSrc" {
+                    // TODO There must be an easier way of doing this.
+                    let adapter_number = element
+                        .get_property("adapter").expect("Could not retrieve adapter number Value")
+                        .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
+                    let frontend_number = element
+                        .get_property("frontend").expect("Could not retrieve frontend number Value.")
+                        .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
+                    if adapter_number != fei.adapter {
+                        println!("Setting adapter from {} to {}.", &adapter_number, &fei.adapter);
+                        element.set_property("adapter", &(fei.adapter as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
+                    }
+                    if frontend_number != fei.frontend {
+                        println!("Setting frontend from {} to {}.", &frontend_number, &fei.frontend);
+                        element.set_property("frontend", &(fei.frontend as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
+                    }
+                }
+                None
+            }
+        }).expect("Could not connect a handler to the element-setup signal.");
         let bus = playbin.get_bus().unwrap();
         // The compiler cannot determine that the bus watch callback will be executed by the same thread that
         // the gtk::Application object is created with, which must be the case, and so fails to compile unless we
@@ -128,11 +154,11 @@ impl GStreamerEngine {
         }
         let engine = GStreamerEngine {
             playbin,
-            video_element: video_element.expect("'video_element' is not None so this cannot happen."),
+            video_element: video_element.expect("'video_element' is not None, this cannot happen."),
             video_widget: video_widget.expect("'video_widget is not None, this cannot happen."),
         };
-        engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
         engine.video_element.set_property("force-aspect-ratio", &true.to_value()).expect("Could not set 'force-aspect-ration' property");
+        engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
         engine.set_subtitles_showing(false);
         engine
     }
@@ -152,7 +178,12 @@ impl GStreamerEngine {
 
     pub fn play(&self) {
         let rv = self.playbin.set_state(gst::State::Playing);
-        assert_ne!(rv,  gst::StateChangeReturn::Failure, "could not set play state, try 'GST_DEBUG=3 me-tv' to see why.");
+        if rv == gst::StateChangeReturn::Failure {
+            display_an_error_dialog(
+                Some(&(self.video_widget.get_toplevel().unwrap().downcast::<gtk::Window>().unwrap())),
+                "Could not set play state, perhaps the aerial isn't connected?\n\nTry running with 'GST_DEBUG=3 me-tv' for details."
+            );
+        }
     }
 
     pub fn stop(&self) {
