@@ -128,11 +128,10 @@ impl FrontendWindow {
         video_overlay.show_all();
         video_overlay.add_overlay(&fullscreen_toolbar);
         window.add(&video_overlay);
-        window.add_events(gdk::EventMask::KEY_PRESS_MASK);
+        window.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
         window.connect_key_press_event({
-            let w = window.clone();
             let f_t = fullscreen_toolbar.clone();
-            move |_, key| {
+            move |w, key| {
                 if key.get_keyval() == gdk::enums::key::Escape {
                     f_t.hide();
                     w.unfullscreen();
@@ -141,13 +140,9 @@ impl FrontendWindow {
                 Inhibit(false)
             }
         });
-        window.add_events(gdk::EventMask::POINTER_MOTION_MASK);
-        window.connect_motion_notify_event({
-            let a_w = window.clone();
+        window.connect_event({
             let f_t = fullscreen_toolbar.clone();
-            // TODO Why is there no mouse motion event triggered when moving the mouse
-            // over the channel list ComboBox drop down.
-            move |_, _| {
+            move |a_w, _| {
                 show_cursor(&a_w);
                 if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
                     f_t.show();
@@ -233,5 +228,5 @@ fn hide_cursor(window: &gtk::ApplicationWindow) {
 }
 
 fn show_cursor(window: &gtk::ApplicationWindow) {
-    window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "default")));
+    window.get_window().unwrap().set_cursor(None);
 }
