@@ -24,7 +24,7 @@ gtk = {git="https://github.com/gtk-rs/gtk.git", features=["v3_18"]}
 #
 #gstreamer = { version = "*", features = ["v1_12"] }
 #
-gstreamer = {git="https://github.com/sdroege/gstreamer-rs.git", features=["v1_12"]}
+gstreamer = {git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs.git", features=["v1_12"]}
 #
 lazy_static = "*"
 notify = "*"
