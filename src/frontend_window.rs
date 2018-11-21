@@ -19,9 +19,8 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::cell::Cell;
 use std::rc::Rc;
-use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 // use glib;
 use glib::prelude::*;
@@ -36,7 +35,10 @@ use gstreamer_engine::GStreamerEngine;
 use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
 use preferences;
 
-lazy_static! { static ref TIMEOUT_COUNT: Mutex<Cell<u32>> = Mutex::new(Cell::new(0)); }
+/// When in fullscreen mode this will hold the last time there was mouse movement
+/// or key press activity. It is used to provide a timeout for hiding the fullscreen
+/// control bar. In window mode this value should be None.
+static mut LAST_ACTIVITY_TIME: Option<Instant> = None;
 
 pub struct FrontendWindow {
     control_window_button: Rc<ControlWindowButton>,
@@ -73,13 +75,7 @@ impl FrontendWindow {
         });
         let fullscreen_button = gtk::Button::new();
         fullscreen_button.set_image(&gtk::Image::new_from_icon_name("view-fullscreen-symbolic", gtk::IconSize::Button.into()));
-        fullscreen_button.connect_clicked({
-            let w = window.clone();
-            move |_| {
-                hide_cursor(&w);
-                w.fullscreen();
-            }
-        });
+        // Can only set the fullscreen_button actions after fullscreen_toolbar has been defined.
         let channel_selector = MeTVComboBoxText::new_and_set_model(&control_window_button.control_window.channel_names_store);
         channel_selector.set_active(control_window_button.channel_selector.get_active());
         channel_selector.connect_changed({
@@ -87,30 +83,104 @@ impl FrontendWindow {
             move |channel_selector| ControlWindowButton::on_channel_changed(&c_w_b, channel_selector.get_active())
         });
         let volume_adjustment = gtk::Adjustment::new(0.2, 0.0, 1.0, 0.01, 0.05, 0.0);
-        // Call back defined at the end of this function.
+        // Cannot clone engine so have to wait for construction of the frontend window
+        // to be able to define the action associated with the volume_adjustment.
         let volume_button = gtk::VolumeButton::new();
         let fullscreen_toolbar_builder = gtk::Builder::new_from_string(include_str!("resources/frontend_window_fullscreen_toolbar.glade.xml"));
         let fullscreen_toolbar = fullscreen_toolbar_builder.get_object::<gtk::Toolbar>("fullscreen_control_toolbar").unwrap();
         fullscreen_toolbar.set_halign(gtk::Align::Baseline);
         fullscreen_toolbar.set_valign(gtk::Align::Start);
         fullscreen_toolbar.hide();
+        fullscreen_button.connect_clicked({
+            let w = window.clone();
+            let f_t = fullscreen_toolbar.clone();
+            move |_| {
+                unsafe {
+                    match LAST_ACTIVITY_TIME {
+                        Some(_) => panic!("Last activity time should have been None."),
+                        None => LAST_ACTIVITY_TIME = Some(Instant::now()),
+                    }
+                }
+                hide_cursor(&w.clone().upcast::<gtk::Widget>());
+                w.fullscreen();
+                gtk::timeout_add_seconds(2, {
+                    let ww = w.clone();
+                    let ft = f_t.clone();
+                    move || {
+                        unsafe {
+                            match LAST_ACTIVITY_TIME {
+                                Some(last_activity_time) => {
+                                    if Instant::now().duration_since(last_activity_time) > Duration::from_secs(5) {
+                                        hide_cursor(&ww.clone().upcast::<gtk::Widget>());
+                                        ft.hide();
+                                    }
+                                    Continue(true)
+                                },
+                                None => Continue(false)
+                            }
+                        }
+                    }
+                });
+            }
+        });
         let fullscreen_unfullscreen_button = fullscreen_toolbar_builder.get_object::<gtk::Button>("fullscreen_unfullscreen_button").unwrap();
         fullscreen_unfullscreen_button.connect_clicked({
             let w = window.clone();
             let f_t = fullscreen_toolbar.clone();
             move |_| {
+                unsafe {
+                    LAST_ACTIVITY_TIME = None;
+                }
                 f_t.hide();
                 w.unfullscreen();
-                show_cursor(&w);
+                show_cursor(&w.clone().upcast::<gtk::Widget>());
             }
         });
         let fullscreen_volume_button = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
+        fullscreen_volume_button.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
+        fullscreen_volume_button.connect_key_press_event({
+            let f_t = fullscreen_toolbar.clone();
+            // TODO This never appears to get called.
+            move |v_b, _| {
+                println!("fullscreen volume button key press");
+                show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
+                Inhibit(false)
+            }
+        });
+        fullscreen_volume_button.connect_motion_notify_event({
+            let f_t = fullscreen_toolbar.clone();
+            // TODO This appears to work
+            move |v_b, _| {
+                println!("fullscreen volume button mouse motion");
+                show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
+                Inhibit(false)
+            }
+        });
         let mut fullscreen_channel_selector = fullscreen_toolbar_builder.get_object::<MeTVComboBoxText>("fullscreen_channel_selector").unwrap();
         fullscreen_channel_selector.set_new_model(&control_window_button.control_window.channel_names_store);
         fullscreen_channel_selector.set_active(control_window_button.channel_selector.get_active());
         fullscreen_channel_selector.connect_changed({
             let c_w_b = control_window_button.clone();
             move |f_c_s| ControlWindowButton::on_channel_changed(&c_w_b, f_c_s.get_active())
+        });
+        fullscreen_channel_selector.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
+        fullscreen_channel_selector.connect_key_press_event({
+            let f_t = fullscreen_toolbar.clone();
+            // TODO this never appears to be called.
+            move |c_b, _| {
+                println!("fullscreen channel selector key press");
+                show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
+                Inhibit(false)
+            }
+        });
+        fullscreen_channel_selector.connect_motion_notify_event({
+            let f_t = fullscreen_toolbar.clone();
+            // TODO this never appears to be called.
+            move |c_b, _| {
+                println!("fullscreen channel selector mouse move");
+                show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
+                Inhibit(false)
+            }
         });
         let volume = volume_adjustment.get_value();
         volume_button.set_value(volume);
@@ -131,46 +201,26 @@ impl FrontendWindow {
         window.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
         window.connect_key_press_event({
             let f_t = fullscreen_toolbar.clone();
-            move |w, key| {
+            move |a_w, key| {
                 if key.get_keyval() == gdk::enums::key::Escape {
-                    f_t.hide();
-                    w.unfullscreen();
-                    show_cursor(&w);
+                    if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
+                        unsafe {
+                            LAST_ACTIVITY_TIME = None;
+                        }
+                        f_t.hide();
+                        a_w.unfullscreen();
+                        show_cursor(&a_w.clone().upcast::<gtk::Widget>());
+                    }
+                } else {
+                    if_fullscreen_show_toolbar_and_add_timeout(&a_w.clone().upcast::<gtk::Widget>(), &f_t);
                 }
                 Inhibit(false)
             }
         });
-        window.connect_event({
+        window.connect_motion_notify_event({
             let f_t = fullscreen_toolbar.clone();
             move |a_w, _| {
-                show_cursor(&a_w);
-                if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
-                    f_t.show();
-                    gtk::timeout_add_seconds(5, {
-                        if let Ok(timeout_count) = TIMEOUT_COUNT.lock() {
-                            timeout_count.set(timeout_count.get() + 1);
-                        }
-                        let aw = a_w.clone();
-                        let ft = f_t.clone();
-                        move || {
-                            let mut value = 0;
-                            if let Ok(timeout_count) = TIMEOUT_COUNT.lock() {
-                                value = timeout_count.get();
-                                if value > 0 {
-                                    value = value - 1;
-                                    timeout_count.set(value);
-                                }
-                            }
-                            if value == 0 {
-                                if aw.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
-                                    ft.hide();
-                                    hide_cursor(&aw);
-                                }
-                            }
-                            Continue(false)
-                        }
-                    });
-                }
+                if_fullscreen_show_toolbar_and_add_timeout(&a_w.clone().upcast::<gtk::Widget>(), &f_t);
                 Inhibit(false)
             }
         });
@@ -223,10 +273,24 @@ impl FrontendWindow {
 
 }
 
-fn hide_cursor(window: &gtk::ApplicationWindow) {
-    window.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&window.get_display().unwrap(), "none")));
+fn hide_cursor(widget: &gtk::Widget) {
+    widget.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none")));
 }
 
-fn show_cursor(window: &gtk::ApplicationWindow) {
-    window.get_window().unwrap().set_cursor(None);
+fn show_cursor(widget: &gtk::Widget) {
+    widget.get_window().unwrap().set_cursor(None);
+}
+
+fn if_fullscreen_show_toolbar_and_add_timeout(w: &gtk::Widget, t: &gtk::Toolbar) {
+    if w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
+        show_toolbar_and_add_timeout(w, t);
+    }
+}
+
+fn show_toolbar_and_add_timeout(w: &gtk::Widget, t: &gtk::Toolbar) {
+    show_cursor(&w);
+    t.show();
+    unsafe {
+        LAST_ACTIVITY_TIME = Some(Instant::now());
+    }
 }
