@@ -19,12 +19,14 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 use std::cell::{Cell, RefCell};
+use std::fs::OpenOptions;
+use std::io::{Read, Write};
 use std::process;
 use std::rc::Rc;
+use std::thread;
 
 use futures;
 use futures::prelude::*;
-use futures::channel::mpsc::Receiver;
 
 use gio;
 use gio::prelude::*;
@@ -32,6 +34,8 @@ use glib;
 //use glib::prelude::*;
 use gtk;
 use gtk::prelude::*;
+
+use tempfile;
 
 use channel_names::{channels_file_path, get_names};
 use control_window_button::ControlWindowButton;
@@ -56,7 +60,7 @@ impl ControlWindow {
     /// Constructor (obviously :-). Creates the window to hold the widgets representing the
     /// frontends available. It is assumed this is called in the main thread that then runs the
     /// GTK event loop.
-    pub fn new(application: &gtk::Application, message_channel: Receiver<Message>) -> Rc<ControlWindow> {
+    pub fn new(application: &gtk::Application, message_channel: futures::channel::mpsc::Receiver<Message>) -> Rc<ControlWindow> {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         window.set_border_width(10);
@@ -103,7 +107,7 @@ impl ControlWindow {
                 display_an_error_dialog(Some(&c_w.window), if c_w.control_window_buttons.borrow().is_empty() {
                     "No frontends, so no EPG."
                 } else {
-                    "Should display the EPG window."
+                    "Should display the EPG window."  // TODO Get the EPG window working.
                 });
             }
         });
@@ -117,8 +121,7 @@ impl ControlWindow {
                 }
             }
         });
-        let context = glib::MainContext::ref_thread_default();
-        context.spawn_local({
+        glib::MainContext::ref_thread_default().spawn_local({
             let c_w = control_window.clone();
             message_channel.for_each(move |message| {
                 match message {
@@ -158,49 +161,69 @@ impl ControlWindow {
 
 /// Ensure that the GStreamer dvbsrc channels file is present.
 ///
-///  If the transmitter files are not present this function will do nothing.
+/// If the transmitter files are not present this function will do nothing.
 ///
 /// Currently try to use dvbv5-scan to create the file, or if it isn't present, try dvbscan or w_scan.
 fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
     match  transmitter_dialog::present(Some(&control_window.window)) {
         Some(path_to_transmitter_file) => {
             //  TODO Turn this into a dialog that follows the GNOME HIG. Probably best to create a custom dialog.
-            let dialog = gtk::MessageDialog::new(
+            let start_dialog = gtk::MessageDialog::new(
                 Some(&control_window.window),
                 gtk::DialogFlags::MODAL,
                 gtk::MessageType::Info,
                 gtk::ButtonsType::OkCancel,   // TODO This button type is discourage by the GNOME HIG, incorrect button placements.
-                "Run dvbv5-scan, this may take a while.");
-            let return_code = dialog.run();
-            if return_code == 0 {  // TODO  what is the response ID for OK and for Cancel?
-                let context = glib::MainContext::ref_thread_default();
-                context.block_on(
-                    futures::future::lazy({
-                        let p_t_t_f = path_to_transmitter_file.clone();
-                        let d = dialog.clone();
-                        move |_| {
-                            let output = process::Command::new("dvbv5-scan")
-                                .arg("-o")
-                                .arg(channels_file_path())
-                                .arg(p_t_t_f)
-                                .output();
-                            // TODO Show some form of activity during the scanning.
-                            d.destroy();
-                            output
+                &format!("Run:\n\n    dvbv5-scan {}\n\n?\n\nYou need to have already closed all open channel viewers for this to work.", path_to_transmitter_file.to_str().unwrap()),
+            );
+            let response = gtk::ResponseType::from(start_dialog.run());
+            start_dialog.destroy();
+            if response== gtk::ResponseType::Ok {
+                let wait_dialog = gtk::MessageDialog::new(
+                    Some(&control_window.window),
+                    gtk::DialogFlags::MODAL,
+                    gtk::MessageType::Info,
+                    gtk::ButtonsType::None,
+                    &format!("Running:\n\n    dvbv5-scan {}\n\nThis may take a while.", path_to_transmitter_file.to_str().unwrap())
+                );
+                wait_dialog.show_all();
+                let (sender, mut receiver) = futures::channel::oneshot::channel::<bool>();
+                glib::MainContext::ref_thread_default().spawn_local({
+                    let c_w = control_window.clone();
+                    let w_d = wait_dialog.clone();
+                    receiver.map(move |result|{
+                        w_d.destroy();
+                        if result {
+                            c_w.update_channels_store();
+                        } else {
+                            display_an_error_dialog(Some(&c_w.window), "dvbv5-scan failed to generate a file.");
                         }
-                    }).then({
-                        let c_w = control_window.clone();
-                        move |output| {
-                            match output {
-                                Ok(_) => c_w.update_channels_store(),
-                                Err(error) => display_an_error_dialog(Some(&c_w.window), &format!("dvbv5-scan failed to generate a file.\n{:?}", error)),
-                            };
-                            futures::future::ok::<(), ()>(())
-                        }
-                    })
-                ).unwrap();
-            } else {
-                dialog.destroy();
+                    }).map(|_| ()).map_err(|_| unreachable!())
+                });
+                thread::spawn({
+                    let p_t_t_f = path_to_transmitter_file.clone();
+                    move || {
+                        let mut temporary_file = tempfile::NamedTempFile::new().expect("Could not create a temporary file.");
+                        match process::Command::new("dvbv5-scan")
+                            .arg("-o")
+                            .arg(&temporary_file.path())
+                            .arg(&p_t_t_f)
+                            .output() {
+                            Ok(_) => {
+                                let mut destination = OpenOptions::new()
+                                    .write(true)
+                                    .truncate(true)
+                                    .create(true)
+                                    .open(channels_file_path())
+                                    .expect("Could not open channels file.");
+                                let mut buffer = String::new();
+                                temporary_file.read_to_string(&mut buffer).expect("Could not read temporary channels file.");
+                                destination.write(&buffer.as_bytes()).expect("Could not write channels file.");
+                                sender.send(true).expect("Could not send result for some reason.")
+                            },
+                            Err(error) => sender.send(false).expect(&format!("Could not send result of error:{}", error)),
+                        };
+                    }
+                });
             }
         },
         None => ()  // User already informed of problem.
