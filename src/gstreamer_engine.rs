@@ -58,7 +58,6 @@ impl GStreamerEngine {
         playbin.connect("element-setup",  false, {
             let fei = frontend_id.clone();
             move |values| {
-                let playbin = values[0].get::<gst::Element>().expect("Could not retrieve a handle on the playbin Element");
                 let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
                 if let Some(element_factory) = element.get_factory() {
                     if element_factory.get_name() == "dvbsrc" {
