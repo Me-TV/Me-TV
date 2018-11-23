@@ -20,7 +20,6 @@
  */
 
 extern crate clap;
-#[cfg(not(test))]
 extern crate futures;
 extern crate gdk;
 extern crate gio;
