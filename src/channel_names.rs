@@ -67,11 +67,11 @@ pub fn encode_to_mrl(channel_name: &String) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{get_names_from_file,encode_to_mrl};
-
-    extern crate tempfile;
-
     use std::io::{Write, Seek, SeekFrom};
+
+    use tempfile;
+
+    use super::{get_names_from_file,encode_to_mrl};
 
     #[test]
     fn empty_file() {
