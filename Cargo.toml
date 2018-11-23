@@ -33,6 +33,7 @@ send-cell = "*"
 serde = "*"
 serde_derive = "*"
 serde_yaml = "*"
+tempfile = "*"
 xdg = "*"
 
 [dev-dependencies]
