@@ -3,7 +3,7 @@
 project(
     'Me TV',
     'rust',
-    version: '3.0.4-snapshot',
+    version: '3.0.4',
     license: 'GPLv3',
 )
 
