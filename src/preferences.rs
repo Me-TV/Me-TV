@@ -38,13 +38,13 @@ struct Preferences {
 }
 
 lazy_static! {
-static ref PREFERENCES: Mutex<RefCell<Preferences>> = Mutex::new(RefCell::new(Preferences{
-    use_opengl: true,
-    immediate_tv: false,
-    use_last_channel: false,
-    default_channel: String::from(""),
-    last_channel: String::from(""),
-}));
+    static ref PREFERENCES: Mutex<RefCell<Preferences>> = Mutex::new(RefCell::new(Preferences{
+        use_opengl: true,
+        immediate_tv: false,
+        use_last_channel: false,
+        default_channel: String::from(""),
+        last_channel: String::from(""),
+    }));
 }
 
 /// Return a `PathBuf` to the Me TV preferences file location.
