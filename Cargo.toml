@@ -29,7 +29,7 @@ gstreamer = {git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs.git", fe
 lazy_static = "*"
 notify = "*"
 regex= "*"
-send-cell = "*"
+fragile = "*"
 serde = "*"
 serde_derive = "*"
 serde_yaml = "*"

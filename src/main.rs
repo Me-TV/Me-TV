@@ -31,7 +31,7 @@ extern crate gstreamer as gst;
 extern crate lazy_static;
 extern crate notify;
 extern crate regex;
-extern crate send_cell;
+extern crate fragile;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;

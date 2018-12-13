@@ -31,7 +31,7 @@ use gtk::prelude::*;
 use gst;
 use gst::prelude::*;
 
-use send_cell::SendCell;
+use fragile::Fragile;
 
 use dialogs::display_an_error_dialog;
 use frontend_manager::FrontendId;
@@ -81,11 +81,11 @@ impl GStreamerEngine {
         let bus = playbin.get_bus().unwrap();
         // The compiler cannot determine that the bus watch callback will be executed by the same thread that
         // the gtk::Application object is created with, which must be the case, and so fails to compile unless we
-        // use a SendCell.
-        let application_clone = SendCell::new(application.clone());
-        let application_clone_for_bus_watch = SendCell::new(application.clone());
+        // use a Fragile.
+        let application_clone = Fragile::new(application.clone());
+        let application_clone_for_bus_watch = Fragile::new(application.clone());
         bus.add_watch(move |_, msg| {
-            let application_for_bus_watch = application_clone_for_bus_watch.borrow();
+            let application_for_bus_watch = application_clone_for_bus_watch.get();
             match msg.view() {
                 gst::MessageView::Eos(..) => {
                     display_an_error_dialog(
@@ -111,7 +111,7 @@ impl GStreamerEngine {
                 },
                 None => {
                     display_an_error_dialog(
-                        Some(&application_clone.borrow().get_windows()[0]),
+                        Some(&application_clone.get().get_windows()[0]),
                         "Could not create a 'gtksink'\n\nIs the gstreamer1.0-gtk3 package installed?"
                     );
                     (None, None)
@@ -131,7 +131,7 @@ impl GStreamerEngine {
                         },
                         None => {
                             display_an_error_dialog(
-                                Some(&application_clone.borrow().get_windows()[0]),
+                                Some(&application_clone.get().get_windows()[0]),
                                 "Could not create a 'glsinkbin'\n\nIs the gstreamer1.0-gl package installed?."
                             );
                             (None, None)
@@ -143,10 +143,10 @@ impl GStreamerEngine {
         };
         if video_element.is_none() || video_widget.is_none() {
             display_an_error_dialog(
-                Some(&application_clone.borrow().get_windows()[0]),
+                Some(&application_clone.get().get_windows()[0]),
                 "Since the GStreamer system could not be initialised\nMe TV cannot work as required and so is quitting."
             );
-            application_clone.borrow().quit();
+            application_clone.get().quit();
             assert_eq!("Why has the application not quit?", "");
             // TODO Why is this not quitting but terminating due to the assertion failure?
         }
