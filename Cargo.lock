@@ -364,7 +364,7 @@ dependencies = [
 [[package]]
 name = "gio"
 version = "0.5.1"
-source = "git+https://github.com/gtk-rs/gio.git#f380b37ed3bd15c18375a88324e9c324677ebfa3"
+source = "git+https://github.com/gtk-rs/gio.git#5b0c2858248814817b83555cdd7e864cb62e41a6"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "fragile 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -425,7 +425,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.13.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs.git#02dc888a3a3ac3d1bf87b6700e6335eeffc0e137"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs.git#86673009df49456b5424f27b030f126235ca3822"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -579,7 +579,7 @@ dependencies = [
 
 [[package]]
 name = "me-tv"
-version = "3.0.6-snapshot"
+version = "3.0.6"
 dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "fragile 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",

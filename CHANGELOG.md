@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [3.0.6] - 2018-12-17
+### Changed
+- Alter the way failure to create a GStreamerEngine is handled.
+- Fix the panic that happens on closing a frontend window.
+
 ## [3.0.5] - 2018-12-17
 ### Changed
 - Frontend windows changed from teh erroneous application window to the correct 
