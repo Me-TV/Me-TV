@@ -42,7 +42,7 @@ static mut LAST_ACTIVITY_TIME: Option<Instant> = None;
 
 pub struct FrontendWindow {
     control_window_button: Rc<ControlWindowButton>,
-    window: gtk::ApplicationWindow,
+    window: gtk::Window,
     pub close_button: gtk::Button, // ControlWindowButton instance needs access to this.
     fullscreen_button: gtk::Button,
     volume_adjustment: gtk::Adjustment,
@@ -61,7 +61,7 @@ impl FrontendWindow {
     pub fn new(control_window_button: &Rc<ControlWindowButton>) -> Rc<FrontendWindow> {
         let application = control_window_button.control_window.window.get_application().unwrap();
         let engine = GStreamerEngine::new(&application, &control_window_button.frontend_id);
-        let window = gtk::ApplicationWindow::new(&application);
+        let window = gtk::Window::new(gtk::WindowType::Toplevel);
         window.set_title("Me TV");
         window.set_default_size(480, 270);
         let header_bar = gtk::HeaderBar::new();
