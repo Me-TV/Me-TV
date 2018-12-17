@@ -265,7 +265,7 @@ impl FrontendWindow {
 
     pub fn stop(&self) {
         if self.inhibitor  != 0 {
-            let application = self.window.get_application().unwrap();
+            let application = self.control_window_button.control_window.window.get_application().unwrap();
             application.uninhibit(self.inhibitor);
         } else {
             println!("Warning: inhibitor was not set.");
