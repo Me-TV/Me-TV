@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.0.5] - 2018-12-17
+### Changed
+- Frontend windows changed from teh erroneous application window to the correct 
+  toplevel window.
+- Use crate fragile instead of send-cell.
+
 ## [3.0.4] - 2018-11-24
 ### Added
 - Add a Meson-based build to help with installation.

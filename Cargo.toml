@@ -1,6 +1,6 @@
 [package]
 name = "me-tv"
-version = "3.0.5-snapshot"
+version = "3.0.5"
 authors = ["Russel Winder <russel@winder.org.uk>"]
 
 [dependencies]
