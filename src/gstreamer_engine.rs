@@ -52,12 +52,12 @@ pub struct GStreamerEngine {
 }
 
 impl GStreamerEngine {
-
-    pub fn new(application: &gtk::Application, frontend_id: &FrontendId) -> GStreamerEngine {
+    pub fn new(application: &gtk::Application, frontend_id: &FrontendId) -> Result<GStreamerEngine, ()> {
         let playbin = gst::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
         playbin.connect("element-setup",  false, {
             let fei = frontend_id.clone();
             move |values| {
+                // values[0] .get::<gst::Element>() is an Option on the playbin itself.
                 let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
                 if let Some(element_factory) = element.get_factory() {
                     if element_factory.get_name() == "dvbsrc" {
@@ -146,9 +146,7 @@ impl GStreamerEngine {
                 Some(&application_clone.get().get_windows()[0]),
                 "Since the GStreamer system could not be initialised\nMe TV cannot work as required and so is quitting."
             );
-            application_clone.get().quit();
-            assert_eq!("Why has the application not quit?", "");
-            // TODO Why is this not quitting but terminating due to the assertion failure?
+            return Err(())
         }
         let engine = GStreamerEngine {
             playbin,
@@ -158,7 +156,7 @@ impl GStreamerEngine {
         engine.video_element.set_property("force-aspect-ratio", &true.to_value()).expect("Could not set 'force-aspect-ration' property");
         engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
         engine.set_subtitles_showing(false);
-        engine
+        Ok(engine)
     }
 
     pub fn set_mrl(&self, mrl: &str) {

@@ -58,9 +58,12 @@ pub struct FrontendWindow {
 
 impl FrontendWindow {
 
-    pub fn new(control_window_button: &Rc<ControlWindowButton>) -> Rc<FrontendWindow> {
+    pub fn new(control_window_button: &Rc<ControlWindowButton>) -> Result<Rc<FrontendWindow>, ()> {
         let application = control_window_button.control_window.window.get_application().unwrap();
-        let engine = GStreamerEngine::new(&application, &control_window_button.frontend_id);
+        let engine = match GStreamerEngine::new(&application, &control_window_button.frontend_id) {
+            Ok(engine) => engine,
+            Err(_) => { return Err(()); },
+        };
         let window = gtk::Window::new(gtk::WindowType::Toplevel);
         window.set_title("Me TV");
         window.set_default_size(480, 270);
@@ -257,7 +260,7 @@ impl FrontendWindow {
             let f_w = frontend_window.clone();
             move |v_a| f_w.engine.set_volume(v_a.get_value())
         });
-        frontend_window
+        Ok(frontend_window)
     }
 
     pub fn stop(&self) {
