@@ -126,6 +126,7 @@ impl ControlWindowButton {
                     None => {},
                 };
             }
+            // TODO Should there be an else activity here?
         } else {
             match control_window_button.frontend_window.replace(None) {
                 Some(ref frontend_window) => frontend_window.stop(),

@@ -145,14 +145,14 @@ impl FrontendWindow {
             let f_t = fullscreen_toolbar.clone();
             // TODO This never appears to get called.
             move |v_b, _| {
-                println!("fullscreen volume button key press");
+                println!("fullscreen volume button key press.");
                 show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
                 Inhibit(false)
             }
         });
         fullscreen_volume_button.connect_motion_notify_event({
             let f_t = fullscreen_toolbar.clone();
-            // TODO This appears to work
+            // TODO This appears to work.
             move |v_b, _| {
                 println!("fullscreen volume button mouse motion");
                 show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
@@ -277,11 +277,15 @@ impl FrontendWindow {
 }
 
 fn hide_cursor(widget: &gtk::Widget) {
-    widget.get_window().unwrap().set_cursor(Some(&gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none")));
+    if let Some(window) = widget.get_window() {
+        window.set_cursor(Some(&gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none")));
+    }
 }
 
 fn show_cursor(widget: &gtk::Widget) {
-    widget.get_window().unwrap().set_cursor(None);
+    if let Some(window) = widget.get_window() {
+       window.set_cursor(None);
+    }
 }
 
 fn if_fullscreen_show_toolbar_and_add_timeout(w: &gtk::Widget, t: &gtk::Toolbar) {
