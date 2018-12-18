@@ -57,7 +57,6 @@ pub struct FrontendWindow {
 }
 
 impl FrontendWindow {
-
     pub fn new(control_window_button: &Rc<ControlWindowButton>) -> Result<Rc<FrontendWindow>, ()> {
         let application = control_window_button.control_window.window.get_application().unwrap();
         let engine = match GStreamerEngine::new(&application, &control_window_button.frontend_id) {
@@ -70,6 +69,7 @@ impl FrontendWindow {
             w.set_default_size(480, 270);
             w
         };
+        // TODO Why have a special close button instead of the standard one?
         let close_button = {
             let c_b = gtk::Button::new();
             c_b.set_image(&gtk::Image::new_from_icon_name("window-close-symbolic", gtk::IconSize::Button.into()));
@@ -101,7 +101,7 @@ impl FrontendWindow {
         let header_bar = {
             let h_b = gtk::HeaderBar::new();
             h_b.set_title("Me TV");
-            h_b.set_show_close_button(false);
+            h_b.set_show_close_button(false);  // TODO Why have a special close button instead of the standard one?
             h_b.pack_end(&close_button);
             h_b.pack_end(&fullscreen_button);
             h_b.pack_end(&volume_button);
@@ -166,19 +166,12 @@ impl FrontendWindow {
         };
         let fullscreen_volume_button = {
             let f_v_b = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
-            // TODO Whilst mouse movement over the open fullscreen volume button keeps the timeout from
-            //   closing the tool bar, use of key strokes on the volume button do not. So let's
-            //   try setting a special event handler for the events.
-            f_v_b.add_events(gdk::EventMask::KEY_PRESS_MASK);
-            f_v_b.connect_key_press_event({
-                let f_t = fullscreen_toolbar.clone();
-                // TODO This never appears to get called even when keys get pressed that cause activity on the volume button.
-                move |v_b, k| {
-                    println!("fullscreen volume button key press: {:?}", k);
-                    show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
-                    Inhibit(false)
-                }
-            });
+            //
+            // TODO Mouse movement over the open fullscreen volume button seems to update the timeout
+            //   and keep the toolbar visible. However any interaction with the volume button fails to
+            //   trigger a timeout. Need to find out how to make clicking + or -, use of key strokes,
+            //   gripping the slider and moving it cause a new timeout setting.
+            //
             f_v_b
         };
         let fullscreen_channel_selector = {
@@ -189,28 +182,11 @@ impl FrontendWindow {
                 let c_w_b = control_window_button.clone();
                 move |f_c_s| ControlWindowButton::on_channel_changed(&c_w_b, f_c_s.get_active())
             });
-            // TODO motion events on the window do not get transmitted through the fullscreen channel selector drop down.
-            //    Nor it seems are key press events. There has to be a way of setting the timeout for when the fullscreen
-            //    channel selector drop down is happening.
-            f_c_s.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
-            f_c_s.connect_key_press_event({
-                let f_t = fullscreen_toolbar.clone();
-                // TODO This appears not to get called even when a keypress is used to change the volume.
-                move |c_b, e| {
-                    println!("fullscreen channel selector key press: {:?}", e);
-                    show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
-                    Inhibit(false)
-                }
-            });
-            f_c_s.connect_motion_notify_event({
-                let f_t = fullscreen_toolbar.clone();
-                // TODO this never appears to be called.
-                move |c_b, e| {
-                    println!("fullscreen channel selector mouse move: {:?}", e);
-                    show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
-                    Inhibit(false)
-                }
-            });
+            //
+            // TODO motion and keystroke events on the full screen channel selector appear not to cause
+            //   a timeout on the diusappearance of the widget. Need to find way of ensuring that activity
+            //   on the channel selector causes timeouts on disappearance.
+            //
             f_c_s
         };
         let volume = volume_adjustment.get_value();
@@ -226,7 +202,7 @@ impl FrontendWindow {
             v_o
         };
         window.add(&video_overlay);
-        window.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
+        window.add_events(gdk::EventMask::KEY_PRESS_MASK);
         window.connect_key_press_event({
             let f_t = fullscreen_toolbar.clone();
             move |a_w, key| {
@@ -243,10 +219,7 @@ impl FrontendWindow {
                 Inhibit(false)
             }
         });
-        // This callback covers motion events on the window generally and also on the
-        // volume button drop downs. However it does not cover motion on the channel
-        // selector drop down. This only matters for the fullscreen channel selector. But
-        // in that case it matters a lot.
+        window.add_events(gdk::EventMask::POINTER_MOTION_MASK);
         window.connect_motion_notify_event({
             let f_t = fullscreen_toolbar.clone();
             move |a_w, _| {
@@ -299,7 +272,6 @@ impl FrontendWindow {
         self.window.hide();
         self.engine.stop();
     }
-
 }
 
 fn hide_cursor(widget: &gtk::Widget) {
