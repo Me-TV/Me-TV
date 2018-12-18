@@ -64,36 +64,60 @@ impl FrontendWindow {
             Ok(engine) => engine,
             Err(_) => { return Err(()); },
         };
-        let window = gtk::Window::new(gtk::WindowType::Toplevel);
-        window.set_title("Me TV");
-        window.set_default_size(480, 270);
-        let header_bar = gtk::HeaderBar::new();
-        header_bar.set_title("Me TV");
-        header_bar.set_show_close_button(false);
-        let close_button = gtk::Button::new();
-        close_button.set_image(&gtk::Image::new_from_icon_name("window-close-symbolic", gtk::IconSize::Button.into()));
-        close_button.connect_clicked({
-            let button = control_window_button.frontend_button.clone();
-            move |_| button.set_active(!button.get_active())
-        });
-        let fullscreen_button = gtk::Button::new();
-        fullscreen_button.set_image(&gtk::Image::new_from_icon_name("view-fullscreen-symbolic", gtk::IconSize::Button.into()));
-        // Can only set the fullscreen_button actions after fullscreen_toolbar has been defined.
-        let channel_selector = MeTVComboBoxText::new_and_set_model(&control_window_button.control_window.channel_names_store);
-        channel_selector.set_active(control_window_button.channel_selector.get_active());
-        channel_selector.connect_changed({
-            let c_w_b = control_window_button.clone();
-            move |channel_selector| ControlWindowButton::on_channel_changed(&c_w_b, channel_selector.get_active())
-        });
+        let window = {
+            let w = gtk::Window::new(gtk::WindowType::Toplevel);
+            w.set_title("Me TV");
+            w.set_default_size(480, 270);
+            w
+        };
+        let close_button = {
+            let c_b = gtk::Button::new();
+            c_b.set_image(&gtk::Image::new_from_icon_name("window-close-symbolic", gtk::IconSize::Button.into()));
+            c_b.connect_clicked({
+                let button = control_window_button.frontend_button.clone();
+                move |_| button.set_active(!button.get_active())
+            });
+            c_b
+        };
+        let fullscreen_button = {
+            let f_b = gtk::Button::new();
+            f_b.set_image(&gtk::Image::new_from_icon_name("view-fullscreen-symbolic", gtk::IconSize::Button.into()));
+            // Can only set the fullscreen_button actions after fullscreen_toolbar has been defined.
+            f_b
+        };
         let volume_adjustment = gtk::Adjustment::new(0.2, 0.0, 1.0, 0.01, 0.05, 0.0);
         // Cannot clone engine so have to wait for construction of the frontend window
         // to be able to define the action associated with the volume_adjustment.
         let volume_button = gtk::VolumeButton::new();
+        let channel_selector = {
+            let c_s = MeTVComboBoxText::new_and_set_model(&control_window_button.control_window.channel_names_store);
+            c_s.set_active(control_window_button.channel_selector.get_active());
+            c_s.connect_changed({
+                let c_w_b = control_window_button.clone();
+                move |channel_selector| ControlWindowButton::on_channel_changed(&c_w_b, channel_selector.get_active())
+            });
+            c_s
+        };
+        let header_bar = {
+            let h_b = gtk::HeaderBar::new();
+            h_b.set_title("Me TV");
+            h_b.set_show_close_button(false);
+            h_b.pack_end(&close_button);
+            h_b.pack_end(&fullscreen_button);
+            h_b.pack_end(&volume_button);
+            h_b.pack_start(&channel_selector);
+            h_b.show_all();
+            h_b
+        };
+        window.set_titlebar(&header_bar);
         let fullscreen_toolbar_builder = gtk::Builder::new_from_string(include_str!("resources/frontend_window_fullscreen_toolbar.glade.xml"));
-        let fullscreen_toolbar = fullscreen_toolbar_builder.get_object::<gtk::Toolbar>("fullscreen_control_toolbar").unwrap();
-        fullscreen_toolbar.set_halign(gtk::Align::Baseline);
-        fullscreen_toolbar.set_valign(gtk::Align::Start);
-        fullscreen_toolbar.hide();
+        let fullscreen_toolbar = {
+            let f_t = fullscreen_toolbar_builder.get_object::<gtk::Toolbar>("fullscreen_control_toolbar").unwrap();
+            f_t.set_halign(gtk::Align::Baseline);
+            f_t.set_valign(gtk::Align::Start);
+            f_t.hide();
+            f_t
+        };
         fullscreen_button.connect_clicked({
             let w = window.clone();
             let f_t = fullscreen_toolbar.clone();
@@ -101,7 +125,7 @@ impl FrontendWindow {
                 unsafe {
                     match LAST_ACTIVITY_TIME {
                         Some(_) => panic!("Last activity time should have been None."),
-                        None => LAST_ACTIVITY_TIME = Some(Instant::now()),
+                        None => set_timeout(Some(Instant::now())),
                     }
                 }
                 hide_cursor(&w.clone().upcast::<gtk::Widget>());
@@ -126,80 +150,81 @@ impl FrontendWindow {
                 });
             }
         });
-        let fullscreen_unfullscreen_button = fullscreen_toolbar_builder.get_object::<gtk::Button>("fullscreen_unfullscreen_button").unwrap();
-        fullscreen_unfullscreen_button.connect_clicked({
-            let w = window.clone();
-            let f_t = fullscreen_toolbar.clone();
-            move |_| {
-                unsafe {
-                    LAST_ACTIVITY_TIME = None;
+        let fullscreen_unfullscreen_button = {
+            let f_u_b = fullscreen_toolbar_builder.get_object::<gtk::Button>("fullscreen_unfullscreen_button").unwrap();
+            f_u_b.connect_clicked({
+                let w = window.clone();
+                let f_t = fullscreen_toolbar.clone();
+                move |_| {
+                    set_timeout(None);
+                    f_t.hide();
+                    w.unfullscreen();
+                    show_cursor(&w.clone().upcast::<gtk::Widget>());
                 }
-                f_t.hide();
-                w.unfullscreen();
-                show_cursor(&w.clone().upcast::<gtk::Widget>());
-            }
-        });
-        let fullscreen_volume_button = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
-        fullscreen_volume_button.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
-        fullscreen_volume_button.connect_key_press_event({
-            let f_t = fullscreen_toolbar.clone();
-            // TODO This never appears to get called.
-            move |v_b, _| {
-                println!("fullscreen volume button key press.");
-                show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
-                Inhibit(false)
-            }
-        });
-        fullscreen_volume_button.connect_motion_notify_event({
-            let f_t = fullscreen_toolbar.clone();
-            // TODO This appears to work.
-            move |v_b, _| {
-                println!("fullscreen volume button mouse motion");
-                show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
-                Inhibit(false)
-            }
-        });
-        let mut fullscreen_channel_selector = fullscreen_toolbar_builder.get_object::<MeTVComboBoxText>("fullscreen_channel_selector").unwrap();
-        fullscreen_channel_selector.set_new_model(&control_window_button.control_window.channel_names_store);
-        fullscreen_channel_selector.set_active(control_window_button.channel_selector.get_active());
-        fullscreen_channel_selector.connect_changed({
-            let c_w_b = control_window_button.clone();
-            move |f_c_s| ControlWindowButton::on_channel_changed(&c_w_b, f_c_s.get_active())
-        });
-        fullscreen_channel_selector.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
-        fullscreen_channel_selector.connect_key_press_event({
-            let f_t = fullscreen_toolbar.clone();
-            // TODO this never appears to be called.
-            move |c_b, _| {
-                println!("fullscreen channel selector key press");
-                show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
-                Inhibit(false)
-            }
-        });
-        fullscreen_channel_selector.connect_motion_notify_event({
-            let f_t = fullscreen_toolbar.clone();
-            // TODO this never appears to be called.
-            move |c_b, _| {
-                println!("fullscreen channel selector mouse move");
-                show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
-                Inhibit(false)
-            }
-        });
+            });
+            f_u_b
+        };
+        let fullscreen_volume_button = {
+            let f_v_b = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
+            // TODO Whilst mouse movement over the open fullscreen volume button keeps the timeout from
+            //   closing the tool bar, use of key strokes on the volume button do not. So let's
+            //   try setting a special event handler for the events.
+            f_v_b.add_events(gdk::EventMask::KEY_PRESS_MASK);
+            f_v_b.connect_key_press_event({
+                let f_t = fullscreen_toolbar.clone();
+                // TODO This never appears to get called even when keys get pressed that cause activity on the volume button.
+                move |v_b, k| {
+                    println!("fullscreen volume button key press: {:?}", k);
+                    show_toolbar_and_add_timeout(&v_b.clone().upcast::<gtk::Widget>(), &f_t);
+                    Inhibit(false)
+                }
+            });
+            f_v_b
+        };
+        let fullscreen_channel_selector = {
+            let mut f_c_s = fullscreen_toolbar_builder.get_object::<MeTVComboBoxText>("fullscreen_channel_selector").unwrap();
+            f_c_s.set_new_model(&control_window_button.control_window.channel_names_store);
+            f_c_s.set_active(control_window_button.channel_selector.get_active());
+            f_c_s.connect_changed({
+                let c_w_b = control_window_button.clone();
+                move |f_c_s| ControlWindowButton::on_channel_changed(&c_w_b, f_c_s.get_active())
+            });
+            // TODO motion events on the window do not get transmitted through the fullscreen channel selector drop down.
+            //    Nor it seems are key press events. There has to be a way of setting the timeout for when the fullscreen
+            //    channel selector drop down is happening.
+            f_c_s.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
+            f_c_s.connect_key_press_event({
+                let f_t = fullscreen_toolbar.clone();
+                // TODO This appears not to get called even when a keypress is used to change the volume.
+                move |c_b, e| {
+                    println!("fullscreen channel selector key press: {:?}", e);
+                    show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
+                    Inhibit(false)
+                }
+            });
+            f_c_s.connect_motion_notify_event({
+                let f_t = fullscreen_toolbar.clone();
+                // TODO this never appears to be called.
+                move |c_b, e| {
+                    println!("fullscreen channel selector mouse move: {:?}", e);
+                    show_toolbar_and_add_timeout(&c_b.clone().upcast::<gtk::Widget>(), &f_t);
+                    Inhibit(false)
+                }
+            });
+            f_c_s
+        };
         let volume = volume_adjustment.get_value();
         volume_button.set_value(volume);
         fullscreen_volume_button.set_value(volume);
         volume_button.set_adjustment(&volume_adjustment);
         fullscreen_volume_button.set_adjustment(&volume_adjustment);
-        header_bar.pack_end(&close_button);
-        header_bar.pack_end(&fullscreen_button);
-        header_bar.pack_end(&volume_button);
-        header_bar.pack_start(&channel_selector);
-        header_bar.show_all();
-        window.set_titlebar(&header_bar);
-        let video_overlay = gtk::Overlay::new();
-        video_overlay.add(&engine.video_widget);
-        video_overlay.show_all();
-        video_overlay.add_overlay(&fullscreen_toolbar);
+        let video_overlay = {
+            let v_o = gtk::Overlay::new();
+            v_o.add(&engine.video_widget);
+            v_o.show_all();
+            v_o.add_overlay(&fullscreen_toolbar);
+            v_o
+        };
         window.add(&video_overlay);
         window.add_events(gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::KEY_PRESS_MASK);
         window.connect_key_press_event({
@@ -207,9 +232,7 @@ impl FrontendWindow {
             move |a_w, key| {
                 if key.get_keyval() == gdk::enums::key::Escape {
                     if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
-                        unsafe {
-                            LAST_ACTIVITY_TIME = None;
-                        }
+                        set_timeout(None);
                         f_t.hide();
                         a_w.unfullscreen();
                         show_cursor(&a_w.clone().upcast::<gtk::Widget>());
@@ -220,6 +243,10 @@ impl FrontendWindow {
                 Inhibit(false)
             }
         });
+        // This callback covers motion events on the window generally and also on the
+        // volume button drop downs. However it does not cover motion on the channel
+        // selector drop down. This only matters for the fullscreen channel selector. But
+        // in that case it matters a lot.
         window.connect_motion_notify_event({
             let f_t = fullscreen_toolbar.clone();
             move |a_w, _| {
@@ -229,10 +256,9 @@ impl FrontendWindow {
         });
         let channel_name = control_window_button.channel_selector.get_active_text().unwrap();
         engine.set_mrl(&encode_to_mrl(&channel_name));
-        preferences::set_last_channel(channel_name, true);
         engine.play();
+        preferences::set_last_channel(channel_name, true);
         window.show();
-        let application = control_window_button.control_window.window.get_application().unwrap();
         let inhibitor = application.inhibit(
             &window,
             gtk::ApplicationInhibitFlags::SUSPEND | gtk::ApplicationInhibitFlags::IDLE,
@@ -297,7 +323,27 @@ fn if_fullscreen_show_toolbar_and_add_timeout(w: &gtk::Widget, t: &gtk::Toolbar)
 fn show_toolbar_and_add_timeout(w: &gtk::Widget, t: &gtk::Toolbar) {
     show_cursor(&w);
     t.show();
+    add_timeout();
+}
+
+fn add_timeout() {
     unsafe {
-        LAST_ACTIVITY_TIME = Some(Instant::now());
+        set_timeout(match LAST_ACTIVITY_TIME {
+            Some(last_activity_time) => {
+                let current_time = Instant::now();
+                if last_activity_time < current_time {
+                    Some(current_time)
+                } else {
+                    Some(last_activity_time)
+                }
+            },
+            None =>  Some(Instant::now()),
+        });
+    }
+}
+
+fn set_timeout(time: Option<Instant>) {
+    unsafe {
+        LAST_ACTIVITY_TIME = time;
     }
 }
