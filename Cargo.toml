@@ -5,6 +5,8 @@ authors = ["Russel Winder <russel@winder.org.uk>"]
 
 [dependencies]
 clap = "*"
+chrono = "*"
+exitcode = "*"
 futures-preview = "*"
 #
 # As of 2018-09-09 release of gtk-rs, there are still some missing bits to do
@@ -26,6 +28,7 @@ gtk = {git="https://github.com/gtk-rs/gtk.git", features=["v3_18"]}
 #
 gstreamer = {git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs.git", features=["v1_12"]}
 #
+iso8601 = "*"
 lazy_static = "*"
 notify = "*"
 regex= "*"
@@ -34,6 +37,7 @@ serde = "*"
 serde_derive = "*"
 serde_yaml = "*"
 tempfile = "*"
+time = "*"
 xdg = "*"
 
 [dev-dependencies]
