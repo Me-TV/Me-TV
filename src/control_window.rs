@@ -186,7 +186,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                     &format!("Running:\n\n    dvbv5-scan {}\n\nThis may take a while.", path_to_transmitter_file.to_str().unwrap())
                 );
                 wait_dialog.show_all();
-                let (sender, mut receiver) = futures::channel::oneshot::channel::<bool>();
+                let (sender, receiver) = futures::channel::oneshot::channel::<bool>();
                 glib::MainContext::ref_thread_default().spawn_local({
                     let c_w = control_window.clone();
                     let w_d = wait_dialog.clone();
