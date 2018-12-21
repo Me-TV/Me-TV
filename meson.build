@@ -31,6 +31,32 @@ me_tv = custom_target(
     command: [cargo_script, '@CURRENT_SOURCE_DIR@', '@OUTPUT@']
 )
 
+me_tv_recording_target_name = me_tv_target_name + '-record'
+
+me_tv_recording = custom_target(
+    me_tv_recording_target_name,
+    build_by_default: true,
+    console: true,
+    input: 'src/bin/' + me_tv_recording_target_name + '.rs',
+    output: [me_tv_recording_target_name],
+    install: true,
+    install_dir: bindir,
+    command: [cargo_script, '@CURRENT_SOURCE_DIR@', '@OUTPUT@']
+)
+
+me_tv_schedule_target_name = me_tv_target_name + '-schedule'
+
+me_tv_schedule = custom_target(
+    me_tv_schedule_target_name,
+    build_by_default: true,
+    console: true,
+    input: 'src/bin/' + me_tv_schedule_target_name + '.rs',
+    output: [me_tv_schedule_target_name],
+    install: true,
+    install_dir: bindir,
+    command: [cargo_script, '@CURRENT_SOURCE_DIR@', '@OUTPUT@']
+)
+
 conf_data = configuration_data()
 conf_data.set('PREFIX', prefix)
 configure_file(
