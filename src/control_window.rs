@@ -259,7 +259,8 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                                             match control_window.channel_names_store.get_path(&iterator) {
                                                 Some(mut tree_path) => {
                                                     let index = tree_path.get_indices_with_depth()[0];
-                                                    c_w_b.channel_selector.set_active(index);
+                                                    if index < 0 { panic!("index cannot be a negative integer"); }
+                                                    c_w_b.channel_selector.set_active(index as u32);
                                                     c_w_b.frontend_button.set_active(true);
                                                 },
                                                 None => panic!("Failed to get the path of the iterator."),

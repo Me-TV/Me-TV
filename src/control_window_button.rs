@@ -72,7 +72,7 @@ impl ControlWindowButton {
         control_window_button.reset_active_channel();
         control_window_button.channel_selector.connect_changed({
             let c_w_b = control_window_button.clone();
-            move |_| Self::on_channel_changed(&c_w_b, c_w_b.channel_selector.get_active())
+            move |_| Self::on_channel_changed(&c_w_b, c_w_b.channel_selector.get_active().unwrap())
         });
         control_window_button.frontend_button.connect_toggled({
             let c_w_b = control_window_button.clone();
@@ -97,8 +97,8 @@ impl ControlWindowButton {
     }
 
     /// Set the state of the channel control widgets.
-    fn set_channel_index(&self, channel_index: i32) {
-        let current = self.channel_selector.get_active();
+    fn set_channel_index(&self, channel_index: u32) {
+        let current = self.channel_selector.get_active().unwrap();
         if current != channel_index {
             self.channel_selector.set_active(channel_index);
             if let Some(ref frontend_window) = *self.frontend_window.borrow() {
@@ -113,7 +113,7 @@ impl ControlWindowButton {
     /// This function is called after the change of state of the frontend_button.
     fn toggle_button(control_window_button: &Rc<ControlWindowButton>) { // Used in control_window.rs
         if control_window_button.frontend_button.get_active() {
-            if control_window_button.control_window.is_channels_store_loaded() && control_window_button.channel_selector.get_active() >= 0 {
+            if control_window_button.control_window.is_channels_store_loaded() {
                 let frontend_window = match FrontendWindow::new(&control_window_button) {
                     Ok(frontend_window) => frontend_window,
                     Err(_) => {
@@ -136,7 +136,7 @@ impl ControlWindowButton {
     }
 
     /// Callback for an observed channel change.
-    pub fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_index: i32) { // Used in frontend_window.rs
+    pub fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_index: u32) { // Used in frontend_window.rs
         let status = control_window_button.frontend_button.get_active();
         if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
             if status {

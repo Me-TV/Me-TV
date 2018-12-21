@@ -94,7 +94,7 @@ impl FrontendWindow {
             c_s.set_active(control_window_button.channel_selector.get_active());
             c_s.connect_changed({
                 let c_w_b = control_window_button.clone();
-                move |channel_selector| ControlWindowButton::on_channel_changed(&c_w_b, channel_selector.get_active())
+                move |channel_selector| ControlWindowButton::on_channel_changed(&c_w_b, channel_selector.get_active().unwrap())
             });
             c_s
         };
@@ -180,7 +180,7 @@ impl FrontendWindow {
             f_c_s.set_active(control_window_button.channel_selector.get_active());
             f_c_s.connect_changed({
                 let c_w_b = control_window_button.clone();
-                move |f_c_s| ControlWindowButton::on_channel_changed(&c_w_b, f_c_s.get_active())
+                move |f_c_s| ControlWindowButton::on_channel_changed(&c_w_b, f_c_s.get_active().unwrap())
             });
             //
             // TODO motion and keystroke events on the full screen channel selector appear not to cause
