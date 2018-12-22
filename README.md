@@ -102,13 +102,13 @@ channel. Channels can be changed and there is a full screen capability.
 
 Hopefully the UI is intuitive and gives a good UX. If not please feel free to submit an issue.
 
-## Recording 
+## Recording
 
 The main Me TV program is a GUI for watching TV. With it come two command line programs,
 _me-tv-record_ and _me-tv-schedule_. _me-tv-record_ records a named channel for a given period
 to a named MPEG-4 file. The created files can be watched using Glide or Totem (or any other
 viewer program that can play MPEG-4 files). _me-tv-schedule_ is a command line program for
-setting up an execution of me-tv-record, i.e. it schedule recording a given channel for a given
+setting up an execution of me-tv-record, i.e. it schedules recording a given channel for a given
 duration outputting to a given file, starting at a given time in the future.
 
 ## NB
