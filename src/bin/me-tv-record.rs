@@ -89,14 +89,13 @@ A channel name and a duration must be provided.
     let channel = matches.value_of("channel").unwrap();
     let duration = matches.value_of("duration").unwrap().parse::<u32>().expect("Couldn't parse the provided duration as a positive integer.");
     let output_path = matches.value_of("output").unwrap();
-    //println!("Recording channel '{}' for {} minutes.", channel, duration);
+    if be_verbose {
+        println!("Recording channel '{}' for {} minutes on adapter {} frontend {}.", channel, duration, adapter, frontend);
+    }
     //
     // Construct the GStreamer graph described by:
     //
     //    gst-launch-1.0 -e uridecodebin uri=dvb://<channel> name=d ! queue ! x264enc ! mp4mux name=m ! filesink location=<output-path> d. ! queue ! avenc_ac3 ! m.
-    //
-    //
-    // TODO The following is currently always going to use adapter 0, frontend 0. FIXME.
     //
     gstreamer::init().unwrap();
     let pipeline = gstreamer::Pipeline::new(None);
@@ -127,7 +126,7 @@ A channel name and a duration must be provided.
                 }
                 None
             }
-        }).expect("Could not connect a handler to the element-setup signal.");
+        }).expect("Could not connect a handler to the source-setup signal.");
         element
     };
     let mp4mux = gstreamer::ElementFactory::make("mp4mux", None).expect("cannot make mp4mux");
