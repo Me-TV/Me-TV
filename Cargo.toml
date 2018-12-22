@@ -2,6 +2,11 @@
 name = "me-tv"
 version = "3.0.7-snapshot"
 authors = ["Russel Winder <russel@winder.org.uk>"]
+categories = ["desktop applications"]
+keywords = ["dvb", "video", "audio", "player", "atsc"]
+license = "GPL-3.0"
+description = "Me TV is a GTK+/GStreamer desktop application for playing DVB, digital video broadcasting."
+readme = "README.md"
 
 [dependencies]
 clap = "*"
