@@ -109,7 +109,7 @@ A channel name and a duration must be provided.
                 // values[0] .get::<gst::Element>() is an Option on the uridecodebin itself.
                 let element = values[1].get::<gstreamer::Element>().expect("Failed to get a handle on the Element being created");
                 if let Some(element_factory) = element.get_factory() {
-                    if element_factory.get_name() == "dvbsrc" {
+                    if element_factory.get_name() == "dvbbasebin" {
                         let current_adapter_number = element
                             .get_property("adapter").expect("Could not retrieve adapter number Value")
                             .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
