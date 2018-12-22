@@ -20,6 +20,7 @@
  */
 
 extern crate clap;
+extern crate ctrlc;
 extern crate exitcode;
 extern crate futures;
 extern crate glib;
@@ -43,44 +44,48 @@ fn main() {
 A channel name and a duration must be provided.
 ")
         .arg(Arg::with_name("adapter")
-             .short("a")
-             .long("adapter")
-             .value_name("NUMBER")
-             .help("Sets the adapter number to use, default 0")
-             .takes_value(true))
+            .short("a")
+            .long("adapter")
+            .value_name("NUMBER")
+            .help("Sets the adapter number to use, default 0.")
+            .takes_value(true)
+            .default_value("0"))
         .arg(Arg::with_name("frontend")
-             .short("f")
-             .long("frontend")
-             .value_name("NUMBER")
-             .help("Sets the frontend number to use, default 0")
-             .takes_value(true))
+            .short("f")
+            .long("frontend")
+            .value_name("NUMBER")
+            .help("Sets the frontend number to use, default 0.")
+            .takes_value(true)
+            .default_value("0"))
         .arg(Arg::with_name("channel")
-             .short("c")
-             .long("channel")
-             .value_name("CHANNEL")
-             .help("Sets the channel name, no default")
-             .takes_value(true)
-             .required(true))
+            .short("c")
+            .long("channel")
+            .value_name("CHANNEL")
+            .help("Sets the channel name, no default.")
+            .takes_value(true)
+            .required(true))
         .arg(Arg::with_name("duration")
-             .short("d")
-             .long("duration")
-             .value_name("TIME")
-             .help("Sets the duration of recording in minutes, no default")
-             .takes_value(true)
-             .required(true))
+            .short("d")
+            .long("duration")
+            .value_name("TIME")
+            .help("Sets the duration of recording in minutes, no default.")
+            .takes_value(true)
+            .required(true))
         .arg(Arg::with_name("output")
-             .short("o")
-             .long("output")
-             .value_name("PATH")
-             .help("Path to output file.")
-             .takes_value(true)
-             .required(true))
+            .short("o")
+            .long("output")
+            .value_name("PATH")
+            .help("Path to output file, no default.")
+            .takes_value(true)
+            .required(true))
         .arg(Arg::with_name("verbose")
             .short("v")
             .long("verbose")
             .help("sets verbose mode"))
         .get_matches();
     let be_verbose = matches.is_present("verbose");
+    let adapter = matches.value_of("adapter").unwrap().parse::<u8>().expect("Couldn't parse adapter value as a positive integer.");
+    let frontend = matches.value_of("frontend").unwrap().parse::<u8>().expect("Couldn't parse frontend value as a positive integer.");
     let channel = matches.value_of("channel").unwrap();
     let duration = matches.value_of("duration").unwrap().parse::<u32>().expect("Couldn't parse the provided duration as a positive integer.");
     let output_path = matches.value_of("output").unwrap();
@@ -98,6 +103,31 @@ A channel name and a duration must be provided.
     let uridecodebin = {
         let element = gstreamer::ElementFactory::make("uridecodebin", None).expect("cannot make uridecodebin");
         element.set_property("uri", &format!("dvb://{}", channel)).expect("cannot set uri property on uridecodebin");
+        element.connect("source-setup",  false, {
+            let adapter_number = adapter;
+            let frontend_number = frontend;
+            move |values| {
+                // values[0] .get::<gst::Element>() is an Option on the uridecodebin itself.
+                let element = values[1].get::<gstreamer::Element>().expect("Failed to get a handle on the Element being created");
+                if let Some(element_factory) = element.get_factory() {
+                    if element_factory.get_name() == "dvbsrc" {
+                        let current_adapter_number = element
+                            .get_property("adapter").expect("Could not retrieve adapter number Value")
+                            .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
+                        let current_frontend_number = element
+                            .get_property("frontend").expect("Could not retrieve frontend number Value.")
+                            .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
+                        if current_adapter_number != adapter_number {
+                            element.set_property("adapter", &(adapter_number as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
+                        }
+                        if current_frontend_number != adapter_number {
+                            element.set_property("frontend", &(frontend_number as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
+                        }
+                    }
+                }
+                None
+            }
+        }).expect("Could not connect a handler to the element-setup signal.");
         element
     };
     let mp4mux = gstreamer::ElementFactory::make("mp4mux", None).expect("cannot make mp4mux");
@@ -162,15 +192,27 @@ A channel name and a duration must be provided.
     });
     let rc = pipeline.set_state(gstreamer::State::Playing);
     assert_ne!(rc, gstreamer::StateChangeReturn::Failure);
-    let pipeline_weak_ref = pipeline.downgrade();
-    thread::spawn(move ||{
-        let pipeline = match pipeline_weak_ref.upgrade() {
-            Some(pipeline) => pipeline,
-            None => panic!("no access to the pipeline"),
-        };
-        thread::sleep(time::Duration::from_secs((duration * 60).into()));
-        pipeline.send_event(gstreamer::Event::new_eos().build());
+    thread::spawn({
+        let pipeline_weak_ref = pipeline.downgrade();
+        move || {
+            thread::sleep(time::Duration::from_secs((duration * 60).into()));
+            let pipeline = match pipeline_weak_ref.upgrade() {
+                Some(pipeline) => pipeline,
+                None => panic!("no access to the pipeline"),
+            };
+            pipeline.send_event(gstreamer::Event::new_eos().build());
+        }
     });
+    ctrlc::set_handler({
+        let pipeline_weak_ref = pipeline.downgrade();
+        move || {
+            let pipeline = match pipeline_weak_ref.upgrade() {
+                Some(pipeline) => pipeline,
+                None => panic!("no access to the pipeline"),
+            };
+            pipeline.send_event(gstreamer::Event::new_eos().build());
+        }
+    }).expect("Error setting ctrl-c handler.");
     let bus = pipeline.get_bus().expect("Pipeline without bus. Shouldn't happen!");
     while let Some(msg) = bus.timed_pop(gstreamer::CLOCK_TIME_NONE) {
         use gstreamer::MessageView;
