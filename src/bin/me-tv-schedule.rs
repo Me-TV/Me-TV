@@ -93,7 +93,12 @@ must be provided.
              .help("Path to output file.")
              .takes_value(true)
              .required(true))
+        .arg(Arg::with_name("verbose")
+            .short("v")
+            .long("verbose")
+            .help("sets verbose mode"))
         .get_matches();
+    let be_verbose = matches.is_present("verbose");
     let channel = matches.value_of("channel").unwrap();
     let start_time = convert_datetime(iso8601::datetime(matches.value_of("start_time").unwrap()).expect("Could not parse start time."));
     let end_time = match matches.value_of("end_time") {
@@ -120,9 +125,11 @@ must be provided.
         duration.unwrap()
     };
     let output_file = matches.value_of("output").unwrap();
-    println!("Scheduling recording of channel '{}' at {:?} for {} minutes to file {}.", channel, start_time, duration.num_minutes(), output_file);
+    if be_verbose {
+        println!("Scheduling recording of channel '{}' at {:?} for {} minutes to file {}.", channel, start_time, duration.num_minutes(), output_file);
+    }
     let echo_process = process::Command::new("echo")
-        .arg(format!("me-tv-record {} {}", channel, duration.num_minutes()))
+        .arg(format!("me-tv-record --channel={} --duration={} --output={}", channel, duration.num_minutes(), output_file))
         .stdout(process::Stdio::piped())
         .spawn()
         .expect("Failed to start echo process.");
