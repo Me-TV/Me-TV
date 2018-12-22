@@ -75,7 +75,12 @@ A channel name and a duration must be provided.
              .help("Path to output file.")
              .takes_value(true)
              .required(true))
+        .arg(Arg::with_name("verbose")
+            .short("v")
+            .long("verbose")
+            .help("sets verbose mode"))
         .get_matches();
+    let be_verbose = matches.is_present("verbose");
     let channel = matches.value_of("channel").unwrap();
     let duration = matches.value_of("duration").unwrap().parse::<u32>().expect("Couldn't parse the provided duration as a positive integer.");
     let output_path = matches.value_of("output").unwrap();
@@ -182,17 +187,17 @@ A channel name and a duration must be provided.
                 );
                 break
             },
-            /*
             MessageView::StateChanged(s) => {
-                println!(
-                    "State changed from {:?}: {:?} -> {:?} ({:?})",
-                    s.get_src().map(|s| s.get_path_string()),
-                    s.get_old(),
-                    s.get_current(),
-                    s.get_pending()
-                );
+                if be_verbose {
+                    println!(
+                        "State changed from {:?}: {:?} -> {:?} ({:?})",
+                        s.get_src().map(|s| s.get_path_string()),
+                        s.get_old(),
+                        s.get_current(),
+                        s.get_pending()
+                    );
+                }
             }
-             */
             _ => (),
         }
     }
