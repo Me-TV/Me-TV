@@ -6,7 +6,9 @@ authors = ["Russel Winder <russel@winder.org.uk>"]
 [dependencies]
 clap = "*"
 chrono = "*"
+ctrlc = {version = "*", features = ["termination"]}
 exitcode = "*"
+fragile = "*"
 futures-preview = "*"
 #
 # As of 2018-09-09 release of gtk-rs, there are still some missing bits to do
@@ -32,7 +34,6 @@ iso8601 = "*"
 lazy_static = "*"
 notify = "*"
 regex= "*"
-fragile = "*"
 serde = "*"
 serde_derive = "*"
 serde_yaml = "*"
