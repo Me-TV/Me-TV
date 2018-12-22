@@ -1,6 +1,9 @@
 # ChangeLog
 
 ## [Unreleased]
+### Added
+- Added the command line executables _me-tv-record_ and
+  _me-tv-schedule_ to allow people to record DVB broadcasts to MPEG4 files.
 
 ## [3.0.6] - 2018-12-17
 ### Changed
@@ -9,7 +12,7 @@
 
 ## [3.0.5] - 2018-12-17
 ### Changed
-- Frontend windows changed from teh erroneous application window to the correct 
+- Frontend windows changed from teh erroneous application window to the correct
   toplevel window.
 - Use crate fragile instead of send-cell.
 
