@@ -1,0 +1,31 @@
+{
+    "package": {
+        "name": "Me_TV",
+        "repo": "generic",
+        "subject": "russel",
+        "desc": "Latest Me TV release",
+        "website_url": "https://github.com/Me-TV/Me-TV",
+        "issue_tracker_url": "https://github.com/Me-TV/Me-TV/issues",
+        "vcs_url": "https://github.com/Me-TV/Me-TV",
+        "github_use_tag_release_notes": true,
+        "github_release_notes_file": "CHANGELOG.md",
+        "licenses": ["GPLv3"],
+        "labels": ["dvb", "video", "audio", "television"],
+        "public_download_numbers": false,
+        "public_stats": false,
+    },
+
+    "version": {
+        "name": "3.0.7",
+        "desc": "Version 3.0.5, obviously. :-)",
+        "released": "2018-12-23",
+        "vcs_tag": "v3.0.7",
+        "gpgSign": false
+    },
+
+    "files":
+    [
+        {"includePattern": "build/release/me-tv(.*)*"},
+    ],
+    "publish": true
+}

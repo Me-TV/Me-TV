@@ -1,20 +1,28 @@
 sudo: true
 dist: xenial
-
 language: rust
 
 before_install:
-  - curl -L https://people.freedesktop.org/~slomo/gstreamer.tar.gz | tar xz
-  - sed -i "s;prefix=/root/gstreamer;prefix=$PWD/gstreamer;g" $PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig/*.pc
-  - export PKG_CONFIG_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig
-  - export LD_LIBRARY_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu # Hack to get the Xenial test to run. Trusty didn't need this.
-  - export GST_PLUGIN_SYSTEM_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0
-  - export PATH=$PATH:$PWD/gstreamer/bin
-  - export RUST_BACKTRACE=1
+- curl -L https://people.freedesktop.org/~slomo/gstreamer.tar.gz | tar xz
+- sed -i "s;prefix=/root/gstreamer;prefix=$PWD/gstreamer;g" $PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig/*.pc
+- export PKG_CONFIG_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig
+- export LD_LIBRARY_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu
+- export GST_PLUGIN_SYSTEM_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0
+- export PATH=$PATH:$PWD/gstreamer/bin
+- export RUST_BACKTRACE=1
 
 before_script:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libgtk-3-dev libatk1.0-dev libpango1.0-dev
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
-  - sleep 3 # give xvfb some time to start
+- sudo apt-get -qq update
+- sudo apt-get install -y libgtk-3-dev libatk1.0-dev libpango1.0-dev
+- export DISPLAY=:99.0
+- sh -e /etc/init.d/xvfb start
+- sleep 3
+
+deploy:
+  provider: bintray
+  file: bintray_descriptor.json
+  user: russel
+  key:
+    secure: Mj0Op2f9myLCZ8Mn1TBFVRLOPahoW6zAjflUe8kgDwNuwuYZkjFFC3xDazYz2b6EWxc7FSWTKYfHJgwDpCXQq1LuPwtAqjtLMeX++OJun0f0UlFcH68aN9G9u112wAcY9jvLKMmNTlx50JLnIebKkLZwWzYimreUAGlIwHf3iqUC1ckgz2f4lkAWEtyQF6v13GZu6nGw1/dfmdVW3EYkpyoj7mLUkKbaLfiAz9/jH9lB6pf4/nYyGnoIvSwdEDbWz680OI77DyAwXU4Nzo8ZNSa3hCFUfEE+FINm8tGygZE6rZuar2Etn2BP5hyev4ytCt/Mzq2lSy1whFrL2tcnQxMewPUrWdx5Id+5IIGiw0xEJTS1ib5BsFQxoGGT0YgUutU8ACPM0mvw29nkK+2e+/3DeX364fMWhh7hKvUfsyMa4F78+5UU1E/aqN4vfLh6ThgEBEu4hU8CDykn3nkV6rM66Qk6FO/ha/c9dzaJvyOHJb0l33Y07htEw3uLBcDsy/VYwmv9HOt+N5ilu2ogNGi89ohws/K74sEu9tpLHVlqusTptEI3TqOAWB0kJghDePsiVFEUyRf5BZ1qW0CZ3c76fAgrbelH9ROwQ5/y2dzP3g0cBstaPx7bbRpWk/y6eIdaImt+LqIT18x2DZuK0Ot2U9i7YxfYmzp78Q4ztFo=
+  passphrase: DVB-T2
+  skip_cleanup: true
