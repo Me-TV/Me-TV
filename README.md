@@ -76,7 +76,7 @@ currently it requires the executable _dvbv5-scan_ be installed. On Debian Sid th
 _dvb-tools_, whereas on Fedora Rawhide it is in the package _v4l-utils_ – for some reason Debian splits out
 the DVB tools from the V4L utils, whereas Fedora keeps them all together. To create the channels file you
 will not only need _dvbv5-scan_ installed but also the transmitter data files. These are in the package
-_dvb-scan-tables_ on both Debian and Fedora. However Debian installs them to /usr/share/dvb/dvb-t/ whereas
+_dtv-scan-tables_ on both Debian and Fedora. However Debian installs them to /usr/share/dvb/dvb-t/ whereas
 Fedora installs them to /usr/share/dvbv5/dvb-t/.
 
 To have the channels file available before executing Me TV you can run _dvbv5-scan_ manually. For example:
