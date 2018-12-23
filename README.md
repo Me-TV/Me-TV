@@ -27,13 +27,23 @@ been separated out, so you will also need to install gstreamer1.0-gtk3 and gstre
 For building Me TV you need the development packages installed, not just the library packages. So on Debian
 the libgtk-3-dev and the libgstreamer1.0-dev packages.
 
+## Using Pre-compiled Executables
+
+Most users of Me TV will not want to be bothered with trying to build the executables from
+source code. Pre-compiled are therefore available on Bintray. There are pre-compiled
+executables for each release. The Me TV project page is
+[here](https://bintray.com/beta/#/russel/generic/Me_TV). Go to the release you are
+interested in and there is section "Direct Downloads" that has the pre-compiled executables.
+
 ## Building (and Installing)
 
-You need to either take a clone of this repository, or download a release tarball.  You will then need to
-build the executable. This being a Rust program all build is handled using Cargo – though there is a
-Meson/Ninja build for those who wish to use that, Rust and Cargo are still needed though, the Meson/Ninja
-build just manages use of Cargo. Rust and Cargo may be packaged for your operating system, but most people
-use [Rustup](https://rustup.rs/) to install Rust and Cargo so as to stay up to date with both.
+If you are going to build the executables from sourc, you need to either take a clone of
+this repository, or download a release tarball.  You will then need to build the
+executable. This being a Rust program all build is handled using Cargo – though there is a
+Meson/Ninja build for those who wish to use that, Rust and Cargo are still needed though,
+the Meson/Ninja build just manages use of Cargo. Rust and Cargo may be packaged for your
+operating system, but most people use [Rustup](https://rustup.rs/) to install Rust and
+Cargo so as to stay up to date with both.
 
 Once you have Rust and Cargo installed, by whatever means, then in the directory of the Me TV project,
 typing the command:
