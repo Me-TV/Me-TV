@@ -26,15 +26,17 @@ use gtk;
 use gtk::prelude::*;
 
 use dialogs::display_an_error_dialog;
+use dvb;
+use preferences;
 
 struct TransmitterSelector {
     transmitter: gtk::ComboBoxText,
     dialog: gtk::Dialog,
 }
 
-/// Return the path to the directory of DVB-T transmitter files if present.
-/// On Fedora /usr/share/dvbv5/dvb-t
-/// On Debian /usr/share/dvb/dvb-t
+/// Return the path to the directory of transmitter files if present.
+/// On Fedora DVBT/DVBT2 files are in /usr/share/dvbv5/dvb-t
+/// On Debian DVBT/DVBT2 files are in /usr/share/dvb/dvb-t
 fn dvbt_transmitter_files_directory_path() -> Option<path::PathBuf> {
     let mut path = path::PathBuf::new();
     path.push("/usr");
@@ -44,7 +46,14 @@ fn dvbt_transmitter_files_directory_path() -> Option<path::PathBuf> {
         path.pop();
         path.push("dvb");
     }
-    path.push("dvb-t");
+    path.push(match preferences::get_delivery_system() {
+        dvb::DeliverySystem::ATSC => "atsc",
+        dvb::DeliverySystem::DVBC_ANNEX_A => "atsc",
+        dvb::DeliverySystem::DVBC_ANNEX_B => "dvb-c",
+        dvb::DeliverySystem::DVBT => "dvb-t",
+        dvb::DeliverySystem::DVBT2 => "dvb-t",
+        dvb::DeliverySystem::ISDBT => "isdb-t",
+    });
     if path.is_dir() { Some(path) }
     else { None }
 }

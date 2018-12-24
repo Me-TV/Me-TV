@@ -75,7 +75,7 @@ dependencies = [
 [[package]]
 name = "cairo-rs"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/cairo#d394e597dede99e316b7ae2ab8b48d432fa070c7"
+source = "git+https://github.com/gtk-rs/cairo#a6ea55b42f41220ec84f8a4842e987aa67baf66c"
 dependencies = [
  "cairo-sys-rs 0.7.0 (git+https://github.com/gtk-rs/cairo)",
  "glib 0.6.0 (git+https://github.com/gtk-rs/glib.git)",
@@ -87,7 +87,7 @@ dependencies = [
 [[package]]
 name = "cairo-sys-rs"
 version = "0.7.0"
-source = "git+https://github.com/gtk-rs/cairo#d394e597dede99e316b7ae2ab8b48d432fa070c7"
+source = "git+https://github.com/gtk-rs/cairo#a6ea55b42f41220ec84f8a4842e987aa67baf66c"
 dependencies = [
  "glib-sys 0.7.0 (git+https://github.com/gtk-rs/sys)",
  "libc 0.2.45 (registry+https://github.com/rust-lang/crates.io-index)",

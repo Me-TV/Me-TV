@@ -26,6 +26,7 @@ use gtk;
 use gtk::prelude::*;
 
 use control_window::ControlWindow;
+use dvb;
 use metvcomboboxtext::MeTVComboBoxText;
 use metvcomboboxtext::MeTVComboBoxTextExt;
 use preferences;
@@ -36,19 +37,39 @@ lazy_static! {
 
 fn create(control_window: &ControlWindow) -> gtk::Window {
     let menu_builder = gtk::Builder::new_from_string(include_str!("resources/preferences_dialog.glade.xml"));
-    let use_opengl_button = menu_builder.get_object::<gtk::CheckButton>("use_opengl").unwrap();
-    use_opengl_button.set_active(preferences::get_use_opengl());
-    use_opengl_button.connect_toggled(
-        move |button| preferences::set_use_opengl(button.get_active(), true)
-    );
-    let immediate_tv_button = menu_builder.get_object::<gtk::CheckButton>("immediate_tv").unwrap();
-    immediate_tv_button.set_active(preferences::get_immediate_tv());
-    immediate_tv_button.connect_toggled(
-        move |button| preferences::set_immediate_tv(button.get_active(), true)
-    );
+    let _delivery_system_comboboxtext = {
+        let comboboxtext = menu_builder.get_object::<gtk::ComboBoxText>("delivery_system").unwrap();
+        for delivery_system in dvb::DeliverySystem::iterator() {
+            comboboxtext.append_text(&delivery_system.to_string());
+        }
+        comboboxtext.set_active(preferences::get_delivery_system().get_index());
+        comboboxtext.connect_changed(
+            move |selector| preferences::set_delivery_system(selector.get_active_text().unwrap().into(), true)
+        );
+        comboboxtext
+    };
+    let _use_opengl_button = {
+        let button = menu_builder.get_object::<gtk::CheckButton>("use_opengl").unwrap();
+        button.set_active(preferences::get_use_opengl());
+        button.connect_toggled(
+            move |b| preferences::set_use_opengl(b.get_active(), true)
+        );
+        button
+    };
+    let _immediate_tv_button = {
+        let button = menu_builder.get_object::<gtk::CheckButton>("immediate_tv").unwrap();
+        button.set_active(preferences::get_immediate_tv());
+        button.connect_toggled(
+            move |b| preferences::set_immediate_tv(b.get_active(), true)
+        );
+        button
+    };
     let  use_last_channel_button = menu_builder.get_object::<gtk::RadioButton>("last_channel").unwrap();
-    let  use_default_channel_button = menu_builder.get_object::<gtk::RadioButton>("default_channel").unwrap();
-    use_default_channel_button.join_group(Some(&use_last_channel_button));
+    let  use_default_channel_button = {
+        let button = menu_builder.get_object::<gtk::RadioButton>("default_channel").unwrap();
+        button.join_group(Some(&use_last_channel_button));
+        button
+    };
     if preferences::get_use_last_channel() { use_last_channel_button.set_active(true); }
     else { use_default_channel_button.set_active(true); }
     use_last_channel_button.connect_clicked(
@@ -57,21 +78,27 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
     use_default_channel_button.connect_clicked(
         move |_| preferences::set_use_last_channel(false, true)
     );
-    let mut default_channel_selector = menu_builder.get_object::<MeTVComboBoxText>("channel_name").unwrap();
-    default_channel_selector.set_new_model(&control_window.channel_names_store);
-    if let Some(channel_name) = preferences::get_default_channel() {
-        if channel_name != "" {
-            if ! default_channel_selector.set_active_text(channel_name.clone()) {
-                panic!("Could not set the default channel to {}.", channel_name);
+    let _default_channel_selector = {
+        let mut combobox = menu_builder.get_object::<MeTVComboBoxText>("channel_name").unwrap();
+        combobox.set_new_model(&control_window.channel_names_store);
+        if let Some(channel_name) = preferences::get_default_channel() {
+            if channel_name != "" {
+                if ! combobox.set_active_text(channel_name.clone()) {
+                    panic!("Could not set the default channel to {}.", channel_name);
+                }
             }
         }
-    }
-    default_channel_selector.connect_changed(
-        move |selector: &MeTVComboBoxText| preferences::set_default_channel(selector.get_active_text().unwrap(), true)
-    );
-    let preferences_dialog = menu_builder.get_object::<gtk::Window>("preferences_dialog").unwrap();
-    preferences_dialog.set_transient_for(&control_window.window);
-    preferences_dialog.show_all();
+        combobox.connect_changed(
+            move |selector: &MeTVComboBoxText| preferences::set_default_channel(selector.get_active_text().unwrap(), true)
+        );
+        combobox
+    };
+    let preferences_dialog = {
+        let window = menu_builder.get_object::<gtk::Window>("preferences_dialog").unwrap();
+        window.set_transient_for(&control_window.window);
+        window.show_all();
+        window
+    };
     preferences_dialog
 }
 

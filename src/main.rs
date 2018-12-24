@@ -57,6 +57,7 @@ mod metvcomboboxtext;
 mod control_window;
 mod control_window_button;
 mod dialogs;
+mod dvb;
 mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
