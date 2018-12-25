@@ -26,7 +26,8 @@
     "files": [
         {
             "includePattern": "target/release/me-tv(.*)",
-            "excludePattern": "target/release/me-tv(.*).d"
+            "excludePattern": "target/release/me-tv(.*).d",
+            "uploadPattern": "v3.0.7-snapshot/me-tv$1"
         }
     ],
 
