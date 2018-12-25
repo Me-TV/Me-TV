@@ -2,7 +2,7 @@
     "package": {
         "name": "Me-TV",
         "repo": "Downloads",
-        "subject": "Me-TV",
+        "subject": "me-tv",
         "desc": "Precompiled executables for download and use.",
         "website_url": "https://github.com/Me-TV/Me-TV",
         "issue_tracker_url": "https://github.com/Me-TV/Me-TV/issues",
