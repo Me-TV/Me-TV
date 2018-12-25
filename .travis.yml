@@ -1,6 +1,7 @@
 sudo: true
 dist: xenial
 language: rust
+cache: cargo
 
 before_install:
 - curl -L https://people.freedesktop.org/~slomo/gstreamer.tar.gz | tar xz
