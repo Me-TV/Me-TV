@@ -24,10 +24,9 @@
     },
 
     "files": [
-        {
-            "includePattern": "\\./target/release/me-tv.*",
-            "excludePattern": "\\./target/release/me-tv.*\\.d"
-        }
+        "./target/release/me-tv",
+        "./target/release/me-tv-record",
+        "./target/release/me-tv-schedule"
     ],
 
     "publish": true
