@@ -18,9 +18,7 @@ before_script:
 - sh -e /etc/init.d/xvfb start
 - sleep 3
 
-script:
-- cargo build --verbose
-- cargo test --verbose
+before-deploy:
 - cargo build --release
 
 deploy:
