@@ -15,7 +15,7 @@ The home page for previous versions of Me TV is [Me TV Home Page on Launchpad](h
 
 To run Me TV, it is assumed you have the following installed:
 
-1. GTK+3 3.18.0 or later.
+1. GTK+ 3.18.0 or later.
 2. GStreamer 1.12.0 or later for Me TV 3.0.x, or GStreamer 1.14.5 or later for Me TV 3.1.x or later.
 3. The base, good, and bad GStreamer plugins – currently the DVB plugin is in the bad package; it started
 there for historical reasons, and although it is not now bad, it is good, it has never migrated to the good
@@ -23,25 +23,25 @@ package. So to run Me TV on Debian you need the packages gstreamer1.0-plugins-ba
 gstreamer1.0-plugins-good, and gstreamer1.0-plugins-bad. On Debian the GStreamer GTK and OpenGL plugins have
 been separated out, so you will also need to install gstreamer1.0-gtk3 and gstreamer1.0-gl.
 
-For building Me TV you need the development packages installed, not just the library packages. So on Debian
-the libgtk-3-dev and the libgstreamer1.0-dev packages.
+For building Me TV from source code you need the development packages installed, not just the library
+packages. So on Debian the libgtk-3-dev and the libgstreamer1.0-dev packages.
 
 ## Using Pre-compiled Executables
 
-Most users of Me TV will not want to be bothered with trying to build the executables from
-source code. Pre-compiled are therefore available on Bintray. There are pre-compiled
-executables for each release. The Me TV project page is
-[here](https://bintray.com/beta/#/me-tv/Downloads/Me-TV). Go to the release you are
-interested in and there is section "Direct Downloads" that has the pre-compiled executables.
+Most users of Me TV will not want to be bothered with trying to build the executables from source
+code. Pre-compiled executables are therefore available on Bintray; a set of pre-compiled executables for
+each release, and the snapshot ones for the next release – that are replaced with each new commit to the
+repository. The Me TV project page is [here](https://bintray.com/beta/#/me-tv/Downloads/Me-TV). Go to the
+release you are interested in and there is section "Direct Downloads" that has the pre-compiled executables
+for that release.
 
 ## Building (and Installing)
 
-If you are going to build the executables from sourc, you need to either take a clone of
-this repository, or download a release tarball.  You will then need to build the
-executable. This being a Rust program all build is handled using Cargo – though there is a
-Meson/Ninja build for those who wish to use that, Rust and Cargo are still needed though,
-the Meson/Ninja build just manages use of Cargo. Rust and Cargo may be packaged for your
-operating system, but most people use [Rustup](https://rustup.rs/) to install Rust and
+If you are going to build the executables from source, you need to either take a clone of this repository,
+or download a release tarball.  You will then need to build the executable. This being a Rust program all
+build is handled using Cargo – though there is a Meson/Ninja build for those who wish to use that, Rust and
+Cargo are still needed though, the Meson/Ninja build just manages use of Cargo. Rust and Cargo may be
+packaged for your operating system, but most people use [Rustup](https://rustup.rs/) to install Rust and
 Cargo so as to stay up to date with both.
 
 Once you have Rust and Cargo installed, by whatever means, then in the directory of the Me TV project,
@@ -88,16 +88,21 @@ _dvb-tools_, whereas on Fedora Rawhide it is in the package _v4l-utils_ – for 
 the DVB tools from the V4L utils, whereas Fedora keeps them all together. To create the channels file you
 will not only need _dvbv5-scan_ installed but also the transmitter data files. These are in the package
 _dtv-scan-tables_ on both Debian and Fedora. However Debian installs them to /usr/share/dvb/dvb-t/ whereas
-Fedora installs them to /usr/share/dvbv5/dvb-t/.
+Fedora installs them to /usr/share/dvbv5/dvb-t/. You will also need to set the correct delivery system for
+your area. For example, Europe, Australia, and many other placed use DVB-T, North America uses ATSC.
 
 To have the channels file available before executing Me TV you can run _dvbv5-scan_ manually. For example:
 
     dvbv5-scan --output=~/.config/gstreamer-1.0/dvb-channels.conf /usr/share/dvb/dvb-t/uk-CrystalPalace
 
 on a Debian system (Fedora puts the transmitter files in a slightly different place) will do the right thing
-of you live in the Crystal Palace transmitter region in the UK. I suspect people will want to scan on their
-local transmitter, in which case you should replace the uk-CrystalPalace with the name appropriate for the
-location you are when you run Me TV.
+if you live in the Crystal Palace transmitter region in the UK. I suspect people will want to scan on their
+local transmitter, in which case you should replace the dvb-t/uk-CrystalPalace with the name appropriate for
+the location you are when you run Me TV.
+
+The Crystal Palace example is for a delivery system using DVB-T, if your area uses a different delivery
+system (ATSC, DVB-C, ISDB-T, etc.) the transmitter files are in different directories, for example
+/usr/share/dvb/atsc/us-ATSC-center-frequencies-8VSB
 
 If you do not have _dvb5-scan_ installed then best advice is to install it, preferably using the Linux
 distribution package management. If that is not possible then _dvbscan_ or _w\_scan_ can be used to create
@@ -116,17 +121,20 @@ Hopefully the UI is intuitive and gives a good UX. If not please feel free to su
 ## Recording
 
 The main Me TV program is a GUI for watching TV. With it come two command line programs,
-_me-tv-record_ and _me-tv-schedule_. _me-tv-record_ records a named channel for a given period
-to a named MPEG-4 file. The created files can be watched using Glide or Totem (or any other
-viewer program that can play MPEG-4 files). _me-tv-schedule_ is a command line program for
-setting up an execution of me-tv-record, i.e. it schedules recording a given channel for a given
-duration outputting to a given file, starting at a given time in the future.
+_me-tv-record_ and _me-tv-schedule_:
+- _me-tv-record_ records a named channel for a given period to a named MPEG-4 file. The created files can be
+watched using Glide or Totem (or any other viewer program that can play MPEG-4 files).
+- _me-tv-schedule_ sets up execution of _me-tv-record_ at a given time in the future, i.e. it schedules
+recording a given channel for a given duration outputting to a given file, starting at a given time in the
+future.
+
+It is not yet possible to start a recording from the Me TV GUI, but things are being planned.
 
 ## NB
 
-Me TV has, to date, only been tested for DVB-T and DVB-T2, none of the other formats (DVB-C, DVB-S, DVB-S2,
-ATSC) have been tested. They should work, but… actual reports of success are needed before any claims can be
-made.
+Me TV has, to date, only been tested for DVB-T and DVB-T2, none of the other delivery systems (DVB-C, DVB-S, DVB-S2,
+ATSC, ISDB-T) have been tested. They should work, but… actual reports of success are needed before any claims can be
+made. New year 2019, may bring news on the ATSC front.
 
 ## Licence
 
