@@ -16,15 +16,17 @@
     },
 
     "version": {
-        "name": "3.0.7",
-        "desc": "Version 3.0.7, obviously. :-)",
+        "name": "3.0.7-snapshot",
+        "desc": "Version 3.0.7-snapshot, obviously. :-)",
         "released": "2018-12-25",
-        "vcs_tag": "v3.0.7",
-        "gpgSign": false
+        "vcs_tag": "v3.0.7-snapshot",
+        "gpgSign": true
     },
 
     "files": [
-        {"includePattern": "build/release/me-tv.*"}
+        "target/releaser/me-tv",
+        "target/release/me-tv-record",
+        "target/release/me-tv-schedule"
     ],
 
     "publish": true
