@@ -23,7 +23,6 @@ script:
 - cargo build
 - cargo test
 - cargo build --release
-- ls -l ./target/release
 
 deploy:
   provider: bintray
@@ -34,4 +33,3 @@ deploy:
   passphrase: DVB-T2
   skip_cleanup: true
   on: travis-bintray
-  dry_run: true
