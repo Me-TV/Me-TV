@@ -1,9 +1,9 @@
 {
     "package": {
         "name": "Me-TV",
-        "repo": "generic",
+        "repo": "Downloads",
         "subject": "Me-TV",
-        "desc": "Latest Me TV release",
+        "desc": "Precompiled executables for download and use.",
         "website_url": "https://github.com/Me-TV/Me-TV",
         "issue_tracker_url": "https://github.com/Me-TV/Me-TV/issues",
         "vcs_url": "https://github.com/Me-TV/Me-TV",
