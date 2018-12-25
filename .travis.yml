@@ -23,7 +23,7 @@ script:
 - cargo build
 - cargo test
 - cargo build --release
-- ls -Rl ./target/release
+- ls -l ./target/release
 
 deploy:
   provider: bintray
