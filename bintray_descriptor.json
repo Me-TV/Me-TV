@@ -24,18 +24,9 @@
     },
 
     "files": [
-        {
-            "includePattern": "target/release/me-tv",
-            "uploadPattern": "v3.0.7-snapshot/me-tv"
-        },
-        {
-            "includePattern": "target/release/me-tv-record",
-            "uploadPattern": "v3.0.7-snapshot/me-tv-record"
-        },
-        {
-            "includePattern": "target/release/me-tv-schedule",
-            "uploadPattern": "v3.0.7-snapshot/me-tv-schedule"
-        }
+        {"includePattern": "target/release/me-tv", "uploadPattern": "me-tv"},
+        {"includePattern": "target/release/me-tv-record", "uploadPattern": "me-tv-record"},
+        {"includePattern": "target/release/me-tv-schedule", "uploadPattern": "me-tv-schedule"}
     ],
 
     "publish": true
