@@ -12,20 +12,20 @@
         "licenses": ["GPLv3"],
         "labels": ["dvb", "video", "audio", "television"],
         "public_download_numbers": false,
-        "public_stats": false,
+        "public_stats": false
     },
 
     "version": {
         "name": "3.0.7",
-        "desc": "Version 3.0.5, obviously. :-)",
-        "released": "2018-12-23",
+        "desc": "Version 3.0.7, obviously. :-)",
+        "released": "2018-12-25",
         "vcs_tag": "v3.0.7",
         "gpgSign": false
     },
 
-    "files":
-    [
-        {"includePattern": "build/release/me-tv(.*)*"},
+    "files": [
+        {"includePattern": "build/release/me-tv.*"}
     ],
+
     "publish": true
 }
