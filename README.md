@@ -1,7 +1,6 @@
 [![Travis-CI](https://travis-ci.org/Me-TV/Me-TV.svg?branch=master)](https://travis-ci.org/Me-TV/Me-TV)
 [![Licence](https://img.shields.io/badge/license-GPL_3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-[![Download](https://api.bintray.com/packages/russel/generic/Me_TV/images/download.svg?version=v3.0.6)
-](https://bintray.com/russel/generic/Me_TV/v3.0.6/link)
+[![Download](https://api.bintray.com/packages/russel/generic/Me_TV/images/download.svg)](https://bintray.com/russel/generic/Me_TV)
 
 # Me TV – it's TV for me computer
 
