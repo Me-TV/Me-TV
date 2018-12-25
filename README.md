@@ -31,7 +31,7 @@ the libgtk-3-dev and the libgstreamer1.0-dev packages.
 Most users of Me TV will not want to be bothered with trying to build the executables from
 source code. Pre-compiled are therefore available on Bintray. There are pre-compiled
 executables for each release. The Me TV project page is
-[here](https://bintray.com/beta/#/russel/generic/Me_TV). Go to the release you are
+[here](https://bintray.com/beta/#/me-tv/Downloads/Me-TV). Go to the release you are
 interested in and there is section "Direct Downloads" that has the pre-compiled executables.
 
 ## Building (and Installing)
