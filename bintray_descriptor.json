@@ -26,7 +26,7 @@
     "files": [
         {
             "includePattern": "target/release/me-tv(.*)",
-            "excludePattern": "target/release/me-tv(.*\\.d)"
+            "excludePattern": "target/release/me-tv(.*).d"
         }
     ],
 
