@@ -47,7 +47,7 @@ fn create() -> gtk::AboutDialog {
     authors.push("Russel Winder <russel@winder.org.uk>");
     let mut documentors = Vec::<&str>::new();
     about.set_authors(&authors);
-    about.set_comments("Me TV is a Digital Television (DVB) viewer for GTK+3.");
+    about.set_comments("A digital television (DVB) viewer using GTK+3 and GStreamer.");
     about.set_copyright("Copyright © 2010–2011  Michael Lamothe <michael.lamothe@gmail.com>\nCopyright © 2014, 2016–2018  Russel Winder <russel@winder.org.uk>");
     about.set_documenters(&documentors);
     about.set_license("This program is licenced under GNU General Public Licence (GPL) version 3.");

@@ -81,7 +81,7 @@ fn main() {
      */
     let cli_matches = clap::App::new("Me TV")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("A GTK+3 application for watching DVB broadcast.")
+        .about("A Digital Television (DVB) viewer using GTK+3 and GStreamer.")
         .arg(clap::Arg::with_name("no_gl")
             .long("no-gl")
             .help("Do not try to use OpenGL."))
