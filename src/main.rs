@@ -70,11 +70,17 @@ mod transmitter_dialog;
 fn main() {
     preferences::init();
     /*
-     *  As at 2018-04-05 there is no way of dealing with the handle_local_options and commandline events/signals.
-     *  Thus there is no Rust/GTK+ way of handling command line arguments.
+     *  As at 2018-12-26 gtk-rs seems not to allow connecting to the GTK+ handle_local_options signal,
+     *  though it does now allow connecting to the GTK+ command_line signal. Thus gtk-rs still does not
+     *  provide a way of processing options locally using the GTK+ mechanisms. Since we want to be able to
+     *  process command line prior to the primary instance being created and/or communicated with, we just
+     *  use the clap package. C++/gtkmm and D/GtkD do this right, it is a pity Rust/gtk-rs does not.
+     *
+     *  This is not a huge burden since clap is needed anyway for me-tv-record and me-tv-schedule, the two
+     *  command line programs that come with Me TV for doing recording.
      */
     let cli_matches = clap::App::new("Me TV")
-        .version("0.0.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .about("A GTK+3 application for watching DVB broadcast.")
         .arg(clap::Arg::with_name("no_gl")
             .long("no-gl")
