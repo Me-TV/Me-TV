@@ -6,8 +6,8 @@
 
 Me TV is a DVB – digital video broadcast – viewer based on GTK+3 and GStreamer.
 
-*NB This is a rewrite of Me TV for GTK+3 and GStreamer using the Rust programming language and the gtk-rs and
-gstreamer-rs bindings.*
+*NB This is a rewrite of Me TV for GTK+3 and GStreamer using the Rust programming language and the gtk-rs
+and gstreamer-rs bindings.*
 
 The home page for previous versions of Me TV is [Me TV Home Page on Launchpad](http://launchpad.net/me-tv).
 
@@ -16,15 +16,30 @@ The home page for previous versions of Me TV is [Me TV Home Page on Launchpad](h
 To run Me TV, it is assumed you have the following installed:
 
 1. GTK+ 3.18.0 or later.
-2. GStreamer 1.12.0 or later for Me TV 3.0.x, or GStreamer 1.14.5 or later for Me TV 3.1.x or later.
-3. The base, good, and bad GStreamer plugins – currently the DVB plugin is in the bad package; it started
-there for historical reasons, and although it is not now bad, it is good, it has never migrated to the good
-package. So to run Me TV on Debian you need the packages gstreamer1.0-plugins-base,
-gstreamer1.0-plugins-good, and gstreamer1.0-plugins-bad. On Debian the GStreamer GTK and OpenGL plugins have
-been separated out, so you will also need to install gstreamer1.0-gtk3 and gstreamer1.0-gl.
+1. GStreamer 1.12.0 or later for Me TV 3.0.x, or GStreamer 1.14.5 or later for Me TV 3.1.x or later.
+1. The GStreamer plugins – currently the DVB plugin is in the bad package; it started there for historical
+reasons, and although it is not now bad, it is good, it has never migrated to the good package. Some of the
+other bits and pieces that might get used during use of Me TV are in the ugly package, so best to install
+that; the things in there aren't actually ugly, some are indeed very nice – long story. On Debian at least
+some plugins from the GStreamer are separated out for Debian repository package publishing: the libav, gl,
+and gtk3 plugins are in their own Debian packages rather than being in one of base, good, bad, ugly
+GStreamer packages – sorry the term package is a bit over-used in this context. So, using Debian, you
+probably want to make sure the following Debian packages are installed:
+    1. gstreamer1.0-plugins-base
+    1. gstreamer1.0-plugins-good
+    1. gstreamer1.0-plugins-bad
+    1. gstreamer1.0-plugins-ugly
+    1. gstreamer1.0-libav
+    1. gstreamer1.0-gtk3
+    1. gstreamer1.0-gl
+
+This list of distribution packages should apply also to Ubuntu and Mint distributions. Fedora Rawhide
+probably doesn't have some of these last few, the Fedora packers do not separate things as much as the
+Debian packagers do.
 
 For building Me TV from source code you need the development packages installed, not just the library
-packages. So on Debian the libgtk-3-dev and the libgstreamer1.0-dev packages.
+packages. So on Debian the libgtk-3-dev, libgstreamer1.0-dev, and libgstreamer-plugins-bad1.0-dev
+packages. But you will not need these to run Me TV if you get pre-compiled executables.
 
 ## Using Pre-compiled Executables
 
