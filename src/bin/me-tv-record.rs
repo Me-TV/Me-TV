@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2018  Russel Winder
+ *  Copyright © 2018, 2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,35 +47,35 @@ A channel name and a duration must be provided.
             .short("a")
             .long("adapter")
             .value_name("NUMBER")
-            .help("Sets the adapter number to use, default 0.")
+            .help("Sets the adapter number to use.")
             .takes_value(true)
             .default_value("0"))
         .arg(Arg::with_name("frontend")
             .short("f")
             .long("frontend")
             .value_name("NUMBER")
-            .help("Sets the frontend number to use, default 0.")
+            .help("Sets the frontend number to use.")
             .takes_value(true)
             .default_value("0"))
         .arg(Arg::with_name("channel")
             .short("c")
             .long("channel")
             .value_name("CHANNEL")
-            .help("Sets the channel name, no default.")
+            .help("Sets the channel name, must be specified, no default.")
             .takes_value(true)
             .required(true))
         .arg(Arg::with_name("duration")
             .short("d")
             .long("duration")
             .value_name("TIME")
-            .help("Sets the duration of recording in minutes, no default.")
+            .help("Sets the duration of recording in minutes, must be specified, no default.")
             .takes_value(true)
             .required(true))
         .arg(Arg::with_name("output")
             .short("o")
             .long("output")
             .value_name("PATH")
-            .help("Path to output file, no default.")
+            .help("Path to output file, must be specified, no default.")
             .takes_value(true)
             .required(true))
         .arg(Arg::with_name("verbose")
