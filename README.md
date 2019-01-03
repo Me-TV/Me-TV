@@ -50,7 +50,7 @@ repository. The Me TV project page is [here](https://bintray.com/beta/#/me-tv/Do
 release you are interested in and there is section "Direct Downloads" that has the pre-compiled executables
 for that release.
 
-## Building (and Installing)
+## Building (and Installing) From Source
 
 If you are going to build the executables from source, you need to either take a clone of this repository,
 or download a release tarball.  You will then need to build the executable. This being a Rust program all
@@ -147,10 +147,14 @@ It is not yet possible to start a recording from the Me TV GUI, but things are b
 
 ## NB
 
-Me TV has, to date, only been tested for DVB-T and DVB-T2, none of the other delivery systems (DVB-C, DVB-S, DVB-S2,
-ATSC, ISDB-T) have been tested. They should work, but… actual reports of success are needed before any claims can be
-made. New year 2019, may bring news on the ATSC front.
+Me TV 3 has been developed and tested using only DVB-T and DVB-T2, none of the other delivery systems
+(DVB-C, DVB-S, DVB-S2, ATSC, ISDB-T) were tested. It was believed all the delivery systems should work, but…
+it isn't possible to test non-DVB-T and non-DVB-T2 broadcast in a DVB-T and DVB-T2 broadcast
+region. However, there is now at least one person using Me TV 3 in an ATSC area, and it works. Which is
+good. This still leaves no data on whether Me TV works with DVB-C, DVB-S, DVB-S2, and ISDB-T, reports of
+success are awaited.
 
 ## Licence
 
-This code is licenced under GPLv3. [![Licence](https://www.gnu.org/graphics/gplv3-127x51.png)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+This code is licenced under GPLv3.
+[![Licence](https://www.gnu.org/graphics/gplv3-127x51.png)](https://www.gnu.org/licenses/gpl-3.0.en.html)
