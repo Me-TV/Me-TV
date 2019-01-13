@@ -73,9 +73,9 @@ impl fmt::Display for DeliverySystem {
     }
 }
 
-impl std::convert::From<String> for DeliverySystem {
-    fn from(s: String) -> DeliverySystem {
-        match s.as_ref() {
+impl std::convert::From<&str> for DeliverySystem {
+    fn from(s: &str) -> DeliverySystem {
+        match s {
             "ATSC" => DeliverySystem::ATSC,
             "DVBC_ANNEX_A" => DeliverySystem::DVBC_ANNEX_A,
             "DVBC_ANNEX_B" => DeliverySystem::DVBC_ANNEX_B,
@@ -92,7 +92,7 @@ mod test {
 
     #[test]
     fn construct_from_string() {
-        assert_eq!(DeliverySystem::from("DVBT2".to_string()), DeliverySystem::DVBT2);
+        assert_eq!(DeliverySystem::from("DVBT2"), DeliverySystem::DVBT2);
     }
 
     #[test]

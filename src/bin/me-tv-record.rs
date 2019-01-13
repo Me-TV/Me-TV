@@ -175,13 +175,11 @@ A channel name and a duration must be provided.
                 e.sync_state_with_parent().expect("could not sync state of elements with parent");
             }
             let sink_pad = queue.get_static_pad("sink").expect("video queue has no sink pad");
-            let rc = src_pad.link(&sink_pad);
-            assert_eq!(rc, gstreamer::PadLinkReturn::Ok, "linking src_pad to sink_pad of new queue failed.");
+            src_pad.link(&sink_pad).expect("linking src_pad to sink_pad of new queue failed");
             let new_element_src_pad = new_element.get_static_pad("src").expect("new element has no src pad");
             let sink_pad_template = if is_audio { "audio_%u" } else { "video_%u" };
             let mp4mux_sink_pad = mp4mux.get_request_pad(sink_pad_template).expect(&format!("mp4mux has no {} sink pad", sink_pad_template));
-            let rc = new_element_src_pad.link(&mp4mux_sink_pad);
-            assert_eq!(rc, gstreamer::PadLinkReturn::Ok, "linking new element to mp4mux failed");
+            new_element_src_pad.link(&mp4mux_sink_pad).expect("linking new element to mp4mux failed.");
             Ok(())
         };
         if let Err(err) = insert_sink(is_audio, is_video) {
@@ -189,8 +187,7 @@ A channel name and a duration must be provided.
             gst_element_error!(d_b, gstreamer::LibraryError::Failed, ("Failed to insert sink"), ["{:?}", err]);
         }
     });
-    let rc = pipeline.set_state(gstreamer::State::Playing);
-    assert_ne!(rc, gstreamer::StateChangeReturn::Failure);
+    pipeline.set_state(gstreamer::State::Playing).unwrap();
     thread::spawn({
         let pipeline_weak_ref = pipeline.downgrade();
         move || {
@@ -218,10 +215,9 @@ A channel name and a duration must be provided.
         match msg.view() {
             MessageView::Eos(..) => break,
             MessageView::Error(err) => {
-                let rc = pipeline.set_state(gstreamer::State::Null);
-                assert_ne!(rc, gstreamer::StateChangeReturn::Failure);
+                pipeline.set_state(gstreamer::State::Null).unwrap();
                 println!("Error: {} {} {} {}",
-                         err.get_src().map(|s| s.get_path_string()).unwrap_or_else(|| String::from("None")),
+                         err.get_src().map(|s| s.get_path_string()).unwrap_or_else(|| glib::GString::from("None")),
                          err.get_error().description(),
                          err.get_debug().unwrap_or_else(|| String::from("None")),
                          err.get_error(),
@@ -242,6 +238,5 @@ A channel name and a duration must be provided.
             _ => (),
         }
     }
-    let rc = pipeline.set_state(gstreamer::State::Null);
-    assert_ne!(rc, gstreamer::StateChangeReturn::Failure);
+    pipeline.set_state(gstreamer::State::Null).unwrap();
 }

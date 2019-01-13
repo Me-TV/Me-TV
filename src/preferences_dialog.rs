@@ -44,7 +44,7 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
         }
         comboboxtext.set_active(preferences::get_delivery_system().get_index());
         comboboxtext.connect_changed(
-            move |selector| preferences::set_delivery_system(selector.get_active_text().unwrap().into(), true)
+            move |selector| preferences::set_delivery_system(selector.get_active_text().unwrap().as_str().into(), true)
         );
         comboboxtext
     };

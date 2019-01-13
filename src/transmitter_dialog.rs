@@ -103,7 +103,7 @@ pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<path::PathBuf>
             Some(dialog) => {
                 dialog.dialog.run();
                 let mut path = transmitter_files_directory_path;
-                path.push(dialog.transmitter.get_active_text().unwrap());
+                path.push(dialog.transmitter.get_active_text().unwrap().as_str());
                 dialog.dialog.destroy();
                 Some(path)
             },

@@ -165,16 +165,14 @@ impl GStreamerEngine {
 
     pub fn pause(&self) {
         let (rv, state, _pending) = self.playbin.get_state(gst::CLOCK_TIME_NONE);
-        assert_ne!(rv, gst::StateChangeReturn::Failure);
+        assert_eq!(rv.unwrap(), gst::StateChangeSuccess::Success);
         if state == gst::State::Playing {
-            let rv = self.playbin.set_state(gst::State::Paused);
-            assert_ne!(rv, gst::StateChangeReturn::Failure);
+            self.playbin.set_state(gst::State::Paused).unwrap();
         }
     }
 
     pub fn play(&self) {
-        let rv = self.playbin.set_state(gst::State::Playing);
-        if rv == gst::StateChangeReturn::Failure {
+        if let Err(error) = self.playbin.set_state(gst::State::Playing) {
             display_an_error_dialog(
                 Some(&(self.video_widget.get_toplevel().unwrap().downcast::<gtk::Window>().unwrap())),
                 "Could not set play state, perhaps the aerial isn't connected?\n\nTry running with 'GST_DEBUG=3 me-tv' for details."
@@ -183,8 +181,7 @@ impl GStreamerEngine {
     }
 
     pub fn stop(&self) {
-        let rv = self.playbin.set_state(gst::State::Null);
-        assert_ne!(rv,  gst::StateChangeReturn::Failure);
+        self.playbin.set_state(gst::State::Null).unwrap();
     }
 
     pub fn get_volume(&self) -> f64 {

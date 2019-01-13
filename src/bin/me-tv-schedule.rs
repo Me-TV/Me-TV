@@ -47,6 +47,9 @@ fn main() {
 
 A channel name, a start time, a file path, and either an end time
 or a duration must be provided.
+
+Start and end times must be in ISO8601 format which means
+either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
 ")
         .arg(Arg::with_name("adapter")
             .short("a")
