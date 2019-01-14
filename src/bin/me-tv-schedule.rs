@@ -20,23 +20,41 @@
  */
 
 extern crate clap;
-extern crate chrono;  // Parsers aren't really up to it, so use iso8601. :-(
+extern crate chrono;
 extern crate exitcode;
-extern crate iso8601;
+#[cfg(test)]
+extern crate rstest;
 extern crate time;  // Need this for durations for chrono.
 
 use std::process;
 
 use clap::{Arg, App};
 
-use chrono::{DateTime, Local, TimeZone};
-use time::Duration;
+use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
+use time::{Duration, now};
 
-fn convert_datetime(dt: iso8601::DateTime) -> DateTime<Local> {
-    match dt.date {
-        iso8601::Date::YMD{year, month, day} => Local.ymd(year, month, day).and_hms(dt.time.hour, dt.time.minute, dt.time.second),
-        _ => panic!("HELP"),
+fn parse_to_datetime(datum: &str) -> Result<NaiveDateTime, &str> {
+    let datetime_patterns = [
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M",
+        "%Y-%m-%d %H:%M",
+    ];
+    let time_patterns= [
+        "%H:%M:%S",
+        "%H:%M",
+    ];
+    for pattern in datetime_patterns.iter() {
+        if let Ok(datetime) = NaiveDateTime::parse_from_str(datum, pattern) {
+            return Ok(datetime.into());
+        }
     }
+    for pattern in time_patterns.iter() {
+        if let Ok(time) = NaiveTime::parse_from_str(datum, pattern) {
+            return Ok(Local::today().and_time(time).unwrap().naive_local())
+        }
+    };
+    Err(datum)
 }
 
 fn main() {
@@ -109,9 +127,9 @@ either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
     let adapter = matches.value_of("adapter").unwrap().parse::<u8>().expect("Couldn't parse adapter value as a positive integer.");
     let frontend = matches.value_of("frontend").unwrap().parse::<u8>().expect("Couldn't parse frontend value as a positive integer.");
     let channel = matches.value_of("channel").unwrap();
-    let start_time = convert_datetime(iso8601::datetime(matches.value_of("start_time").unwrap()).expect("Could not parse start time."));
+    let start_time = parse_to_datetime(matches.value_of("start_time").unwrap()).expect("Could not parse start time.");
     let end_time = match matches.value_of("end_time") {
-        Some(e_t) => Some(convert_datetime(iso8601::datetime(e_t).expect("Could not parse end time."))),
+        Some(e_t) => Some(parse_to_datetime(e_t).expect("Could not parse end time.")),
         None => None,
     };
     let duration = match matches.value_of("duration") {
@@ -166,13 +184,76 @@ either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
         .expect("Failed to start at process.");
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
+    use rstest::rstest_parametrize;
+
+    // Pending rstest_paramtrize working in this context, we hack a few tests manually.
 
     #[test]
-    fn datetime_conversion_works() {
-        let expected = Local.ymd(2018, 12, 19).and_hms(18, 15, 33);
-        let result = convert_datetime(iso8601::datetime(&expected.to_rfc3339()).unwrap());
-        assert_eq!(result, expected);
+    fn parse_full_with_t() {
+        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33);
+        match parse_to_datetime("2018-12-29T18:15:33") {
+            Ok(result) => assert_eq!(result, expected),
+            Err(_) => assert!(false),
+        };
+    }
+
+    #[test]
+    fn parse_date_no_seconds_with_t() {
+        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 0);
+        match parse_to_datetime("2018-12-29T18:15") {
+            Ok(result) => assert_eq!(result, expected),
+            Err(_) => assert!(false),
+        };
+    }
+
+    #[test]
+    fn parse_no_date_no_seconds_with_t() {
+        let expected = Local::today().naive_local().and_hms(18, 15, 00);
+        match parse_to_datetime("18:15") {
+            Ok(result) => assert_eq!(result, expected),
+            Err(_) => assert!(false),
+        };
+    }
+
+    #[test]
+    fn parse_full_without_t() {
+        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33);
+        match parse_to_datetime("2018-12-29 18:15:33") {
+            Ok(result) => assert_eq!(result, expected),
+            Err(e) => assert!(false, "failed to parse: {}", e),
+        };
+    }
+
+    #[test]
+    fn parse_date_no_seconds_without_t() {
+        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 0);
+        match parse_to_datetime("2018-12-29 18:15") {
+            Ok(result) => assert_eq!(result, expected),
+            Err(e) => assert!(false, "failed to parse: {}", e),
+        };
+    }
+
+    #[test]
+    fn parse_no_date_no_seconds_without_t() {
+        let expected = Local::today().naive_local().and_hms(18, 15, 0);
+        match parse_to_datetime("18:15") {
+            Ok(result) => assert_eq!(result, expected),
+            Err(e) => assert!(false, "failed to parse: {}", e),
+        };
+    }
+
+    #[rstest_parametrize(
+        datum, expected,
+        case("2018-12-29T18:15:33", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)),
+        case("2018-12-29 18:15:33", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33))
+    )]
+    fn parse_datetime_string(datum: &str, expected: NaiveDateTime) {
+        match parse_to_datetime(datum) {
+            Ok(result) => assert_eq!(result, expected),
+            Err(e) => assert!(false,"failed to parse: {}", e),
+        };
     }
 }
