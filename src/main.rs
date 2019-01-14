@@ -62,7 +62,7 @@ mod dvb;
 mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
-mod notify_daemon;
+mod adaptor_notify_daemon;
 mod preferences;
 mod preferences_dialog;
 mod remote_control;

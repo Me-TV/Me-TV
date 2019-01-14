@@ -26,7 +26,7 @@ use std::os::unix::fs::FileTypeExt;
 
 use futures::channel::mpsc::Sender;
 
-use notify_daemon;
+use adaptor_notify_daemon;
 
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.
@@ -111,10 +111,10 @@ pub fn search_and_add_adaptors(to_cw: &mut Sender<Message>) {
     }
 }
 
-/// The entry point for the thread that is the front end manager process.
+/// The entry point for the thread that is the frontend manager process.
 pub fn run(mut to_cw: Sender<Message>) {
     search_and_add_adaptors(&mut to_cw);
-    notify_daemon::run(to_cw);
+    adaptor_notify_daemon::run(to_cw);
     println!("Frontend Manager terminated.");
 }
 

@@ -50,7 +50,7 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
     }
 }
 
-/// The function that drives the inotify daemon.
+/// The function that drives the adaptor notify daemon.
 pub fn run(mut to_cw: Sender<Message>) {
     let (transmit_end, receive_end) = channel();
     let mut watcher = raw_watcher(transmit_end).unwrap();
@@ -80,8 +80,8 @@ pub fn run(mut to_cw: Sender<Message>) {
                     _ => {},
                 }
             },
-            Ok(event) => println!("notify_daemon: broken event: {:?}", event),
-            Err(e) => println!("notify_daemon: watch error: {:?}", e),
+            Ok(event) => println!("adaptor_notify_daemon: broken event: {:?}", event),
+            Err(e) => println!("adaptor_notify_daemon: watch error: {:?}", e),
         }
     }
 }
