@@ -189,66 +189,14 @@ mod test {
     use super::*;
     use rstest::rstest_parametrize;
 
-    // Pending rstest_paramtrize working in this context, we hack a few tests manually.
-
-    #[test]
-    fn parse_full_with_t() {
-        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33);
-        match parse_to_datetime("2018-12-29T18:15:33") {
-            Ok(result) => assert_eq!(result, expected),
-            Err(_) => assert!(false),
-        };
-    }
-
-    #[test]
-    fn parse_date_no_seconds_with_t() {
-        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 0);
-        match parse_to_datetime("2018-12-29T18:15") {
-            Ok(result) => assert_eq!(result, expected),
-            Err(_) => assert!(false),
-        };
-    }
-
-    #[test]
-    fn parse_no_date_no_seconds_with_t() {
-        let expected = Local::today().naive_local().and_hms(18, 15, 00);
-        match parse_to_datetime("18:15") {
-            Ok(result) => assert_eq!(result, expected),
-            Err(_) => assert!(false),
-        };
-    }
-
-    #[test]
-    fn parse_full_without_t() {
-        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33);
-        match parse_to_datetime("2018-12-29 18:15:33") {
-            Ok(result) => assert_eq!(result, expected),
-            Err(e) => assert!(false, "failed to parse: {}", e),
-        };
-    }
-
-    #[test]
-    fn parse_date_no_seconds_without_t() {
-        let expected = NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 0);
-        match parse_to_datetime("2018-12-29 18:15") {
-            Ok(result) => assert_eq!(result, expected),
-            Err(e) => assert!(false, "failed to parse: {}", e),
-        };
-    }
-
-    #[test]
-    fn parse_no_date_no_seconds_without_t() {
-        let expected = Local::today().naive_local().and_hms(18, 15, 0);
-        match parse_to_datetime("18:15") {
-            Ok(result) => assert_eq!(result, expected),
-            Err(e) => assert!(false, "failed to parse: {}", e),
-        };
-    }
-
     #[rstest_parametrize(
         datum, expected,
-        case("2018-12-29T18:15:33", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)),
-        case("2018-12-29 18:15:33", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33))
+        case("2018-12-29T18:15:33", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
+        case("2018-12-29 18:15:33", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
+        case("2018-12-29T18:15", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
+        case("2018-12-29 18:15", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
+        case("18:15:13", Unwrap("Local::today().naive_local().and_hms(18, 15, 13)")),
+        case("18:15", Unwrap("Local::today().naive_local().and_hms(18, 15, 00)")),
     )]
     fn parse_datetime_string(datum: &str, expected: NaiveDateTime) {
         match parse_to_datetime(datum) {
