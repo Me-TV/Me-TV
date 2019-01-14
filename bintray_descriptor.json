@@ -18,7 +18,7 @@
     "version": {
         "name": "v3.0.7-snapshot",
         "desc": "Version 3.0.7-snapshot, obviously. :-)",
-        "released": "2018-12-25",
+        "released": "2019-01-14",
         "vcs_tag": "v3.0.7-snapshot",
         "gpgSign": true
     },
@@ -26,7 +26,7 @@
     "files": [
         {"includePattern": "target/release/me-tv", "uploadPattern": "me-tv", "matrixParams": {"override": 1}},
         {"includePattern": "target/release/me-tv-record", "uploadPattern": "me-tv-record", "matrixParams": {"override": 1}},
-         {"includePattern": "target/release/me-tv-schedule", "uploadPattern": "me-tv-schedule", "matrixParams": {"override": 1}}
+        {"includePattern": "target/release/me-tv-schedule", "uploadPattern": "me-tv-schedule", "matrixParams": {"override": 1}}
     ],
 
     "publish": true
