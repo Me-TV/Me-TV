@@ -20,18 +20,19 @@
  */
 
 extern crate clap;
+extern crate fragile;
 extern crate futures;
 extern crate gdk;
+extern crate gdk_pixbuf;
 extern crate gio;
 extern crate glib;
-extern crate gtk;
-extern crate gdk_pixbuf;
+extern crate glob;
 extern crate gstreamer as gst;
+extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
 extern crate notify;
 extern crate regex;
-extern crate fragile;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -64,6 +65,7 @@ mod gstreamer_engine;
 mod notify_daemon;
 mod preferences;
 mod preferences_dialog;
+mod remote_control;
 mod transmitter_dialog;
 
 #[cfg(not(test))]
