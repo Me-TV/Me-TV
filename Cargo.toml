@@ -29,14 +29,15 @@ gdk = {git="https://github.com/gtk-rs/gdk.git"}
 gdk-pixbuf = {git="https://github.com/gtk-rs/gdk-pixbuf.git"}
 gio = {git="https://github.com/gtk-rs/gio.git", features=["futures"]}
 glib = {git="https://github.com/gtk-rs/glib.git", features=["v2_48", "futures"]}
+glob = "*"
 gtk = {git="https://github.com/gtk-rs/gtk.git", features=["v3_18"]}
 #
 #gstreamer = { version = "*", features = ["v1_12"] }
 #
 gstreamer = {git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs.git", features=["v1_12"]}
 #
-iso8601 = "*"
 lazy_static = "*"
+nix = "*"
 notify = "*"
 regex= "*"
 serde = "*"
@@ -48,4 +49,4 @@ xdg = "*"
 
 [dev-dependencies]
 quickcheck = "*"
-tempfile = "*"
+rstest = "*"
