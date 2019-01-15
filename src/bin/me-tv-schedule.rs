@@ -30,8 +30,9 @@ use std::process;
 
 use clap::{Arg, App};
 
-use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
-use time::{Duration, now};
+// Compiler reports NaiveDate as unused, this is not correct. It is used in the rstest tests.
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
+use time::Duration;
 
 fn parse_to_datetime(datum: &str) -> Result<NaiveDateTime, &str> {
     let datetime_patterns = [
@@ -180,8 +181,9 @@ either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
         .arg(format!("{}", start_time.time().format("%H:%M")))
         .arg(format!("{}", start_time.date().format("%Y-%m-%d")))
         .stdin(process::Stdio::from(echo_pipe))
-        .spawn()
+        .status()
         .expect("Failed to start at process.");
+    assert!(at_process.success());
 }
 
 #[cfg(test)]
