@@ -52,9 +52,9 @@ use gio::prelude::*;
 #[cfg(not(test))]
 use gtk::prelude::*;
 
+mod adaptor_notify_daemon;
 mod about;
 mod channel_names;
-mod metvcomboboxtext;
 mod control_window;
 mod control_window_button;
 mod dialogs;
@@ -62,10 +62,11 @@ mod dvb;
 mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
-mod adaptor_notify_daemon;
+mod metvcomboboxtext;
 mod preferences;
 mod preferences_dialog;
 mod remote_control;
+mod remote_control_notify_daemon;
 mod transmitter_dialog;
 
 #[cfg(not(test))]
@@ -119,7 +120,7 @@ fn main() {
             move |_, _| a.quit()
         });
         app.add_action(&quit_action);
-        thread::spawn(||{ frontend_manager::run(to_cw) });
+        thread::spawn(||{ frontend_manager::run(to_cw); });
     });
     // Get a glib-gio warning if activate is not handled.
     application.connect_activate(move |_| { });

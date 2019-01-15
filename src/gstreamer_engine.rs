@@ -172,7 +172,7 @@ impl GStreamerEngine {
     }
 
     pub fn play(&self) {
-        if let Err(error) = self.playbin.set_state(gst::State::Playing) {
+        if let Err(_) = self.playbin.set_state(gst::State::Playing) {
             display_an_error_dialog(
                 Some(&(self.video_widget.get_toplevel().unwrap().downcast::<gtk::Window>().unwrap())),
                 "Could not set play state, perhaps the aerial isn't connected?\n\nTry running with 'GST_DEBUG=3 me-tv' for details."

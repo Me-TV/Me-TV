@@ -38,6 +38,7 @@ pub struct FrontendId {
 
 /// An enumeration of all the message types that  can be sent by
 /// the frontend manager.
+#[derive(Debug)]
 pub enum Message {
     FrontendAppeared{fei: FrontendId},
     FrontendDisappeared{fei: FrontendId},
