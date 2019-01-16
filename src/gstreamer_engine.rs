@@ -37,7 +37,9 @@ use dialogs::display_an_error_dialog;
 use frontend_manager::FrontendId;
 use preferences;
 
-// Cannot use GL stuff on Nouveau, so it is important to know if this is running on a Nouveau system.
+/// Is nouveau the device driver?
+///
+/// Cannot use GL stuff on Nouveau, so it is important to know if this is running on a Nouveau system.
 // There is likely a much easier, and quicker, way of making this test.
 fn is_using_nouveau() -> bool {
     let lsmod_output = Command::new("lsmod").output().unwrap().stdout;
@@ -45,6 +47,9 @@ fn is_using_nouveau() -> bool {
     lsmod_output.contains("nouveau")
 }
 
+/// The GStreamer elements and GTK+ widgets that are the bits that do the work of rendering
+/// the television or radio channel.
+#[derive(Debug)]
 pub struct GStreamerEngine {
     playbin: gst::Element,
     video_element: gst::Element,

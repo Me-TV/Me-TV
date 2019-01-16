@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017, 2018  Russel Winder
+ *  Copyright © 2017–2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,12 +40,13 @@ use tempfile;
 use channel_names::{channels_file_path, get_names};
 use control_window_button::ControlWindowButton;
 use dialogs::display_an_error_dialog;
-use frontend_manager::{FrontendId, Message};
+use frontend_manager::FrontendId;
 use preferences;
 use transmitter_dialog;
 
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
 /// so use a bit of composition.
+#[derive(Debug)]
 pub struct ControlWindow {
     pub window: gtk::ApplicationWindow, // main.rs needs this for putting application menus dialogues over this window.
     main_box: gtk::Box,
@@ -54,6 +55,13 @@ pub struct ControlWindow {
     pub channel_names_store: gtk::ListStore, // Used by ControlWindowButton and FrontendWindow.
     channel_names_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
+}
+
+/// All the message types that  can be sent to the ControllerWindow.
+#[derive(Debug)]
+pub enum Message {
+    FrontendAppeared{fei: FrontendId},
+    FrontendDisappeared{fei: FrontendId},
 }
 
 impl ControlWindow {
@@ -125,8 +133,8 @@ impl ControlWindow {
             let c_w = control_window.clone();
             message_channel.for_each(move |message| {
                 match message {
-                    Message::FrontendAppeared { fei } => add_frontend(&c_w, &fei),
-                    Message::FrontendDisappeared { fei } => remove_frontend(&c_w, &fei),
+                    Message::FrontendAppeared{fei} => add_frontend(&c_w, &fei),
+                    Message::FrontendDisappeared{fei} => remove_frontend(&c_w, &fei),
                 }
                 Ok(())
             }).map(|_| ())

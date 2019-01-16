@@ -20,12 +20,18 @@
  */
 
 use std::fs::{File, OpenOptions};
+use std::os::unix::io::AsRawFd;
 use std::path::PathBuf;
+use std::rc::Rc;
 
+use futures::channel::mpsc::Sender;
 use glob::glob;
+use libc;
 use regex::Regex;
 
+use control_window::Message;
 use frontend_manager::FrontendId;
+use input_event_codes;
 
 #[derive(Debug)]
 pub struct RemoteControl {
@@ -91,6 +97,72 @@ impl RemoteControl {
             sys_rc_path: sys_rc_path.to_path_buf(),
             device_event_path,
             device_file,
+        }
+    }
+}
+
+pub fn get_list_of_remote_controllers() -> Option<Vec<Rc<RemoteControl>>> {
+    let rc_devices = match glob::glob("/sys/class/rc/rc*") {
+        Ok(paths) => paths.map(|x| x.unwrap()).collect::<Vec<PathBuf>>(),
+        Err(e) => panic!("Glob failure: {}", e),
+    };
+    if  rc_devices.is_empty() { None }
+    else { Some(rc_devices.iter()
+        .filter(|d| find_frontends_for_remote_control(d).len() > 0)
+        .map(|d| Rc::new(RemoteControl::new(d)))
+        .collect::<Vec<Rc<RemoteControl>>>()) }
+}
+
+/// A keystroke intended for a given frontend for use in sending messages between the
+/// remote controller daemon and the GUI.
+#[derive(Debug)]
+struct TargettedKeystroke {
+    frontend_id: FrontendId,
+    keystroke: u32,
+}
+
+/// Print all the events currently available on the event special file.
+fn process_events_for_device(device: &File, frontend_ids: &Vec<FrontendId>, to_cw: &Sender<Message>) {
+    // TODO is it reasonable to assume less than 64 events?
+    let buffer = [libc::input_event{time: libc::timeval{tv_sec: 0, tv_usec: 0}, type_: 0, code: 0, value: 0}; 64];
+    let item_size = std::mem::size_of::<libc::input_event>();
+    let rc = unsafe {
+        libc::read(device.as_raw_fd(), buffer.as_ptr() as *mut libc::c_void, item_size * 64)
+    };
+    if rc < 0 { panic!("Read failed:"); }
+    let event_count = rc as usize /  item_size;
+    assert_eq!(item_size * event_count, rc as usize);
+    for i in 0 .. event_count {
+        let item = buffer[i];
+        if item.type_ == input_event_codes::EV_KEY as u16 {
+            println!("Got a keystroke code {:?} and value {:?} for frontends {:?}", item.code, item.value, frontend_ids);
+            // TODO Send the TargettedKeystroke to the GUI thread.
+        }
+    }
+}
+
+pub fn run(to_cw: Sender<Message>) {
+    ioctl_write_int!(ioctl_eviocgrab, b'E', 0x90);
+    loop {
+        // TODO What happens if a new adapter is inserted before a remote control event happens.
+        //    Need to take this into accounts, which means a listener for the remote controllers.
+        let remote_controls = get_list_of_remote_controllers().unwrap_or(vec![]);
+        let event_devices = remote_controls.iter().map(|d| &d.device_file).collect::<Vec<&File>>();
+        let mut pollfds = event_devices.iter().map(|device| {
+            unsafe {
+                ioctl_eviocgrab(device.as_raw_fd(), 1).unwrap();
+            }
+            libc::pollfd{fd: device.as_raw_fd(), events: libc::POLLIN, revents: 0}
+        }).collect::<Vec<libc::pollfd>>();
+        assert_eq!(event_devices.len(), pollfds.len());
+        unsafe {
+            let count = libc::poll(pollfds.as_mut_ptr(), pollfds.len() as u64, -1);
+            assert!(count > 0);
+            for i in 0..pollfds.len() {
+                if pollfds[i].revents != 0 {
+                    process_events_for_device(&event_devices[i], &remote_controls[i].frontend_ids, &to_cw);
+                }
+            }
         }
     }
 }

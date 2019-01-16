@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017, 2018  Russel Winder
+ *  Copyright © 2017–2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ use preferences;
 /// control bar. In window mode this value should be None.
 static mut LAST_ACTIVITY_TIME: Option<Instant> = None;
 
+/// A frontend window for rendering a television or radio channel.
+#[derive(Debug)]
 pub struct FrontendWindow {
     control_window_button: Rc<ControlWindowButton>,
     window: gtk::Window,
@@ -282,7 +284,7 @@ fn hide_cursor(widget: &gtk::Widget) {
 
 fn show_cursor(widget: &gtk::Widget) {
     if let Some(window) = widget.get_window() {
-       window.set_cursor(None);
+       window.set_cursor(None::<&gdk::Cursor>);
     }
 }
 

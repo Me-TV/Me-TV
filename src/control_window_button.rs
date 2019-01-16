@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017, 2018  Russel Winder
+ *  Copyright © 2017–2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ use preferences;
 
 /// A `ControlWindowButton` is a `gtk::Box` but there is no inheritance so use
 /// a bit of composition.
+#[derive(Debug)]
 pub struct ControlWindowButton {
     pub control_window: Rc<ControlWindow>, // FrontendWindow instance needs access to this.
     pub frontend_id: FrontendId, // ControlWindow instance needs access to this for searching.

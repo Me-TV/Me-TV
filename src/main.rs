@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017, 2018  Russel Winder
+ *  Copyright © 2017–2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,9 @@ extern crate gstreamer as gst;
 extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
+extern crate libc;
+#[macro_use]
+extern crate nix;
 extern crate notify;
 extern crate regex;
 extern crate serde;
@@ -62,11 +65,11 @@ mod dvb;
 mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
+pub mod input_event_codes; // Make this module public to avoid all the unused warnings.
 mod metvcomboboxtext;
 mod preferences;
 mod preferences_dialog;
 mod remote_control;
-mod remote_control_notify_daemon;
 mod transmitter_dialog;
 
 #[cfg(not(test))]
@@ -100,7 +103,7 @@ fn main() {
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(&application_menu);
-        let (to_cw, from_fem) = futures::channel::mpsc::channel::<frontend_manager::Message>(4);
+        let (to_cw, from_fem) = futures::channel::mpsc::channel::<control_window::Message>(4);
         let control_window = control_window::ControlWindow::new(&app, from_fem);
         let preferences_action = gio::SimpleAction::new("preferences", None);
         preferences_action.connect_activate({

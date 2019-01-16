@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017, 2018  Russel Winder
+ *  Copyright © 2017–2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 
 use regex::Regex;
 
-use frontend_manager::{FrontendId, Message};
+use control_window::Message;
+use frontend_manager::FrontendId;
 
 // TODO Find out how to fix this problem of notification of the frontendX files..
 //

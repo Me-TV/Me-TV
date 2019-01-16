@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017, 2018  Russel Winder
+ *  Copyright © 2017–2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,13 +20,15 @@
  */
 
 use std::fs;
-use std::path::PathBuf;
-
 use std::os::unix::fs::FileTypeExt;
+use std::path::PathBuf;
+use std::thread;
 
 use futures::channel::mpsc::Sender;
 
+use control_window::Message;
 use adaptor_notify_daemon;
+use remote_control;
 
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.
@@ -34,14 +36,6 @@ use adaptor_notify_daemon;
 pub struct FrontendId {
     pub adapter: u8,
     pub frontend: u8,
-}
-
-/// An enumeration of all the message types that  can be sent by
-/// the frontend manager.
-#[derive(Debug)]
-pub enum Message {
-    FrontendAppeared{fei: FrontendId},
-    FrontendDisappeared{fei: FrontendId},
 }
 
 /// The path in the filesystem to the DVB related special files.
@@ -115,6 +109,10 @@ pub fn search_and_add_adaptors(to_cw: &mut Sender<Message>) {
 /// The entry point for the thread that is the frontend manager process.
 pub fn run(mut to_cw: Sender<Message>) {
     search_and_add_adaptors(&mut to_cw);
+    thread::spawn({
+        let tocw = to_cw.clone();
+        move || remote_control::run(tocw)
+    });
     adaptor_notify_daemon::run(to_cw);
     println!("Frontend Manager terminated.");
 }
