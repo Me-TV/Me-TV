@@ -182,7 +182,7 @@ impl ControlWindowButton {
             }
             input_event_codes::KEY_VOLUMEUP => {
                 if tk.value > 0 {
-                    if let Some(ref mut f_e_w) = *self.frontend_window.borrow_mut() {
+                    if let Some(ref f_e_w) = *self.frontend_window.borrow() {
                         let button = &f_e_w.volume_button;
                         let volume = button.get_value();
                         let increment = button.get_adjustment().get_step_increment();
@@ -192,7 +192,7 @@ impl ControlWindowButton {
             },
             input_event_codes::KEY_VOLUMEDOWN => {
                 if tk.value > 0 {
-                    if let Some(ref mut f_e_w) = *self.frontend_window.borrow_mut() {
+                    if let Some(ref f_e_w) = *self.frontend_window.borrow() {
                         let button = &f_e_w.volume_button;
                         let volume = button.get_value();
                         let increment = button.get_adjustment().get_step_increment();
