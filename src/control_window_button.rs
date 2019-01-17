@@ -99,13 +99,19 @@ impl ControlWindowButton {
         }
     }
 
-    /// Set the state of the channel control widgets.
+    /// Set the state of all the channel control widgets.
     fn set_channel_index(&self, channel_index: u32) {
         let current = self.channel_selector.get_active().unwrap();
         if current != channel_index {
             self.channel_selector.set_active(channel_index);
-            if let Some(ref frontend_window) = *self.frontend_window.borrow() {
+        }
+        if let Some(ref frontend_window) = *self.frontend_window.borrow() {
+            let fe_current = frontend_window.channel_selector.get_active().unwrap();
+            if fe_current != channel_index {
                 frontend_window.channel_selector.set_active(channel_index);
+            }
+            let fs_fe_current = frontend_window.fullscreen_channel_selector.get_active().unwrap();
+            if fs_fe_current != channel_index {
                 frontend_window.fullscreen_channel_selector.set_active(channel_index);
             }
         }
@@ -165,8 +171,6 @@ impl ControlWindowButton {
                     let selector = &self.channel_selector;
                     let index = selector.get_active().unwrap();
                     selector.set_active(index + 1);
-                    //  TODO Fails to change the channel ComboBox on the frontend window.
-                    //    But this happens when using the GUI as well. :-(
                 }
             }
             input_event_codes::KEY_CHANNELDOWN => {
@@ -174,8 +178,6 @@ impl ControlWindowButton {
                     let selector = &self.channel_selector;
                     let index = selector.get_active().unwrap();
                     selector.set_active(index - 1);
-                    //  TODO Fails to change the channel ComboBox on the frontend window.
-                    //    But this happens when using the GUI as well. :-(
                 }
             }
             input_event_codes::KEY_VOLUMEUP => {
