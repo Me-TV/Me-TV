@@ -160,9 +160,27 @@ impl ControlWindowButton {
     pub fn process_targetted_keystroke(&self, tk: &TargettedKeystroke) {
         assert_eq!(self.frontend_id, tk.frontend_id);
         match tk.keystroke {
+            input_event_codes::KEY_CHANNELUP => {
+                if tk.value > 0 {
+                    let selector = &self.channel_selector;
+                    let index = selector.get_active().unwrap();
+                    selector.set_active(index + 1);
+                    //  TODO Fails to change the channel ComboBox on the frontend window.
+                    //    But this happens when using the GUI as well. :-(
+                }
+            }
+            input_event_codes::KEY_CHANNELDOWN => {
+                if tk.value > 0 {
+                    let selector = &self.channel_selector;
+                    let index = selector.get_active().unwrap();
+                    selector.set_active(index - 1);
+                    //  TODO Fails to change the channel ComboBox on the frontend window.
+                    //    But this happens when using the GUI as well. :-(
+                }
+            }
             input_event_codes::KEY_VOLUMEUP => {
                 if tk.value > 0 {
-                    if let Some(f_e_w) = self.frontend_window.borrow_mut().clone() {
+                    if let Some(ref mut f_e_w) = *self.frontend_window.borrow_mut() {
                         let button = &f_e_w.volume_button;
                         let volume = button.get_value();
                         let increment = button.get_adjustment().get_step_increment();
@@ -172,7 +190,7 @@ impl ControlWindowButton {
             },
             input_event_codes::KEY_VOLUMEDOWN => {
                 if tk.value > 0 {
-                    if let Some(f_e_w) = self.frontend_window.borrow_mut().clone() {
+                    if let Some(ref mut f_e_w) = *self.frontend_window.borrow_mut() {
                         let button = &f_e_w.volume_button;
                         let volume = button.get_value();
                         let increment = button.get_adjustment().get_step_increment();
