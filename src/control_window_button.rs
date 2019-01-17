@@ -30,8 +30,10 @@ use control_window::ControlWindow;
 use dialogs::display_an_error_dialog;
 use frontend_manager::FrontendId;
 use frontend_window::FrontendWindow;
+use input_event_codes;
 use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
 use preferences;
+use remote_control::TargettedKeystroke;
 
 /// A `ControlWindowButton` is a `gtk::Box` but there is no inheritance so use
 /// a bit of composition.
@@ -151,6 +153,34 @@ impl ControlWindowButton {
                 // TODO Must handle not being able to tune to a channel better than panicking.
                 frontend_window.engine.play();
             }
+        }
+    }
+
+    /// Process a targetted keystroke.
+    pub fn process_targetted_keystroke(&self, tk: &TargettedKeystroke) {
+        assert_eq!(self.frontend_id, tk.frontend_id);
+        match tk.keystroke {
+            input_event_codes::KEY_VOLUMEUP => {
+                if tk.value > 0 {
+                    if let Some(f_e_w) = self.frontend_window.borrow_mut().clone() {
+                        let button = &f_e_w.volume_button;
+                        let volume = button.get_value();
+                        let increment = button.get_adjustment().get_step_increment();
+                        button.set_value(volume + increment);
+                    }
+                }
+            },
+            input_event_codes::KEY_VOLUMEDOWN => {
+                if tk.value > 0 {
+                    if let Some(f_e_w) = self.frontend_window.borrow_mut().clone() {
+                        let button = &f_e_w.volume_button;
+                        let volume = button.get_value();
+                        let increment = button.get_adjustment().get_step_increment();
+                        button.set_value(volume - increment);
+                    }
+                }
+            },
+            _ => {},
         }
     }
 

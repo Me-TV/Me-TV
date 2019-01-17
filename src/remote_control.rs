@@ -116,13 +116,14 @@ pub fn get_list_of_remote_controllers() -> Option<Vec<Rc<RemoteControl>>> {
 /// A keystroke intended for a given frontend for use in sending messages between the
 /// remote controller daemon and the GUI.
 #[derive(Debug)]
-struct TargettedKeystroke {
-    frontend_id: FrontendId,
-    keystroke: u32,
+pub struct TargettedKeystroke {
+    pub frontend_id: FrontendId, // Used in control_window
+    pub keystroke: u32, // Used in control_window
+    pub value: u32, // Used in control_window
 }
 
 /// Print all the events currently available on the event special file.
-fn process_events_for_device(device: &File, frontend_ids: &Vec<FrontendId>, to_cw: &Sender<Message>) {
+fn process_events_for_device(device: &File, frontend_ids: &Vec<FrontendId>, to_cw: &mut Sender<Message>) {
     // TODO is it reasonable to assume less than 64 events?
     let buffer = [libc::input_event{time: libc::timeval{tv_sec: 0, tv_usec: 0}, type_: 0, code: 0, value: 0}; 64];
     let item_size = std::mem::size_of::<libc::input_event>();
@@ -135,13 +136,14 @@ fn process_events_for_device(device: &File, frontend_ids: &Vec<FrontendId>, to_c
     for i in 0 .. event_count {
         let item = buffer[i];
         if item.type_ == input_event_codes::EV_KEY as u16 {
-            println!("Got a keystroke code {:?} and value {:?} for frontends {:?}", item.code, item.value, frontend_ids);
-            // TODO Send the TargettedKeystroke to the GUI thread.
+            to_cw.try_send(Message::TargettedKeystrokeReceived{
+                tk: TargettedKeystroke{frontend_id: frontend_ids[0].clone(), keystroke: item.code as u32, value: item.value as u32},
+            }).unwrap();
         }
     }
 }
 
-pub fn run(to_cw: Sender<Message>) {
+pub fn run(mut to_cw: Sender<Message>) {
     ioctl_write_int!(ioctl_eviocgrab, b'E', 0x90);
     loop {
         // TODO What happens if a new adapter is inserted before a remote control event happens.
@@ -149,6 +151,8 @@ pub fn run(to_cw: Sender<Message>) {
         let remote_controls = get_list_of_remote_controllers().unwrap_or(vec![]);
         let event_devices = remote_controls.iter().map(|d| &d.device_file).collect::<Vec<&File>>();
         let mut pollfds = event_devices.iter().map(|device| {
+            //  TODO It appears that some events are escaping to GNOME Shell rather than being grabbed
+            //    by this application.
             unsafe {
                 ioctl_eviocgrab(device.as_raw_fd(), 1).unwrap();
             }
@@ -160,7 +164,7 @@ pub fn run(to_cw: Sender<Message>) {
             assert!(count > 0);
             for i in 0..pollfds.len() {
                 if pollfds[i].revents != 0 {
-                    process_events_for_device(&event_devices[i], &remote_controls[i].frontend_ids, &to_cw);
+                    process_events_for_device(&event_devices[i], &remote_controls[i].frontend_ids, &mut to_cw);
                 }
             }
         }

@@ -48,7 +48,7 @@ pub struct FrontendWindow {
     pub close_button: gtk::Button, // ControlWindowButton instance needs access to this.
     fullscreen_button: gtk::Button,
     volume_adjustment: gtk::Adjustment,
-    volume_button: gtk::VolumeButton,
+    pub volume_button: gtk::VolumeButton,  // ControlWindowButton instance uses this.
     pub channel_selector: MeTVComboBoxText, // ControlWindowButton instance needs access to this.
     fullscreen_toolbar: gtk::Toolbar,
     fullscreen_unfullscreen_button: gtk::Button,

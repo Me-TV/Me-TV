@@ -42,6 +42,7 @@ use control_window_button::ControlWindowButton;
 use dialogs::display_an_error_dialog;
 use frontend_manager::FrontendId;
 use preferences;
+use remote_control::TargettedKeystroke;
 use transmitter_dialog;
 
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
@@ -62,6 +63,7 @@ pub struct ControlWindow {
 pub enum Message {
     FrontendAppeared{fei: FrontendId},
     FrontendDisappeared{fei: FrontendId},
+    TargettedKeystrokeReceived{tk: TargettedKeystroke},
 }
 
 impl ControlWindow {
@@ -135,6 +137,7 @@ impl ControlWindow {
                 match message {
                     Message::FrontendAppeared{fei} => add_frontend(&c_w, &fei),
                     Message::FrontendDisappeared{fei} => remove_frontend(&c_w, &fei),
+                    Message::TargettedKeystrokeReceived{tk} => process_targetted_keystroke(&c_w, &tk),
                 }
                 Ok(())
             }).map(|_| ())
@@ -308,4 +311,12 @@ fn remove_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
         control_window.main_box.pack_start(&control_window.label, true, true, 0);
     }
     control_window.window.show_all();
+}
+
+/// Process a keystroke bound for a given frontend.
+fn process_targetted_keystroke(control_window: &Rc<ControlWindow>, tk: &TargettedKeystroke) {
+    for c_w_b in control_window.control_window_buttons.borrow().iter()
+        .filter(|cwb| cwb.frontend_id == tk.frontend_id) {
+        c_w_b.process_targetted_keystroke(&tk);
+    }
 }
