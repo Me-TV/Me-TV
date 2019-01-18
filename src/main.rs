@@ -55,7 +55,6 @@ use gio::prelude::*;
 #[cfg(not(test))]
 use gtk::prelude::*;
 
-mod adaptor_notify_daemon;
 mod about;
 mod channel_names;
 mod control_window;
