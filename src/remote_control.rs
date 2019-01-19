@@ -150,7 +150,10 @@ pub struct TargettedKeystroke {
     pub value: u32, // Used in control_window
 }
 
-/// Print all the events currently available on the event special file.
+/// Process some remote control events.
+///
+/// Find all the events posted for this device, and send messages to the GUI so that it
+/// can act on the data. .
 fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut Sender<Message>) {
     // TODO is it reasonable to assume less than 64 events?
     let buffer = [libc::input_event{time: libc::timeval{tv_sec: 0, tv_usec: 0}, type_: 0, code: 0, value: 0}; 64];
@@ -171,6 +174,7 @@ fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut Se
     }
 }
 
+/// The function that becomes the remote control event listener.
 pub fn rc_event_listener(mut to_cw: Sender<Message>) {
     loop {
         // TODO What happens if a new adapter is inserted or an existing remote removed
@@ -197,18 +201,6 @@ pub fn rc_event_listener(mut to_cw: Sender<Message>) {
     }
 }
 
-fn print_all_remotes_known() {
-    match REMOTES.lock() {
-        Ok(data) => {
-            println!("Current RemoteControls:");
-            for item in data.iter() {
-                println!("\t{:?}", item);
-            }
-        },
-        Err(_) => println!("No data"),
-    }
-}
-
 /// Check for all the remote controls already known to the system and add then to the collection
 /// of known remote controls.
 fn add_already_installed_remotes() {
@@ -227,13 +219,12 @@ fn add_already_installed_remotes() {
         },
         Err(_) => panic!("Couldn't lock REMOTES for addition. ")
     };
-    print_all_remotes_known();
 }
 
+/// A new remote control appeared so add it to the collection of known ones.
 fn add_appeared_remote_control(lirc_path: PathBuf) {
-    println!("LIRC appeared: {:?}", &lirc_path);
     // TODO is a delay required here to ensure the /sys filestore has been updated
-    //   on the presence of the /dev/lircX
+    //   on the presence of the /dev/lircX?
     if get_sys_path_from_lirc_path(&lirc_path).is_some() {
         match REMOTES.lock() {
             Ok(mut data) => {
@@ -242,11 +233,10 @@ fn add_appeared_remote_control(lirc_path: PathBuf) {
             Err(_) => panic!("Failed to lock REMOTES for addition."),
         }
     }
-    print_all_remotes_known();
 }
 
+/// Remove a remote control fromt eh collection of known ones.
 fn remove_disappeared_remote_control(lirc_path: PathBuf) {
-    println!("LIRC disappeared: {:?}", &lirc_path);
     match REMOTES.lock() {
         Ok(mut data) => {
             //  TODO ensure that this properly tidies up all the things such as EVIOCGRAB.
@@ -254,9 +244,12 @@ fn remove_disappeared_remote_control(lirc_path: PathBuf) {
         },
         Err(_) => panic!("Failed to lock REMOTES for removal."),
     };
-    print_all_remotes_known();
 }
 
+/// The main daemon for remote control management.
+///
+/// Add all remote controls already present. Set of the event listener as a separate daemon.
+/// Settle to listening for added and removed remote controls.
 pub fn run(mut to_cw: Sender<Message>) {
     add_already_installed_remotes();
     thread::spawn(|| rc_event_listener(to_cw));
