@@ -21,12 +21,16 @@
 
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::AsRawFd;
-use std::path::PathBuf;
-use std::rc::Rc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::channel;
+use std::thread;
+use std::time::Duration;
 
 use futures::channel::mpsc::Sender;
 use glob::glob;
 use libc;
+use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
 
 use control_window::Message;
@@ -36,9 +40,32 @@ use input_event_codes;
 #[derive(Debug)]
 pub struct RemoteControl {
     pub frontend_ids: Vec<FrontendId>,
-    pub sys_rc_path: PathBuf,
-    pub device_event_path: PathBuf,
+    pub lirc_path: PathBuf,
+    pub sys_rc_path: PathBuf,  // Cache this even though it is refindable.
+    pub device_event_path: PathBuf,  // Cache this even though it is refindable.
     pub device_file: File,
+}
+
+lazy_static! {
+static ref REMOTES: Mutex<Vec<Arc<RemoteControl>>> = Mutex::new(vec![]);
+}
+
+/// Given a /dev/lircX path return the appropriate /sys/class/rc/rcY path.
+fn get_sys_path_from_lirc_path(lirc_path: &PathBuf) -> Option<PathBuf> {
+    let rc_devices_lirc_paths = match glob::glob("/sys/class/rc/rc*/lirc*") {
+        Ok(paths) => paths.map(|x| x.unwrap()).collect::<Vec<PathBuf>>(),
+        Err(e) => panic!("Glob failure: {}", e),
+    };
+    let rc_paths = rc_devices_lirc_paths.iter()
+        .filter(|pb| pb.file_name() == lirc_path.file_name())
+        .collect::<Vec<&PathBuf>>();
+    if rc_paths.len() == 0 { None }
+    else {
+        assert_eq!(rc_paths.len(), 1);
+        let mut rv = rc_paths[0].to_path_buf();
+        assert!(rv.pop());
+        Some(rv)
+    }
 }
 
 /// Create an /dev/inputs/eventsX `PathBuf` from the /sys/class/rc/rcY `PathBuf`.
@@ -47,11 +74,13 @@ pub struct RemoteControl {
 /// It is assumed that all Linux post 4.6 will be the same.
 fn create_event_path_from_sys_path(path: &PathBuf) -> PathBuf {
     let components = path.components().map(|x| x.as_os_str().to_str().unwrap()).collect::<Vec<&str>>();
-    let interesting_bits = vec![components[3], components[4], components[5], components[7]];
+    assert_eq!(components[0], "..");
+    assert_eq!(components[1], "..");
+    assert_eq!(components[components.len() -2], "rc");
     let mut event_path_string = String::from("/dev/input/by-path/pci-");
-    event_path_string += interesting_bits[1];
+    event_path_string += components[4];
     event_path_string += "-usb-0:";
-    event_path_string += interesting_bits[3].split("-").collect::<Vec<&str>>()[1];
+    event_path_string += components[components.len() - 3].split("-").collect::<Vec<&str>>()[1]; // TODO Seems overcomplicated.
     event_path_string += "-event";
     PathBuf::from(event_path_string)
 }
@@ -81,36 +110,35 @@ fn find_frontends_for_remote_control(sys_rc_path: &PathBuf) -> Vec<FrontendId> {
     extract_frontend_from_paths(&frontend_paths)
 }
 
+ioctl_write_int!(ioctl_eviocgrab, b'E', 0x90);
+
 impl RemoteControl {
-    pub fn new(sys_rc_path: &PathBuf) -> RemoteControl {
+    fn new(lirc_path: &PathBuf) -> RemoteControl {
+        let sys_rc_path = get_sys_path_from_lirc_path(lirc_path).unwrap(); // TODO Is it certain this will not fail?
+        let frontend_ids = find_frontends_for_remote_control(&sys_rc_path);
         let device_event_path= match sys_rc_path.read_link() {
             Ok(path) => create_event_path_from_sys_path(&path),
             Err(e) => panic!("Could not read symbolic link for remote control: {}", e),
         };
+        while ! device_event_path.exists() {
+            // TODO Need to avoid an infinite loop here.
+            thread::sleep(Duration::from_millis(500));
+        }
         let device_file = OpenOptions::new()
             .read(true)
             .open(&device_event_path)
             .expect(&format!("Cannot open the event stream {}", device_event_path.to_str().unwrap()));
-        let frontend_ids = find_frontends_for_remote_control(&sys_rc_path);
+        unsafe {
+            ioctl_eviocgrab(device_file.as_raw_fd(), 1).unwrap();
+        }
         RemoteControl {
             frontend_ids,
+            lirc_path: lirc_path.to_path_buf(),
             sys_rc_path: sys_rc_path.to_path_buf(),
             device_event_path,
             device_file,
         }
     }
-}
-
-pub fn get_list_of_remote_controllers() -> Option<Vec<Rc<RemoteControl>>> {
-    let rc_devices = match glob::glob("/sys/class/rc/rc*") {
-        Ok(paths) => paths.map(|x| x.unwrap()).collect::<Vec<PathBuf>>(),
-        Err(e) => panic!("Glob failure: {}", e),
-    };
-    if  rc_devices.is_empty() { None }
-    else { Some(rc_devices.iter()
-        .filter(|d| find_frontends_for_remote_control(d).len() > 0)
-        .map(|d| Rc::new(RemoteControl::new(d)))
-        .collect::<Vec<Rc<RemoteControl>>>()) }
 }
 
 /// A keystroke intended for a given frontend for use in sending messages between the
@@ -123,12 +151,12 @@ pub struct TargettedKeystroke {
 }
 
 /// Print all the events currently available on the event special file.
-fn process_events_for_device(device: &File, frontend_ids: &Vec<FrontendId>, to_cw: &mut Sender<Message>) {
+fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut Sender<Message>) {
     // TODO is it reasonable to assume less than 64 events?
     let buffer = [libc::input_event{time: libc::timeval{tv_sec: 0, tv_usec: 0}, type_: 0, code: 0, value: 0}; 64];
     let item_size = std::mem::size_of::<libc::input_event>();
     let rc = unsafe {
-        libc::read(device.as_raw_fd(), buffer.as_ptr() as *mut libc::c_void, item_size * 64)
+        libc::read(remote_control.device_file.as_raw_fd(), buffer.as_ptr() as *mut libc::c_void, item_size * 64)
     };
     if rc < 0 { panic!("Read failed:"); }
     let event_count = rc as usize /  item_size;
@@ -137,38 +165,126 @@ fn process_events_for_device(device: &File, frontend_ids: &Vec<FrontendId>, to_c
         let item = buffer[i];
         if item.type_ == input_event_codes::EV_KEY as u16 {
             to_cw.try_send(Message::TargettedKeystrokeReceived{
-                tk: TargettedKeystroke{frontend_id: frontend_ids[0].clone(), keystroke: item.code as u32, value: item.value as u32},
+                tk: TargettedKeystroke{frontend_id: remote_control.frontend_ids[0].clone(), keystroke: item.code as u32, value: item.value as u32},
             }).unwrap();
         }
     }
 }
 
-pub fn run(mut to_cw: Sender<Message>) {
-    ioctl_write_int!(ioctl_eviocgrab, b'E', 0x90);
+pub fn rc_event_listener(mut to_cw: Sender<Message>) {
     loop {
-        // TODO What happens if a new adapter is inserted before a remote control event happens.
-        //    Need to take this into accounts, which means a listener for the remote controllers.
-        let remote_controls = get_list_of_remote_controllers().unwrap_or(vec![]);
-        let event_devices = remote_controls.iter().map(|d| &d.device_file).collect::<Vec<&File>>();
-        let mut pollfds = event_devices.iter().map(|device| {
-            //  TODO It appears that some events are escaping to GNOME Shell rather than being grabbed
-            //    by this application.
-            unsafe {
-                ioctl_eviocgrab(device.as_raw_fd(), 1).unwrap();
-            }
-            libc::pollfd{fd: device.as_raw_fd(), events: libc::POLLIN, revents: 0}
+        // TODO What happens if a new adapter is inserted or an existing remote removed
+        //   before a remote control event happens.
+        let remote_controls = match REMOTES.lock() {
+            Ok(data) => data.iter().map(|x| x.clone()).collect::<Vec<Arc<RemoteControl>>>(),
+            Err(_) => vec![],
+        };
+        let mut pollfds = remote_controls.iter().map(|device| {
+            libc::pollfd{fd: device.device_file.as_raw_fd(), events: libc::POLLIN, revents: 0}
         }).collect::<Vec<libc::pollfd>>();
-        assert_eq!(event_devices.len(), pollfds.len());
-        unsafe {
-            let count = libc::poll(pollfds.as_mut_ptr(), pollfds.len() as u64, -1);
-            assert!(count > 0);
-            for i in 0..pollfds.len() {
-                if pollfds[i].revents != 0 {
-                    process_events_for_device(&event_devices[i], &remote_controls[i].frontend_ids, &mut to_cw);
+        if pollfds.len() > 0 {
+            unsafe {
+                // TODO Switch this to not being fully blocking but instead to have a timeout to allow a remote control refresh?
+                let count = libc::poll(pollfds.as_mut_ptr(), pollfds.len() as u64, -1);
+                assert!(count > 0);
+                for i in 0..pollfds.len() {
+                    if pollfds[i].revents != 0 {
+                        process_events_for_device(&remote_controls[i], &mut to_cw);
+                    }
                 }
             }
         }
     }
+}
+
+fn print_all_remotes_known() {
+    match REMOTES.lock() {
+        Ok(data) => {
+            println!("Current RemoteControls:");
+            for item in data.iter() {
+                println!("\t{:?}", item);
+            }
+        },
+        Err(_) => println!("No data"),
+    }
+}
+
+/// Check for all the remote controls already known to the system and add then to the collection
+/// of known remote controls.
+fn add_already_installed_remotes() {
+    let lirc_devices = match glob::glob("/dev/lirc*") {
+        Ok(paths) => paths.map(|x| x.unwrap()).collect::<Vec<PathBuf>>(),
+        Err(e) => panic!("Glob failure: {}", e),
+    };
+    if  lirc_devices.is_empty() { return; };
+    match REMOTES.lock () {
+        Ok(mut data) => {
+            for rc in lirc_devices.iter()
+                .filter(|lirc_path| get_sys_path_from_lirc_path(lirc_path).is_some())
+                .map(|lirc_path| Arc::new(RemoteControl::new(lirc_path))) {
+                data.push(rc);
+            }
+        },
+        Err(_) => panic!("Couldn't lock REMOTES for addition. ")
+    };
+    print_all_remotes_known();
+}
+
+fn add_appeared_remote_control(lirc_path: PathBuf) {
+    println!("LIRC appeared: {:?}", &lirc_path);
+    // TODO is a delay required here to ensure the /sys filestore has been updated
+    //   on the presence of the /dev/lircX
+    if get_sys_path_from_lirc_path(&lirc_path).is_some() {
+        match REMOTES.lock() {
+            Ok(mut data) => {
+                data.push(Arc::new(RemoteControl::new(&lirc_path)))
+            },
+            Err(_) => panic!("Failed to lock REMOTES for addition."),
+        }
+    }
+    print_all_remotes_known();
+}
+
+fn remove_disappeared_remote_control(lirc_path: PathBuf) {
+    println!("LIRC disappeared: {:?}", &lirc_path);
+    match REMOTES.lock() {
+        Ok(mut data) => {
+            //  TODO ensure that this properly tidies up all the things such as EVIOCGRAB.
+            data.retain(|d| d.lirc_path != lirc_path)
+        },
+        Err(_) => panic!("Failed to lock REMOTES for removal."),
+    };
+    print_all_remotes_known();
+}
+
+pub fn run(mut to_cw: Sender<Message>) {
+    add_already_installed_remotes();
+    thread::spawn(|| rc_event_listener(to_cw));
+    let (transmit_end, receive_end) = channel();
+    let mut watcher = raw_watcher(transmit_end).unwrap();
+    watcher.watch("/dev", RecursiveMode::NonRecursive).unwrap();
+    loop {
+        match receive_end.recv() {
+            Ok(RawEvent { path: Some(path), op: Ok(op), cookie: _cookie }) => {
+                match op {
+                    op::CREATE => {
+                        if path.file_name().unwrap().to_str().unwrap().starts_with("lirc") {
+                            add_appeared_remote_control(path);
+                        }
+                    },
+                    op::REMOVE => {
+                        if path.file_name().unwrap().to_str().unwrap().starts_with("lirc") {
+                            remove_disappeared_remote_control(path);
+                        }
+                    },
+                    _ => {},
+                }
+            },
+            Ok(event) => println!("remote_control::run: broken event: {:?}", event),
+            Err(e) => println!("remote_control::run: watch error: {:?}", e),
+        }
+    }
+    println!("remote_control::run terminated.");
 }
 
 #[cfg(test)]
@@ -176,14 +292,21 @@ mod test {
     use super::*;
 
     #[test]
-    fn rc0_on_debian_linux() {
+    fn rc0_on_lynet_debian_linux() {
         assert_eq!(
             create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-1/2-1:1.0/rc/rc0")),
             PathBuf::from("/dev/input/by-path/pci-0000:00:14.0-usb-0:1:1.0-event"));
     }
 
     #[test]
-    fn rc1_on_debian_linux() {
+    fn rc0_on_anglides_debian_linux() {
+        assert_eq!(
+            create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:1d.7/usb4/4-5/4-5.2/4-5.2.4/4-5.2.4.1/4-5.2.4.1.1/4-5.2.4.1.1:1.0/rc/rc0")),
+            PathBuf::from("/dev/input/by-path/pci-0000:00:1d.7-usb-0:5.2.4.1.1:1.0-event"));
+    }
+
+    #[test]
+    fn rc1_on_lynet_debian_linux() {
         assert_eq!(
             create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-3/2-3:1.0/rc/rc1")),
             PathBuf::from("/dev/input/by-path/pci-0000:00:14.0-usb-0:3:1.0-event"));
