@@ -1,6 +1,6 @@
 [package]
 name = "me-tv"
-version = "3.0.7-snapshot"
+version = "3.0.7"
 authors = ["Russel Winder <russel@winder.org.uk>"]
 categories = ["desktop applications"]
 keywords = ["dvb", "video", "audio", "player", "atsc"]
