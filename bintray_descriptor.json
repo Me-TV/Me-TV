@@ -16,10 +16,10 @@
     },
 
     "version": {
-        "name": "v3.0.7-snapshot",
-        "desc": "Version 3.0.7-snapshot, obviously. :-)",
-        "released": "2019-01-14",
-        "vcs_tag": "v3.0.7-snapshot",
+        "name": "v3.0.7",
+        "desc": "Version 3.0.7",
+        "released": "2019-01-19",
+        "vcs_tag": "v3.0.7",
         "gpgSign": true
     },
 
