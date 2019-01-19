@@ -1,6 +1,8 @@
 # ChangeLog
 
 ## [Unreleased]
+
+## [3.0.7] - 2019-01-19
 ### Added
 - Added the command line executables _me-tv-record_ and
   _me-tv-schedule_ to allow people to record DVB broadcasts to MPEG4 files.
