@@ -71,7 +71,13 @@ impl FrontendWindow {
             w.set_default_size(480, 270);
             w
         };
-        // TODO Why have a special close button instead of the standard one?
+        window.connect_delete_event({
+            let button = control_window_button.frontend_button.clone();
+            move |_, _| {
+                button.set_active(!button.get_active());
+                Inhibit(false)
+            }
+        });
         let close_button = {
             let c_b = gtk::Button::new();
             c_b.set_image(&gtk::Image::new_from_icon_name("window-close-symbolic", gtk::IconSize::Button.into()));
