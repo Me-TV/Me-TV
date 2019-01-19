@@ -170,6 +170,7 @@ impl ControlWindowButton {
                 if tk.value > 0 {
                     let selector = &self.channel_selector;
                     let index = selector.get_active().unwrap();
+                    // TODO Need to stop going beyond the number of channels there are.
                     selector.set_active(index + 1);
                 }
             }
@@ -177,7 +178,9 @@ impl ControlWindowButton {
                 if tk.value > 0 {
                     let selector = &self.channel_selector;
                     let index = selector.get_active().unwrap();
-                    selector.set_active(index - 1);
+                    if index > 0 {
+                        selector.set_active(index - 1);
+                    }
                 }
             }
             input_event_codes::KEY_VOLUMEUP => {
@@ -185,8 +188,15 @@ impl ControlWindowButton {
                     if let Some(ref f_w) = *self.frontend_window.borrow() {
                         let button = &f_w.volume_button;
                         let volume = button.get_value();
-                        let increment = button.get_adjustment().get_step_increment();
-                        button.set_value(volume + increment);
+                        let adjustment = button.get_adjustment();
+                        let increment = adjustment.get_step_increment();
+                        let maximum = adjustment.get_upper();
+                        let new_volume = volume + increment;
+                        if new_volume < maximum {
+                            button.set_value(new_volume);
+                        } else {
+                            button.set_value(maximum);
+                        }
                     }
                 }
             },
@@ -195,8 +205,15 @@ impl ControlWindowButton {
                     if let Some(ref f_w) = *self.frontend_window.borrow() {
                         let button = &f_w.volume_button;
                         let volume = button.get_value();
-                        let increment = button.get_adjustment().get_step_increment();
-                        button.set_value(volume - increment);
+                        let adjustment = button.get_adjustment();
+                        let increment = adjustment.get_step_increment();
+                        let minimum = adjustment.get_lower();
+                        let new_volume = volume - increment;
+                        if new_volume > minimum {
+                            button.set_value(new_volume);
+                        } else {
+                            button.set_value(minimum);
+                        }
                     }
                 }
             },
