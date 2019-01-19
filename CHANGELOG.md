@@ -5,6 +5,7 @@
 - Added the command line executables _me-tv-record_ and
   _me-tv-schedule_ to allow people to record DVB broadcasts to MPEG4 files.
 - Added delivery systems other than DVB-T to the mix.
+- Added being able to use remote controllers with the adaptors.
 
 ## [3.0.6] - 2018-12-17
 ### Changed
