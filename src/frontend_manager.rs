@@ -26,9 +26,7 @@ use std::sync::mpsc::channel;
 use std::thread;
 
 use futures::channel::mpsc::Sender;
-
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
-
 use regex::Regex;
 
 use control_window::Message;
@@ -73,35 +71,32 @@ pub fn dvr_path(fei: &FrontendId) -> PathBuf {
     result
 }
 
-/// Process a newly present adapter to inform the control window of all the frontends
-/// newly accessible.
-fn add_frontends(to_cw: &mut Sender<Message>, id: u8) {
-    let mut fei = FrontendId{adapter: id, frontend: 0};
-    loop {
-        // TODO Is it worth doing the check for special file or just check for existence.
-        let path = frontend_path(&fei);
-        match fs::metadata(&path) {
-            Ok(m) => {
-                // NB m.is_file() is false for special files. :-(
-                // Assume the special devices were are dealing with are
-                // character devices not block devices.
-                if m.file_type().is_char_device() {
-                    to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
-                }
-            },
-            Err(_) => break,
-        };
-        fei.frontend += 1;
-    }
-}
-
-/// Search for any adapters already installed on start of the application
-pub fn search_and_add_adaptors(to_cw: &mut Sender<Message>) {
+/// Search for any adapters already installed on start of the application.
+///
+/// Inform the GUI and the remote control manager of the presence of
+/// any adaptors and frontends.
+pub fn add_already_installed_adaptors(to_cw: &mut Sender<Message>) {
     if dvb_base_path().is_dir() {
         let mut adapter_number = 0;
         loop {
             if adapter_path(adapter_number).is_dir() {
-                add_frontends(to_cw, adapter_number);
+                let mut fei = FrontendId{adapter: adapter_number, frontend: 0};
+                loop {
+                    // TODO Is it worth doing the check for special file or just check for existence.
+                    let path = frontend_path(&fei);
+                    match fs::metadata(&path) {
+                        Ok(m) => {
+                            // NB m.is_file() is false for special files. :-(
+                            // Assume the special devices were are dealing with are
+                            // character devices not block devices.
+                            if m.file_type().is_char_device() {
+                                to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
+                            }
+                        },
+                        Err(_) => break,
+                    };
+                    fei.frontend += 1;
+                }
             } else {
                 break;
             }
@@ -118,7 +113,7 @@ pub fn search_and_add_adaptors(to_cw: &mut Sender<Message>) {
 // for the dvr and net devices. All file removes are notified.
 
 /// Ensure the name is adaptorXXX /frontendYYY where XXX and YYY are pure numeric,
-///and return a `FrontendId` based on these numbers.
+/// and return a `FrontendId` based on these numbers.
 fn frontend_id_from(path: &str) -> Option<FrontendId> {
     let regex = Regex::new(r"/dev/dvb/adapter([0-9]+)/frontend([0-9]+)").unwrap();
     if regex.is_match(&path) {
@@ -132,13 +127,15 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
 }
 
 /// The entry point for the thread that is the frontend manager process.
+///
+/// Distributes "appeared" and "disappeared" messages to the GUI and to the remote
+/// control manager whenever an adaptor/frontend state changes.
 pub fn run(mut to_cw: Sender<Message>) {
-    search_and_add_adaptors(&mut to_cw);
     thread::spawn({
         let tocw = to_cw.clone();
         move || remote_control::run(tocw)
     });
-
+    add_already_installed_adaptors(&mut to_cw);
     let (transmit_end, receive_end) = channel();
     let mut watcher = raw_watcher(transmit_end).unwrap();
     watcher.watch("/dev", RecursiveMode::Recursive).unwrap();
@@ -152,7 +149,7 @@ pub fn run(mut to_cw: Sender<Message>) {
                         if path.contains("dvb") && path.contains("adapter") && path.contains("dvr") {
                             let path = path.replace("dvr", "frontend");
                             if let Some(fei) = frontend_id_from(&path) {
-                                to_cw.try_send(Message::FrontendAppeared{fei: fei}).unwrap();
+                                to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
                             }
                         }
                     },
@@ -160,19 +157,17 @@ pub fn run(mut to_cw: Sender<Message>) {
                         let path = path.to_str().unwrap();
                         if path.contains("dvb") && path.contains("adapter") && path.contains("frontend") {
                             if let Some(fei) = frontend_id_from(&path) {
-                                to_cw.try_send(Message::FrontendDisappeared{fei: fei}).unwrap();
+                                to_cw.try_send(Message::FrontendDisappeared{fei: fei.clone()}).unwrap();
                             }
                         }
                     },
                     _ => {},
                 }
             },
-            Ok(event) => println!("adaptor_notify_daemon: broken event: {:?}", event),
-            Err(e) => println!("adaptor_notify_daemon: watch error: {:?}", e),
+            Ok(event) => println!("frontend_manager::run: broken event: {:?}", event),
+            Err(e) => println!("frontend_manager::run: watch error: {:?}", e),
         }
     }
-
-    // adaptor_notify_daemon::run(to_cw);
     println!("Frontend Manager terminated.");
 }
 
