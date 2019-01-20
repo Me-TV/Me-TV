@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [3.0.8] - 2019-01-20
+3.0.7 release organisation failed so make a new release to get things properly organised.
+
 ## [3.0.7] - 2019-01-19
 ### Added
 - Added the command line executables _me-tv-record_ and
@@ -16,7 +19,7 @@
 
 ## [3.0.5] - 2018-12-17
 ### Changed
-- Frontend windows changed from teh erroneous application window to the correct
+- Frontend windows changed from the erroneous application window to the correct
   toplevel window.
 - Use crate fragile instead of send-cell.
 
