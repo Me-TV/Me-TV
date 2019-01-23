@@ -35,9 +35,11 @@ use gstreamer_engine::GStreamerEngine;
 use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
 use preferences;
 
-/// When in fullscreen mode this will hold the last time there was mouse movement
-/// or key press activity. It is used to provide a timeout for hiding the fullscreen
-/// control bar. In window mode this value should be None.
+/// In fullscreen mode this holds the last time there was mouse movement
+/// or key press activity: it is used to provide a timeout for hiding the fullscreen
+/// control bar. In window mode this value should always be None.
+//  NB  This is only ever accessed using the GUI thread so no multi-threading
+//  protection needed. Rust does though require all access to be labelled unsafe.
 static mut LAST_ACTIVITY_TIME: Option<Instant> = None;
 
 /// A frontend window for rendering a television or radio channel.
@@ -148,6 +150,7 @@ impl FrontendWindow {
                                     if Instant::now().duration_since(last_activity_time) > Duration::from_secs(5) {
                                         hide_cursor(&ww.clone().upcast::<gtk::Widget>());
                                         ft.hide();
+                                        println!("XXXXXXXX  Hide the fullscreen toolbar: {:?}, {:?}.", Instant::now(), LAST_ACTIVITY_TIME);
                                     }
                                     Continue(true)
                                 },
@@ -174,12 +177,20 @@ impl FrontendWindow {
         };
         let fullscreen_volume_button = {
             let f_v_b = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
-            //
-            // TODO Mouse movement over the open fullscreen volume button seems to update the timeout
-            //   and keep the toolbar visible. However any interaction with the volume button fails to
-            //   trigger a timeout. Need to find out how to make clicking + or -, use of key strokes,
-            //   gripping the slider and moving it cause a new timeout setting.
-            //
+            //  TODO Mouse clicks on the + and - icons seem to create timeouts, moving the mouse
+            //    creates a timeout, but grabbing the slider and moving it appears not to cause a timeout.
+            f_v_b.connect_event_after(|_, ev| {
+                add_timeout();
+                unsafe {
+                    println!("Adding timeout from volume button: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                };
+            });
+            f_v_b.get_popup().unwrap().connect_event_after(|_, ev| {
+                add_timeout();
+                unsafe {
+                    println!("Adding timeout from volume button popup: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                };
+            });
             f_v_b
         };
         let fullscreen_channel_selector = {
@@ -191,10 +202,20 @@ impl FrontendWindow {
                 move |f_c_s| ControlWindowButton::on_channel_changed(&c_w_b, f_c_s.get_active().unwrap())
             });
             //
-            // TODO motion and keystroke events on the full screen channel selector appear not to cause
-            //   a timeout on the diusappearance of the widget. Need to find way of ensuring that activity
-            //   on the channel selector causes timeouts on disappearance.
+            // TODO There appear to be no 'event-after' events posted for a ComboBox or it's child.
             //
+            f_c_s.connect_event_after(|_, ev| {
+                add_timeout();
+                unsafe {
+                    println!("Adding timeout from channel selector: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                };
+            });
+            f_c_s.get_child().unwrap().connect_event_after(|_, ev| {
+                add_timeout();
+                unsafe {
+                    println!("Adding timeout from channel selector child: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                };
+            });
             f_c_s
         };
         let volume = volume_adjustment.get_value();
@@ -304,6 +325,9 @@ fn show_toolbar_and_add_timeout(w: &gtk::Widget, t: &gtk::Toolbar) {
     show_cursor(&w);
     t.show();
     add_timeout();
+    unsafe {
+        println!("show_toolbar_and_add_timeout: {:?}, {:?}", Instant::now(), LAST_ACTIVITY_TIME);
+    }
 }
 
 fn add_timeout() {
@@ -311,11 +335,7 @@ fn add_timeout() {
         set_timeout(match LAST_ACTIVITY_TIME {
             Some(last_activity_time) => {
                 let current_time = Instant::now();
-                if last_activity_time < current_time {
-                    Some(current_time)
-                } else {
-                    Some(last_activity_time)
-                }
+                Some(if last_activity_time < current_time { current_time } else { last_activity_time })
             },
             None =>  Some(Instant::now()),
         });
