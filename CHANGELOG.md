@@ -1,6 +1,8 @@
 # ChangeLog
 
 ## [Unreleased]
+### Changed
+ - Update the way _me-tv-schedule_ handles date and time specification, and add some scheduling sanity checks.
 
 ## [3.0.8] - 2019-01-20
 3.0.7 release organisation failed so make a new release to get things properly organised.
