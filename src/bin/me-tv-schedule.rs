@@ -36,13 +36,17 @@ use time::Duration;
 
 fn parse_to_datetime(datum: &str) -> Result<NaiveDateTime, &str> {
     let datetime_patterns = [
+        "%Y%m%dT%H%M%S",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%d %H:%M:%S",
+        "%Y%m%dT%H%M",
         "%Y-%m-%dT%H:%M",
         "%Y-%m-%d %H:%M",
     ];
     let time_patterns= [
+        "%H%M%S",
         "%H:%M:%S",
+        "%H%M",
         "%H:%M",
     ];
     for pattern in datetime_patterns.iter() {
@@ -67,8 +71,10 @@ fn main() {
 A channel name, a start time, a file path, and either an end time
 or a duration must be provided.
 
-Start and end times must be in ISO8601 format which means
-either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
+Start and end date-times must be in ISO8601 format. A full date-time is like
+20190123T0559 or 2019-01-23T05:59 basically YYYYMMDD'T'hhmm[ss]
+or YYYY-MM-DD'T'hh:mm[:ss]. For a time today the time alone is specified,
+for example 0559 or 05:59, basically hhmm[ss] or hh:mm:[:ss].
 ")
         .arg(Arg::with_name("adapter")
             .short("a")
@@ -95,14 +101,14 @@ either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
             .short("s")
             .long("start-time")
             .value_name("DATE-TIME")
-            .help("Sets the start date and time time of recording, ISO8601 format, must be specified, no default.")
+            .help("Sets the start date and time (or just time for today) of recording, ISO8601 format, must be specified, no default.")
             .takes_value(true)
             .required(true))
         .arg(Arg::with_name("end_time")
             .short("e")
             .long("end-time")
             .value_name("DATE-TIME")
-            .help("Sets the end date and time of recording, ISO8601 format, no default. This must be set if duration is not, but do not set both.")
+            .help("Sets the end date and time (or just time for today) of recording, ISO8601 format, no default. This must be set if duration is not, but do not set both.")
             .takes_value(true)
             .conflicts_with("duration"))
         .arg(Arg::with_name("duration")
@@ -111,7 +117,7 @@ either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
             .value_name("TIME")
             .help("Sets the duration of recording in minutes, no default. This must be set unless end-time is, but do not set both.")
             .takes_value(true)
-            .required_unless("end-time"))
+            .required_unless("end_time"))
         .arg(Arg::with_name("output")
             .short("o")
             .long("output")
@@ -129,6 +135,14 @@ either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
     let frontend = matches.value_of("frontend").unwrap().parse::<u8>().expect("Couldn't parse frontend value as a positive integer.");
     let channel = matches.value_of("channel").unwrap();
     let start_time = parse_to_datetime(matches.value_of("start_time").unwrap()).expect("Could not parse start time.");
+    let now = {
+        let timestamp = time::now().to_timespec();
+        NaiveDateTime::from_timestamp(timestamp.sec, timestamp.nsec as u32)
+    };
+    if start_time < now {
+        println!("Start time is before the present time, cannot schedule a recording in the past.");
+        process::exit(exitcode::USAGE);
+    }
     let end_time = match matches.value_of("end_time") {
         Some(e_t) => Some(parse_to_datetime(e_t).expect("Could not parse end time.")),
         None => None,
@@ -152,6 +166,10 @@ either YYYY-MM-DD'T'hh:mm or YYYYMMDD'T'hhss.
     } else {
         duration.unwrap()
     };
+    if duration < Duration::seconds(0) {
+        println!("Duration must be a positive number of minutes, cannot record backwards.");
+        process::exit(exitcode::USAGE);
+    }
     let output_file = matches.value_of("output").unwrap();
     if be_verbose {
         println!(
@@ -193,11 +211,15 @@ mod test {
 
     #[rstest_parametrize(
         datum, expected,
+        case("20181229T181533", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
         case("2018-12-29T18:15:33", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
         case("2018-12-29 18:15:33", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
+        case("20181229T1815", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
         case("2018-12-29T18:15", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
         case("2018-12-29 18:15", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
+        case("181513", Unwrap("Local::today().naive_local().and_hms(18, 15, 13)")),
         case("18:15:13", Unwrap("Local::today().naive_local().and_hms(18, 15, 13)")),
+        case("1815", Unwrap("Local::today().naive_local().and_hms(18, 15, 00)")),
         case("18:15", Unwrap("Local::today().naive_local().and_hms(18, 15, 00)")),
     )]
     fn parse_datetime_string(datum: &str, expected: NaiveDateTime) {
