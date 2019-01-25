@@ -128,12 +128,16 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
 
 /// The entry point for the thread that is the frontend manager process.
 ///
-/// Distributes "appeared" and "disappeared" messages to the GUI and to the remote
-/// control manager whenever an adaptor/frontend state changes.
+/// Distributes "appeared" and "disappeared" messages to the GUI whenever an
+/// adaptor/frontend state changes.
+///
+/// Remote controls in the adapters are handled separately, as the kernel deals with
+/// them differently. A separate daemon is spawned for this that then sends messages to
+/// the GUI as needed.
 pub fn run(mut to_cw: Sender<Message>) {
     thread::spawn({
         let tocw = to_cw.clone();
-        move || remote_control::run(tocw)
+        || remote_control::run(tocw)
     });
     add_already_installed_adaptors(&mut to_cw);
     let (transmit_end, receive_end) = channel();
