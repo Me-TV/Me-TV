@@ -161,15 +161,16 @@ fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut Se
     let rc = unsafe {
         libc::read(remote_control.device_file.as_raw_fd(), buffer.as_ptr() as *mut libc::c_void, item_size * 64)
     };
-    if rc < 0 { panic!("Read failed:"); }
-    let event_count = rc as usize /  item_size;
-    assert_eq!(item_size * event_count, rc as usize);
-    for i in 0 .. event_count {
-        let item = buffer[i];
-        if item.type_ == input_event_codes::EV_KEY as u16 {
-            to_cw.try_send(Message::TargettedKeystrokeReceived{
-                tk: TargettedKeystroke{frontend_id: remote_control.frontend_ids[0].clone(), keystroke: item.code as u32, value: item.value as u32},
-            }).unwrap();
+    if rc > 0 {
+        let event_count = rc as usize / item_size;
+        assert_eq!(item_size * event_count, rc as usize);
+        for i in 0..event_count {
+            let item = buffer[i];
+            if item.type_ == input_event_codes::EV_KEY as u16 {
+                to_cw.try_send(Message::TargettedKeystrokeReceived {
+                    tk: TargettedKeystroke { frontend_id: remote_control.frontend_ids[0].clone(), keystroke: item.code as u32, value: item.value as u32 },
+                }).unwrap();
+            }
         }
     }
 }
