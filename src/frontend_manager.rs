@@ -142,35 +142,48 @@ pub fn run(mut to_cw: Sender<Message>) {
     add_already_installed_adaptors(&mut to_cw);
     let (transmit_end, receive_end) = channel();
     let mut watcher = raw_watcher(transmit_end).unwrap();
-    watcher.watch("/dev", RecursiveMode::Recursive).unwrap();
-    loop {
-        match receive_end.recv() {
-            Ok(RawEvent{path: Some(path), op: Ok(op), cookie: _cookie}) => {
-                match op {
-                    op::CREATE => {
-                        let path = path.to_str().unwrap();
-                        // Hack because of the lack of certainty that the frontend notifies.
-                        if path.contains("dvb") && path.contains("adapter") && path.contains("dvr") {
+    //  A simple:
+    //
+    //    watcher.watch("/dev", RecursiveMode::Recursive).unwrap();
+    //
+    //  used to work for everyone. However, as per, https://github.com/Me-TV/Me-TV/issues/36
+    //  and https://github.com/Me-TV/Me-TV/issues/37 there are now reported problems.
+    //  This indicates that there is genuine risk of failure so using unwrap is not appropriate,
+    //  despite the notify documentation. It is not clear why the problem only just appears
+    //  now, nor is there a real indication of what the actual problem is.
+    //
+    //  TODO How to monitor in the face of permission error?
+    match watcher.watch("/dev", RecursiveMode::Recursive) {
+        Ok(_) => loop {
+            match receive_end.recv() {
+                Ok(RawEvent{path: Some(path), op: Ok(op), cookie: _cookie}) => {
+                    match op {
+                        op::CREATE => {
+                            let path = path.to_str().unwrap();
+                            // Hack because of the lack of certainty that the frontend notifies.
+                            if path.contains("dvb") && path.contains("adapter") && path.contains("dvr") {
                             let path = path.replace("dvr", "frontend");
-                            if let Some(fei) = frontend_id_from(&path) {
-                                to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
+                                if let Some(fei) = frontend_id_from(&path) {
+                                    to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
+                                }
                             }
-                        }
-                    },
-                    op::REMOVE => {
+                        },
+                        op::REMOVE => {
                         let path = path.to_str().unwrap();
-                        if path.contains("dvb") && path.contains("adapter") && path.contains("frontend") {
-                            if let Some(fei) = frontend_id_from(&path) {
-                                to_cw.try_send(Message::FrontendDisappeared{fei: fei.clone()}).unwrap();
+                            if path.contains("dvb") && path.contains("adapter") && path.contains("frontend") {
+                                if let Some(fei) = frontend_id_from(&path) {
+                                    to_cw.try_send(Message::FrontendDisappeared{fei: fei.clone()}).unwrap();
+                                }
                             }
-                        }
-                    },
-                    _ => {},
-                }
-            },
-            Ok(event) => println!("frontend_manager::run: broken event: {:?}", event),
-            Err(e) => println!("frontend_manager::run: watch error: {:?}", e),
-        }
+                        },
+                        _ => {},
+                    }
+                },
+                Ok(event) => println!("frontend_manager::run: broken event: {:?}", event),
+                Err(e) => println!("frontend_manager::run: watch error: {:?}", e),
+            }
+        },
+        Err(e) => println!("Watch on /dev/ failed: {:?}", e),
     }
     println!("Frontend Manager terminated.");
 }
