@@ -183,7 +183,7 @@ pub fn run(mut to_cw: Sender<Message>) {
                 Err(e) => println!("frontend_manager::run: watch error: {:?}", e),
             }
         },
-        Err(e) => println!("Watch on /dev/ failed: {:?}", e),
+        Err(e) => println!("Watch on /dev/ failed: {:?}", e),  // TODO How to set up the watcher rather than terminate the daemon.
     }
     println!("Frontend Manager terminated.");
 }
