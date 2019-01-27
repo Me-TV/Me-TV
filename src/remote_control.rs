@@ -235,7 +235,7 @@ fn add_appeared_remote_control(lirc_path: PathBuf) {
             Ok(mut data) => {
                 match RemoteControl::new(&lirc_path) {
                     Ok(rc) => data.push(Arc::new(rc)),
-                    Err(e) => println!("Error adding a remote control: {}\nPerhaps the user is not in group input?{}", e),
+                    Err(e) => println!("Error adding a remote control: {}\nPerhaps the user is not in group input?", e),
                 }
             },
             Err(_) => panic!("Failed to lock REMOTES for addition."),
