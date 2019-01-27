@@ -52,6 +52,7 @@ static ref REMOTES: Mutex<Vec<Arc<RemoteControl>>> = Mutex::new(vec![]);
 
 /// Given a /dev/lircX path return the appropriate /sys/class/rc/rcY path.
 fn get_sys_path_from_lirc_path(lirc_path: &PathBuf) -> Option<PathBuf> {
+    // TODO Should this be a Result rather than an Option returning function?
     let rc_devices_lirc_paths = match glob::glob("/sys/class/rc/rc*/lirc*") {
         Ok(paths) => paths.map(|x| x.unwrap()).collect::<Vec<PathBuf>>(),
         Err(e) => panic!("Glob failure: {}", e),
@@ -113,7 +114,7 @@ fn find_frontends_for_remote_control(sys_rc_path: &PathBuf) -> Vec<FrontendId> {
 ioctl_write_int!(ioctl_eviocgrab, b'E', 0x90);
 
 impl RemoteControl {
-    fn new(lirc_path: &PathBuf) -> RemoteControl {
+    fn new(lirc_path: &PathBuf) -> Result<RemoteControl, String> {
         let sys_rc_path = get_sys_path_from_lirc_path(lirc_path).unwrap(); // TODO Is it certain this will not fail?
         let frontend_ids = find_frontends_for_remote_control(&sys_rc_path);
         let device_event_path= match sys_rc_path.read_link() {
@@ -124,20 +125,20 @@ impl RemoteControl {
             // TODO Need to avoid an infinite loop here.
             thread::sleep(Duration::from_millis(500));
         }
-        let device_file = OpenOptions::new()
-            .read(true)
-            .open(&device_event_path)
-            .expect(&format!("Cannot open the event stream {}", device_event_path.to_str().unwrap()));
+        let device_file = match OpenOptions::new().read(true).open(&device_event_path) {
+            Ok(d_f) => d_f,
+            Err(_) => return Err(format!("Cannot open the event stream {}", device_event_path.to_str().unwrap())),
+        };
         unsafe {
             ioctl_eviocgrab(device_file.as_raw_fd(), 1).unwrap();
         }
-        RemoteControl {
+        Ok(RemoteControl {
             frontend_ids,
             lirc_path: lirc_path.to_path_buf(),
             sys_rc_path: sys_rc_path.to_path_buf(),
             device_event_path,
             device_file,
-        }
+        })
     }
 }
 
@@ -214,8 +215,11 @@ fn add_already_installed_remotes() {
         Ok(mut data) => {
             for rc in lirc_devices.iter()
                 .filter(|lirc_path| get_sys_path_from_lirc_path(lirc_path).is_some())
-                .map(|lirc_path| Arc::new(RemoteControl::new(lirc_path))) {
-                data.push(rc);
+                .map(|lirc_path| RemoteControl::new(lirc_path)) {
+                match rc {
+                    Ok(r_c) => data.push(Arc::new(r_c)),
+                    Err(e) => println!("Error adding a remote control: {}\nPerhaps the user is not in group input?", e),
+                }
             }
         },
         Err(_) => panic!("Couldn't lock REMOTES for addition. ")
@@ -229,7 +233,10 @@ fn add_appeared_remote_control(lirc_path: PathBuf) {
     if get_sys_path_from_lirc_path(&lirc_path).is_some() {
         match REMOTES.lock() {
             Ok(mut data) => {
-                data.push(Arc::new(RemoteControl::new(&lirc_path)))
+                match RemoteControl::new(&lirc_path) {
+                    Ok(rc) => data.push(Arc::new(rc)),
+                    Err(e) => println!("Error adding a remote control: {}\nPerhaps the user is not in group input?{}", e),
+                }
             },
             Err(_) => panic!("Failed to lock REMOTES for addition."),
         }
