@@ -300,6 +300,13 @@ mod test {
     }
 
     #[test]
+    fn rc0_on_lionors_debian_linux() {
+        assert_eq!(
+            create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:1a.0/usb1/1-1/1-1.1/1-1.1:1.0/rc/rc0")),
+            PathBuf::from("/dev/input/by-path/pci-0000:00:1a.0-usb-0:1.1:1.0-event"));
+    }
+
+    #[test]
     fn rc1_on_lynet_debian_linux() {
         assert_eq!(
             create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-3/2-3:1.0/rc/rc1")),
