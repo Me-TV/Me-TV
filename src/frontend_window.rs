@@ -150,7 +150,6 @@ impl FrontendWindow {
                                     if Instant::now().duration_since(last_activity_time) > Duration::from_secs(5) {
                                         hide_cursor(&ww.clone().upcast::<gtk::Widget>());
                                         ft.hide();
-                                        println!("XXXXXXXX  Hide the fullscreen toolbar: {:?}, {:?}.", Instant::now(), LAST_ACTIVITY_TIME);
                                     }
                                     Continue(true)
                                 },
@@ -179,18 +178,8 @@ impl FrontendWindow {
             let f_v_b = fullscreen_toolbar_builder.get_object::<gtk::VolumeButton>("fullscreen_volume_button").unwrap();
             //  TODO Mouse clicks on the + and - icons seem to create timeouts, moving the mouse
             //    creates a timeout, but grabbing the slider and moving it appears not to cause a timeout.
-            f_v_b.connect_event_after(|_, ev| {
-                add_timeout();
-                unsafe {
-                    println!("Adding timeout from volume button: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
-                };
-            });
-            f_v_b.get_popup().unwrap().connect_event_after(|_, ev| {
-                add_timeout();
-                unsafe {
-                    println!("Adding timeout from volume button popup: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
-                };
-            });
+            f_v_b.connect_event_after(|_, _| { add_timeout(); });
+            f_v_b.get_popup().unwrap().connect_event_after(|_, _| { add_timeout(); });
             f_v_b
         };
         let fullscreen_channel_selector = {
@@ -207,15 +196,48 @@ impl FrontendWindow {
             f_c_s.connect_event_after(|_, ev| {
                 add_timeout();
                 unsafe {
-                    println!("Adding timeout from channel selector: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                    println!("Adding timeout from f_c_s: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
                 };
             });
             f_c_s.get_child().unwrap().connect_event_after(|_, ev| {
                 add_timeout();
                 unsafe {
-                    println!("Adding timeout from channel selector child: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                    println!("Adding timeout from f_c_s child: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
                 };
             });
+            /*
+            f_c_s.connect_realize(|f| {
+                println!("============  f_c_s realized.");
+                if let Some(w) = f.get_window() {
+                    println!("======== got a window.");
+                    let events = w.get_events();
+                    w.set_events(events | gdk::EventMask::KEY_PRESS_MASK | gdk::EventMask::POINTER_MOTION_MASK | gdk::EventMask::SCROLL_MASK);
+                    f.connect_event_after(|_, ev| {
+                        add_timeout();
+                        unsafe {
+                            println!("Adding timeout from f: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                        };
+                    });
+                }
+            });
+            if let Some(c) = f_c_s.get_child() {
+                println!("====== Got the f_c_s child.");
+                c.connect_realize(|cc| {
+                    println!("============ f_c_s child got realized");
+                    if let Some(cc_w) = cc.get_window() {
+                        println!("====== Got a f_c_s child window.");
+                        let events = cc_w.get_events();
+                        cc_w.set_events(events | gdk::EventMask::ALL_EVENTS_MASK);
+                        cc.connect_event_after(|_, ev| {
+                            add_timeout();
+                            unsafe {
+                                println!("Adding timeout from f_c_s child: {:?}, {:?}, {:?}", Instant::now(), ev.get_event_type(), LAST_ACTIVITY_TIME);
+                            };
+                        });
+                    }
+                });
+            };
+            */
             f_c_s
         };
         let volume = volume_adjustment.get_value();
@@ -274,7 +296,7 @@ impl FrontendWindow {
             window,
             close_button,
             fullscreen_button,
-            volume_adjustment: volume_adjustment.clone(),
+            volume_adjustment,
             volume_button,
             channel_selector,
             fullscreen_toolbar,
@@ -284,7 +306,7 @@ impl FrontendWindow {
             inhibitor,
             engine,
         });
-        volume_adjustment.connect_value_changed({
+        frontend_window.volume_adjustment.connect_value_changed({
             let f_w = frontend_window.clone();
             move |v_a| f_w.engine.set_volume(v_a.get_value())
         });
@@ -325,9 +347,6 @@ fn show_toolbar_and_add_timeout(w: &gtk::Widget, t: &gtk::Toolbar) {
     show_cursor(&w);
     t.show();
     add_timeout();
-    unsafe {
-        println!("show_toolbar_and_add_timeout: {:?}, {:?}", Instant::now(), LAST_ACTIVITY_TIME);
-    }
 }
 
 fn add_timeout() {
