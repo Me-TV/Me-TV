@@ -358,7 +358,7 @@ dependencies = [
 [[package]]
 name = "gdk-pixbuf"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gdk-pixbuf#51669b95312cd97984ffc959e13e3ed3b2f98225"
+source = "git+https://github.com/gtk-rs/gdk-pixbuf#beed63aff8653c12b9962395c2b3272447dd758a"
 dependencies = [
  "gdk-pixbuf-sys 0.7.0 (git+https://github.com/gtk-rs/sys)",
  "gio 0.5.1 (git+https://github.com/gtk-rs/gio)",
@@ -465,7 +465,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.13.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#3f6424d2ac5fbec2fd917bd7f2fd78a1c74bd6ac"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#d8085a5d791e5be78b6f6d6bb9e9a902c96d4d60"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -493,7 +493,7 @@ dependencies = [
 [[package]]
 name = "gtk"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk#f01af5d8aa9c4662b418d2f9c467d32257b9b38b"
+source = "git+https://github.com/gtk-rs/gtk#dec1bfc6780408f1e6125c4f7076aa118df7f75b"
 dependencies = [
  "atk 0.5.0 (git+https://github.com/gtk-rs/atk)",
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
