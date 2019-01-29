@@ -327,7 +327,7 @@ impl FrontendWindow {
 
 fn hide_cursor(widget: &gtk::Widget) {
     if let Some(window) = widget.get_window() {
-        window.set_cursor(Some(&gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none")));
+        window.set_cursor(&gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none"));
     }
 }
 
