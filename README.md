@@ -45,9 +45,8 @@ packages. But you will not need these to run Me TV if you get pre-compiled execu
 
 Most users of Me TV will not want to be bothered with trying to build the executables from source
 code. Pre-compiled executables are therefore available on Bintray; a set of pre-compiled executables for
-each release, and the snapshot ones for the next release – that are replaced with each new commit to the
-repository. The Me TV project page is [here](https://bintray.com/beta/#/me-tv/Downloads/Me-TV). Go to the
-release you are interested in and there is section "Direct Downloads" that has the pre-compiled executables
+each release. The Me TV project page is [here](https://bintray.com/beta/#/me-tv/Downloads/Me-TV). Go to the
+release you are interested in and there is section "Files" that has the pre-compiled executables
 for that release.
 
 ## Building (and Installing) From Source
@@ -68,7 +67,7 @@ will create a debug build, add the `--release` option to the command line to get
 
 Of course there is always the option of typing:
 
-    cargo run
+    cargo run --bin me-tv
 
 to build and also run the program if the build is successful. Again the `--release` option is available on
 this command line – but see below about creating the channels configuration file, which must happen before
