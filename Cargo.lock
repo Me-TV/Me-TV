@@ -339,7 +339,7 @@ dependencies = [
 [[package]]
 name = "gdk"
 version = "0.9.0"
-source = "git+https://github.com/gtk-rs/gdk#5d4c189b1784867f78da12d3aedb4b403221518e"
+source = "git+https://github.com/gtk-rs/gdk#80439526290ca0073906075bb49b25f1bea1556e"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "cairo-rs 0.5.0 (git+https://github.com/gtk-rs/cairo)",
@@ -465,7 +465,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.13.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#d8085a5d791e5be78b6f6d6bb9e9a902c96d4d60"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#1adb063fbc4370edb80016532d0c79ca1b87bde2"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
