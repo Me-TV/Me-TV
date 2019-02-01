@@ -22,7 +22,6 @@
 extern crate clap;
 extern crate ctrlc;
 extern crate exitcode;
-extern crate futures;
 extern crate glib;
 #[macro_use]
 extern crate gstreamer;

@@ -25,7 +25,9 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::thread;
 
-use futures::channel::mpsc::Sender;
+use glib;
+//use glib::prelude::*;
+
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
 
@@ -75,7 +77,7 @@ pub fn dvr_path(fei: &FrontendId) -> PathBuf {
 ///
 /// Inform the GUI and the remote control manager of the presence of
 /// any adaptors and frontends.
-pub fn add_already_installed_adaptors(to_cw: &mut Sender<Message>) {
+pub fn add_already_installed_adaptors(to_cw: &mut glib::Sender<Message>) {
     if dvb_base_path().is_dir() {
         let mut adapter_number = 0;
         loop {
@@ -90,7 +92,7 @@ pub fn add_already_installed_adaptors(to_cw: &mut Sender<Message>) {
                             // Assume the special devices were are dealing with are
                             // character devices not block devices.
                             if m.file_type().is_char_device() {
-                                to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
+                                to_cw.send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
                             }
                         },
                         Err(_) => break,
@@ -134,7 +136,7 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
 /// Remote controls in the adapters are handled separately, as the kernel deals with
 /// them differently. A separate daemon is spawned for this that then sends messages to
 /// the GUI as needed.
-pub fn run(mut to_cw: Sender<Message>) {
+pub fn run(mut to_cw: glib::Sender<Message>) {
     thread::spawn({
         let tocw = to_cw.clone();
         || remote_control::run(tocw)
@@ -164,7 +166,7 @@ pub fn run(mut to_cw: Sender<Message>) {
                             if path.contains("dvb") && path.contains("adapter") && path.contains("dvr") {
                             let path = path.replace("dvr", "frontend");
                                 if let Some(fei) = frontend_id_from(&path) {
-                                    to_cw.try_send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
+                                    to_cw.send(Message::FrontendAppeared{fei: fei.clone()}).unwrap();
                                 }
                             }
                         },
@@ -172,7 +174,7 @@ pub fn run(mut to_cw: Sender<Message>) {
                         let path = path.to_str().unwrap();
                             if path.contains("dvb") && path.contains("adapter") && path.contains("frontend") {
                                 if let Some(fei) = frontend_id_from(&path) {
-                                    to_cw.try_send(Message::FrontendDisappeared{fei: fei.clone()}).unwrap();
+                                    to_cw.send(Message::FrontendDisappeared{fei: fei.clone()}).unwrap();
                                 }
                             }
                         },

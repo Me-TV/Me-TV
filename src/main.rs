@@ -21,7 +21,6 @@
 
 extern crate clap;
 extern crate fragile;
-extern crate futures;
 extern crate gdk;
 extern crate gdk_pixbuf;
 extern crate gio;
@@ -102,7 +101,7 @@ fn main() {
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(&application_menu);
-        let (to_cw, from_fem) = futures::channel::mpsc::channel::<control_window::Message>(4);
+        let (to_cw, from_fem) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);
         let control_window = control_window::ControlWindow::new(&app, from_fem);
         let preferences_action = gio::SimpleAction::new("preferences", None);
         preferences_action.connect_activate({

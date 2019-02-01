@@ -87,6 +87,7 @@ impl std::convert::From<&str> for DeliverySystem {
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
 

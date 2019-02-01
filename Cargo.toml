@@ -14,7 +14,6 @@ chrono = "*"
 ctrlc = {version = "*", features = ["termination"]}
 exitcode = "*"
 fragile = "*"
-futures-preview = "*"
 #gdk = "*"
 gdk = {git="https://github.com/gtk-rs/gdk"}
 #gdk-pixbuf = "*"

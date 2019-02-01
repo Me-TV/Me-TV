@@ -22,7 +22,7 @@
 use std::process::Command;
 
 //use gio;
-use gio::prelude::*;
+//use gio::prelude::*;
 use glib;
 use glib::prelude::*;
 use gtk;

@@ -25,9 +25,6 @@ use std::process;
 use std::rc::Rc;
 use std::thread;
 
-use futures;
-use futures::prelude::*;
-
 use gio;
 use gio::prelude::*;
 use glib;
@@ -59,7 +56,7 @@ pub struct ControlWindow {
 }
 
 /// All the message types that  can be sent to the ControllerWindow.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Message {
     FrontendAppeared{fei: FrontendId},
     FrontendDisappeared{fei: FrontendId},
@@ -70,7 +67,7 @@ impl ControlWindow {
     /// Constructor (obviously :-). Creates the window to hold the widgets representing the
     /// frontends available. It is assumed this is called in the main thread that then runs the
     /// GTK event loop.
-    pub fn new(application: &gtk::Application, message_channel: futures::channel::mpsc::Receiver<Message>) -> Rc<ControlWindow> {
+    pub fn new(application: &gtk::Application, message_channel: glib::Receiver<Message>) -> Rc<ControlWindow> {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         window.set_border_width(10);
@@ -131,17 +128,17 @@ impl ControlWindow {
                 }
             }
         });
-        glib::MainContext::ref_thread_default().spawn_local({
+        {
             let c_w = control_window.clone();
-            message_channel.for_each(move |message| {
+            message_channel.attach(None, move |message| {
                 match message {
                     Message::FrontendAppeared{fei} => add_frontend(&c_w, &fei),
                     Message::FrontendDisappeared{fei} => remove_frontend(&c_w, &fei),
                     Message::TargettedKeystrokeReceived{tk} => process_targetted_keystroke(&c_w, &tk),
                 }
-                Ok(())
-            }).map(|_| ())
-        });
+                Continue(true)
+            });
+        };
         control_window
     }
 
@@ -197,19 +194,20 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                     &format!("Running:\n\n    dvbv5-scan {}\n\nThis may take a while.", path_to_transmitter_file.to_str().unwrap())
                 );
                 wait_dialog.show_all();
-                let (sender, receiver) = futures::channel::oneshot::channel::<bool>();
-                glib::MainContext::ref_thread_default().spawn_local({
+                let (sender, receiver) = glib::MainContext::channel::<bool>(glib::PRIORITY_DEFAULT);
+                {
                     let c_w = control_window.clone();
                     let w_d = wait_dialog.clone();
-                    receiver.map(move |result|{
+                    receiver.attach(None, move |result| {
                         w_d.destroy();
                         if result {
                             c_w.update_channels_store();
                         } else {
                             display_an_error_dialog(Some(&c_w.window), "dvbv5-scan failed to generate a file.");
                         }
-                    }).map(|_| ()).map_err(|_| unreachable!())
-                });
+                        Continue(false)
+                    });
+                };
                 thread::spawn({
                     let p_t_t_f = path_to_transmitter_file.clone();
                     move || {

@@ -27,7 +27,6 @@ use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 
-use futures::channel::mpsc::Sender;
 use glob::glob;
 use libc;
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
@@ -144,7 +143,7 @@ impl RemoteControl {
 
 /// A keystroke intended for a given frontend for use in sending messages between the
 /// remote controller daemon and the GUI.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TargettedKeystroke {
     pub frontend_id: FrontendId, // Used in control_window
     pub keystroke: u32, // Used in control_window
@@ -155,7 +154,7 @@ pub struct TargettedKeystroke {
 ///
 /// Find all the events posted for this device, and send messages to the GUI so that it
 /// can act on the data. .
-fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut Sender<Message>) {
+fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut glib::Sender<Message>) {
     // TODO is it reasonable to assume less than 64 events?
     let buffer = [libc::input_event{time: libc::timeval{tv_sec: 0, tv_usec: 0}, type_: 0, code: 0, value: 0}; 64];
     let item_size = std::mem::size_of::<libc::input_event>();
@@ -168,7 +167,7 @@ fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut Se
         for i in 0..event_count {
             let item = buffer[i];
             if item.type_ == input_event_codes::EV_KEY as u16 {
-                to_cw.try_send(Message::TargettedKeystrokeReceived {
+                to_cw.send(Message::TargettedKeystrokeReceived {
                     tk: TargettedKeystroke { frontend_id: remote_control.frontend_ids[0].clone(), keystroke: item.code as u32, value: item.value as u32 },
                 }).unwrap();
             }
@@ -177,7 +176,7 @@ fn process_events_for_device(remote_control: &Arc<RemoteControl>, to_cw: &mut Se
 }
 
 /// The function that becomes the remote control event listener.
-pub fn rc_event_listener(mut to_cw: Sender<Message>) {
+pub fn rc_event_listener(mut to_cw: glib::Sender<Message>) {
     loop {
         // TODO What happens if a new adapter is inserted or an existing remote removed
         //   before a remote control event happens.
@@ -258,7 +257,7 @@ fn remove_disappeared_remote_control(lirc_path: PathBuf) {
 ///
 /// Add all remote controls already present. Set of the event listener as a separate daemon.
 /// Settle to listening for added and removed remote controls.
-pub fn run(mut to_cw: Sender<Message>) {
+pub fn run(to_cw: glib::Sender<Message>) {
     add_already_installed_remotes();
     thread::spawn(|| rc_event_listener(to_cw));
     let (transmit_end, receive_end) = channel();
