@@ -1,7 +1,12 @@
 sudo: true
 dist: xenial
 language: rust
-cache: cargo
+
+#  After discussion with the Travis-CI folk, this Rust build requires too big a cache for it to
+#  work well. Also there is too much churn in using Git repositories for the gtk-rs and
+#  gstreamer-rs stuff. So go with the long build times of building everything fresh each time.
+
+#cache: cargo
 
 before_install:
   - curl -L https://people.freedesktop.org/~slomo/gstreamer.tar.gz | tar xz
