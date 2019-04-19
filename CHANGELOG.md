@@ -1,6 +1,8 @@
 # ChangeLog
 
 ## [Unreleased]
+
+## [3.0.9] - 2019-04-19
 ### Changed
  - Update the way _me-tv-schedule_ handles date and time specification, and add some scheduling
    sanity checks.
