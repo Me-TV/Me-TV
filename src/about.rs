@@ -47,18 +47,18 @@ fn create() -> gtk::AboutDialog {
     authors.push("Russel Winder <russel@winder.org.uk>");
     let mut documentors = Vec::<&str>::new();
     about.set_authors(&authors);
-    about.set_comments("A digital television (DVB) viewer using GTK+3 and GStreamer.");
-    about.set_copyright("Copyright © 2010–2011  Michael Lamothe <michael.lamothe@gmail.com>\nCopyright © 2014, 2016–2018  Russel Winder <russel@winder.org.uk>");
+    about.set_comments(Some("A digital television (DVB) viewer using GTK+3 and GStreamer."));
+    about.set_copyright(Some("Copyright © 2010–2011  Michael Lamothe <michael.lamothe@gmail.com>\nCopyright © 2014, 2016–2018  Russel Winder <russel@winder.org.uk>"));
     about.set_documenters(&documentors);
-    about.set_license("This program is licenced under GNU General Public Licence (GPL) version 3.");
+    about.set_license(Some("This program is licenced under GNU General Public Licence (GPL) version 3."));
     let loader = PixbufLoader::new();
     loader.write(include_bytes!("resources/images/me-tv.png")).unwrap();
     loader.close().unwrap();
     let image = loader.get_pixbuf().unwrap();
     about.set_logo(Some(&image));
     about.set_name("Me TV");
-    about.set_translator_credits("");
-    about.set_version(env!("CARGO_PKG_VERSION"));
+    about.set_translator_credits(Some(""));
+    about.set_version(Some(env!("CARGO_PKG_VERSION")));
     about
 }
 

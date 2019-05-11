@@ -68,7 +68,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>, transmitter_files_directory_p
         gtk::DialogFlags::MODAL,
         &[],
     );
-    let label = gtk::Label::new("Select the transmitter\nyou get signal from.");
+    let label = gtk::Label::new(Some("Select the transmitter\nyou get signal from."));
     let transmitter = gtk::ComboBoxText::new();
     let mut transmitter_files = match fs::read_dir(transmitter_files_directory_path) {
         Ok(iterator) => iterator.map(|item| item.unwrap().file_name().to_str().unwrap().to_string()).collect::<Vec<String>>(),
@@ -78,7 +78,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>, transmitter_files_directory_p
     for name in transmitter_files {
         transmitter.append_text(&name)
     }
-    transmitter.set_active(0);
+    transmitter.set_active(Some(0));
     let content_area = dialog.get_content_area();
     content_area.pack_start(&label, false, false, 10);
     // TODO Make the ComboBoxText more easily scrollable?

@@ -31,6 +31,8 @@ use gtk::prelude::*;
 use gst;
 use gst::prelude::*;
 
+use gst_mpegts;
+
 use fragile::Fragile;
 
 use dialogs::display_an_error_dialog;
@@ -58,7 +60,7 @@ pub struct GStreamerEngine {
 
 impl GStreamerEngine {
     pub fn new(application: &gtk::Application, frontend_id: &FrontendId) -> Result<GStreamerEngine, ()> {
-        let playbin = gst::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
+        let playbin = gst::ElementFactory::make("playbin", Some("playbin")).expect("Failed to create playbin element");
         playbin.connect("element-setup",  false, {
             let fei = frontend_id.clone();
             move |values| {
@@ -92,6 +94,9 @@ impl GStreamerEngine {
         bus.add_watch(move |_, msg| {
             let application_for_bus_watch = application_clone_for_bus_watch.get();
             match msg.view() {
+                gst::MessageView::Element(element) => {
+                    let section = gst_mpegts::Section::fromElement(element);
+                },
                 gst::MessageView::Eos(..) => {
                     display_an_error_dialog(
                         Some(&application_for_bus_watch.get_windows()[0]),

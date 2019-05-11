@@ -79,21 +79,21 @@ impl ControlWindow {
             }
         });
         let header_bar = gtk::HeaderBar::new();
-        header_bar.set_title("Me TV");
+        header_bar.set_title(Some("Me TV"));
         header_bar.set_show_close_button(true);
         let menu_button = gtk::MenuButton::new();
-        menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
+        menu_button.set_image(Some(&gtk::Image::new_from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Button.into())));
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/control_window_menu.xml"));
         let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").unwrap();
         let epg_action = gio::SimpleAction::new("epg", None);
         window.add_action(&epg_action);
         let channels_file_action = gio::SimpleAction::new("create_channels_file", None);
         window.add_action(&channels_file_action);
-        menu_button.set_menu_model(&window_menu);
+        menu_button.set_menu_model(Some(&window_menu));
         header_bar.pack_end(&menu_button);
-        window.set_titlebar(&header_bar);
+        window.set_titlebar(Some(&header_bar));
         let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        let label = gtk::Label::new("\nNo frontends available.\n");
+        let label = gtk::Label::new(Some("\nNo frontends available.\n"));
         let frontends_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
         main_box.pack_start(&label, true, true, 0);
         window.add(&main_box);
@@ -269,7 +269,7 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                                                 Some(mut tree_path) => {
                                                     let index = tree_path.get_indices_with_depth()[0];
                                                     if index < 0 { panic!("index cannot be a negative integer"); }
-                                                    c_w_b.channel_selector.set_active(index as u32);
+                                                    c_w_b.channel_selector.set_active(Some(index as u32));
                                                     c_w_b.frontend_button.set_active(true);
                                                 },
                                                 None => panic!("Failed to get the path of the iterator."),

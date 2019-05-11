@@ -27,6 +27,7 @@ extern crate gio;
 extern crate glib;
 extern crate glob;
 extern crate gstreamer as gst;
+extern crate gstreamer_mpegts as gst_mpegts;
 extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
@@ -94,13 +95,13 @@ fn main() {
         preferences::set_use_opengl(false, false);
     }
     gst::init().unwrap();
-    let application = gtk::Application::new("uk.org.russel.me-tv", gio::ApplicationFlags::empty()).expect("Application creation failed");
+    let application = gtk::Application::new(Some("uk.org.russel.me-tv"), gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
     application.connect_startup(move |app| {
         // It seems that the application menu must be added before creating the control window.
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
-        app.set_app_menu(&application_menu);
+        app.set_app_menu(Some(&application_menu));
         let (to_cw, from_fem) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);
         let control_window = control_window::ControlWindow::new(&app, from_fem);
         let preferences_action = gio::SimpleAction::new("preferences", None);

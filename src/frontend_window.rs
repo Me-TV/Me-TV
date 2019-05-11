@@ -82,7 +82,7 @@ impl FrontendWindow {
         });
         let close_button = {
             let c_b = gtk::Button::new();
-            c_b.set_image(&gtk::Image::new_from_icon_name("window-close-symbolic", gtk::IconSize::Button.into()));
+            c_b.set_image(Some(&gtk::Image::new_from_icon_name(Some("window-close-symbolic"), gtk::IconSize::Button.into())));
             c_b.connect_clicked({
                 let button = control_window_button.frontend_button.clone();
                 move |_| button.set_active(!button.get_active())
@@ -91,7 +91,7 @@ impl FrontendWindow {
         };
         let fullscreen_button = {
             let f_b = gtk::Button::new();
-            f_b.set_image(&gtk::Image::new_from_icon_name("view-fullscreen-symbolic", gtk::IconSize::Button.into()));
+            f_b.set_image(Some(&gtk::Image::new_from_icon_name(Some("view-fullscreen-symbolic"), gtk::IconSize::Button.into())));
             // Can only set the fullscreen_button actions after fullscreen_toolbar has been defined.
             f_b
         };
@@ -110,7 +110,7 @@ impl FrontendWindow {
         };
         let header_bar = {
             let h_b = gtk::HeaderBar::new();
-            h_b.set_title("Me TV");
+            h_b.set_title(Some("Me TV"));
             h_b.set_show_close_button(false);  // TODO Why have a special close button instead of the standard one?
             h_b.pack_end(&close_button);
             h_b.pack_end(&fullscreen_button);
@@ -119,7 +119,7 @@ impl FrontendWindow {
             h_b.show_all();
             h_b
         };
-        window.set_titlebar(&header_bar);
+        window.set_titlebar(Some(&header_bar));
         let fullscreen_toolbar_builder = gtk::Builder::new_from_string(include_str!("resources/frontend_window_fullscreen_toolbar.glade.xml"));
         let fullscreen_toolbar = {
             let f_t = fullscreen_toolbar_builder.get_object::<gtk::Toolbar>("fullscreen_control_toolbar").unwrap();
@@ -284,9 +284,9 @@ impl FrontendWindow {
         preferences::set_last_channel(channel_name, true);
         window.show();
         let inhibitor = application.inhibit(
-            &window,
+            Some(&window),
             gtk::ApplicationInhibitFlags::SUSPEND | gtk::ApplicationInhibitFlags::IDLE,
-            "Me TV inhibits when playing a channel."
+            Some("Me TV inhibits when playing a channel."),
         );
         if inhibitor == 0 {
             println!("Warning: could not set inhibitor.");
@@ -327,7 +327,7 @@ impl FrontendWindow {
 
 fn hide_cursor(widget: &gtk::Widget) {
     if let Some(window) = widget.get_window() {
-        window.set_cursor(&gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none"));
+        window.set_cursor(Some(&gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none")));
     }
 }
 

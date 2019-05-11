@@ -92,10 +92,10 @@ impl ControlWindowButton {
 
     /// Set the active channel to 0.
     pub fn reset_active_channel(&self) {  // Used in control_window.rs
-        self.channel_selector.set_active(0);
+        self.channel_selector.set_active(Some(0));
         if let Some(ref frontend_window) = *self.frontend_window.borrow() {
-            frontend_window.channel_selector.set_active(0);
-            frontend_window.fullscreen_channel_selector.set_active(0);
+            frontend_window.channel_selector.set_active(Some(0));
+            frontend_window.fullscreen_channel_selector.set_active(Some(0));
         }
     }
 
@@ -103,16 +103,16 @@ impl ControlWindowButton {
     fn set_channel_index(&self, channel_index: u32) {
         let current = self.channel_selector.get_active().unwrap();
         if current != channel_index {
-            self.channel_selector.set_active(channel_index);
+            self.channel_selector.set_active(Some(channel_index));
         }
         if let Some(ref frontend_window) = *self.frontend_window.borrow() {
             let fe_current = frontend_window.channel_selector.get_active().unwrap();
             if fe_current != channel_index {
-                frontend_window.channel_selector.set_active(channel_index);
+                frontend_window.channel_selector.set_active(Some(channel_index));
             }
             let fs_fe_current = frontend_window.fullscreen_channel_selector.get_active().unwrap();
             if fs_fe_current != channel_index {
-                frontend_window.fullscreen_channel_selector.set_active(channel_index);
+                frontend_window.fullscreen_channel_selector.set_active(Some(channel_index));
             }
         }
     }
@@ -171,7 +171,7 @@ impl ControlWindowButton {
                     let selector = &self.channel_selector;
                     let index = selector.get_active().unwrap();
                     // TODO Need to stop going beyond the number of channels there are.
-                    selector.set_active(index + 1);
+                    selector.set_active(Some(index + 1));
                 }
             }
             input_event_codes::KEY_CHANNELDOWN => {
@@ -179,7 +179,7 @@ impl ControlWindowButton {
                     let selector = &self.channel_selector;
                     let index = selector.get_active().unwrap();
                     if index > 0 {
-                        selector.set_active(index - 1);
+                        selector.set_active(Some(index - 1));
                     }
                 }
             }

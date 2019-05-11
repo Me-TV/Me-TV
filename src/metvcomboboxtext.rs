@@ -46,7 +46,7 @@ impl MeTVComboBoxTextExt for MeTVComboBoxText {
     }
 
     fn set_new_model(&mut self, model: &gtk::ListStore) {
-        self.set_model(model);
+        self.set_model(Some(model));
         let renderer = gtk::CellRendererText::new();
         self.pack_start(&renderer, true);
         self.add_attribute(&renderer, "text", 0);
@@ -117,18 +117,18 @@ mod tests {
         }
         let store = gtk::ListStore::new(&[String::static_type()]);
         let mut thingy = MeTVComboBoxText::new_and_set_model(&store);
-        thingy.set_active(1); // TODO Should this fail in some way?
+        thingy.set_active(Some(1)); // TODO Should this fail in some way?
         assert_eq!(thingy.get_active_text(), None);
 
         let store = create_test_model();
         thingy.set_new_model(&store);
-        thingy.set_active(0);
+        thingy.set_active(Some(0));
         assert_eq!(thingy.get_active_text().unwrap(), "fred");
 
-        thingy.set_active(2);
+        thingy.set_active(Some(2));
         assert_eq!(thingy.get_active_text().unwrap(), "jo");
 
-        thingy.set_active(1);
+        thingy.set_active(Some(1));
         assert_eq!(thingy.get_active_text().unwrap(), "jane");
 
         let mut another_thingy = MeTVComboBoxText::new_and_set_model(&store);
