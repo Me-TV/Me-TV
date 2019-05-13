@@ -9,7 +9,7 @@ language: rust
 #cache: cargo
 
 before_install:
-  - curl -L https://people.freedesktop.org/~slomo/gstreamer.tar.gz | tar xz
+  - curl -L https://people.freedesktop.org/~slomo/gstreamer-1.16.0.tar.gz | tar xz
   - sed -i "s;prefix=/root/gstreamer;prefix=$PWD/gstreamer;g" $PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig/*.pc
   - export PKG_CONFIG_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig
   - export LD_LIBRARY_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu
