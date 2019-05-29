@@ -136,50 +136,25 @@ macro_rules! create_setter {
     }
 }
 
-/// Getter for the current state of the `delivery_system` preference.
 pub fn get_delivery_system() -> dvb::DeliverySystem {
     match PREFERENCES.lock() {
         Ok(preferences) => preferences.borrow().delivery_system.clone(),  //  Must clone here so can't use the macro.
         Err(_) => dvb::DeliverySystem::DVBT,
     }
 }
-
-/// Setter for the `delivery_system` preference. If `write_back` is true the
-/// current `Preferences` instance  is written to file.
 create_setter!(set_delivery_system, delivery_system, dvb::DeliverySystem);
 
-/// Getter for the current state of the `use_opengl` preference.
 create_getter!(get_use_opengl, use_opengl, bool, true);
-
-/// Setter for the `use_opengl` preference. If `write_back` is true the
-/// current `Preferences` instance  is written to file.
 create_setter!(set_use_opengl, use_opengl, bool);
 
-/// Getter for the current state of the `immediate_tv` preference.
 create_getter!(get_immediate_tv, immediate_tv, bool, false);
-
-/// Setter for the `immediate_tv` preference. If `write_back` is true the
-/// current `Preferences` instance  is written to file.
 create_setter!(set_immediate_tv, immediate_tv, bool);
 
-/// Getter for the current state of the `use_last_channel` preference.
 create_getter!(get_use_last_channel, use_last_channel, bool, false);
-
-/// Setter for the `use_last_channel` preference. If `write_back` is true the
-/// current `Preferences` instance  is written to file.
 create_setter!(set_use_last_channel, use_last_channel, bool);
 
-/// Getter for the current state of the `default_channel` preference.
 create_option_getter!(get_default_channel, default_channel, String, None);
-
-/// Setter for the `default_channel` preference. If `write_back` is true the
-/// current `Preferences` instance  is written to file.
 create_setter!(set_default_channel, default_channel, String);
 
-/// Getter for the current state of the `last_channel` preference.
 create_option_getter!(get_last_channel, last_channel, String, None);
-
-/// Setter for the `last_channel` preference. If `write_back` is true the
-/// current `Preferences` instance  is written to file.
 create_setter!(set_last_channel, last_channel, String);
-
