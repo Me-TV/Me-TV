@@ -29,9 +29,7 @@ extern crate time;  // Need this for durations for chrono.
 use std::process;
 
 use clap::{Arg, App};
-
-// Compiler reports NaiveDate as unused, this is not correct. It is used in the rstest tests.
-use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{Local, NaiveDateTime, NaiveTime};
 use time::Duration;
 
 fn parse_to_datetime(datum: &str) -> Result<NaiveDateTime, &str> {
@@ -207,6 +205,7 @@ for example 0559 or 05:59, basically hhmm[ss] or hh:mm:[:ss].
 #[cfg(test)]
 mod test {
     use super::*;
+    use chrono::NaiveDate;
     use rstest::rstest_parametrize;
 
     #[rstest_parametrize(
