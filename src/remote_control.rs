@@ -21,7 +21,7 @@
 
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::AsRawFd;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::channel;
 use std::thread;
