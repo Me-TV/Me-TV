@@ -25,6 +25,7 @@ use std::process::Command;
 //use gio::prelude::*;
 use glib;
 use glib::prelude::*;
+use glib::translate::*;
 use gtk;
 use gtk::prelude::*;
 
@@ -36,6 +37,7 @@ use gst_mpegts;
 use fragile::Fragile;
 
 use dialogs::display_an_error_dialog;
+use epg_event;
 use frontend_manager::FrontendId;
 use preferences;
 
@@ -95,7 +97,55 @@ impl GStreamerEngine {
             let application_for_bus_watch = application_clone_for_bus_watch.get();
             match msg.view() {
                 gst::MessageView::Element(element) => {
-                    let section = gst_mpegts::Section::fromElement(element);
+                    if let Some(structure) = element.get_structure() {
+                        match structure.get_name() {
+                            "cat" => {},
+                            "dvb-adapter" => {},
+                            "dvb-frontend-stats" => {},
+                            "eit" => {
+                                if let Some(mut section) = gst_mpegts::Section::from_element(&element) {
+                                    // println!("Element is a Section: {:?}", element);
+                                    if section.get_section_type() == gst_mpegts::SectionType::Eit {
+                                        // println!("Section is an EIT section: {:?}", section);
+                                        /*
+                                        if let Some(eit) = section.get_eit() {
+                                            let mut events: Vec<epg_event::EPGEvent> = vec![];
+                                            for event in eit.event_iterator() {
+                                                //  TODO  The event_id may already exist and this is extra data for the event.
+                                                //    need to send enough data to the EPG Manager to synthesise all the data
+                                                //    for the event..
+                                                let mut e = epg_event::EPGEvent::new();
+                                                e.service_id = section.get_subtable_extension();
+                                                e.event_id = event.get_event_id();
+                                                e.start_time = event.get_start_time();
+                                                e.duration = event.get_duration();
+                                                events.push(e);
+                                            }
+                                            println!("Events are {:?}", events);
+                                        } else {
+                                            panic!("************    Could not get an EIT from an EIT Section: {:?}", section);
+                                        }
+                                        */
+                                    } else {
+                                        panic!("************  EIT Section is not an EIT Section: {:?}", section);
+                                    }
+                                } else {
+                                    panic!("************  Could not get a Section from an EIT Section Element: {:?}", element);
+                                }
+                            },
+                            "GstNavigationMessage" => {},
+                            "nit" => {},
+                            "pat" => {},
+                            "pmt" =>{},
+                            "sdt" => {},
+                            "section" => {},
+                            "tdt" => {},
+                            "tot" => {},
+                            _ => println!("Unknown Element types: {:?}", element),
+                        }
+                    } else {
+                        panic!("Element has no Structure: {:?}", element);
+                    }
                 },
                 gst::MessageView::Eos(..) => {
                     display_an_error_dialog(

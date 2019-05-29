@@ -61,6 +61,7 @@ mod control_window;
 mod control_window_button;
 mod dialogs;
 mod dvb;
+mod epg_event;
 mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
@@ -95,6 +96,7 @@ fn main() {
         preferences::set_use_opengl(false, false);
     }
     gst::init().unwrap();
+    gst_mpegts::initialise();
     let application = gtk::Application::new(Some("uk.org.russel.me-tv"), gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
     application.connect_startup(move |app| {
