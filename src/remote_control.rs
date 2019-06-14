@@ -30,6 +30,7 @@ use std::time::Duration;
 use glob::glob;
 use lazy_static::lazy_static;
 use libc;
+use nix::ioctl_write_int;
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
 

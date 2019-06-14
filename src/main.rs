@@ -19,10 +19,6 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// TODO Find out how not to have to do this:
-#[macro_use]
-extern crate nix;
-
 #[cfg(not(test))]
 use std::thread;
 
