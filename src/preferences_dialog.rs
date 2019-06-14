@@ -22,14 +22,16 @@
 use std::cell::Cell;
 use std::sync::Mutex;
 
+use lazy_static::lazy_static;
+
 use gtk;
 use gtk::prelude::*;
 
-use control_window::ControlWindow;
-use dvb;
-use metvcomboboxtext::MeTVComboBoxText;
-use metvcomboboxtext::MeTVComboBoxTextExt;
-use preferences;
+use crate::control_window::ControlWindow;
+use crate::dvb;
+use crate::metvcomboboxtext::MeTVComboBoxText;
+use crate::metvcomboboxtext::MeTVComboBoxTextExt;
+use crate::preferences;
 
 lazy_static! {
     static ref PREFERENCES: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));

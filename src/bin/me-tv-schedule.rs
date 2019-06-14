@@ -19,13 +19,6 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate clap;
-extern crate chrono;
-extern crate exitcode;
-#[cfg(test)]
-extern crate rstest;
-extern crate time;  // Need this for durations for chrono.
-
 use std::process;
 
 use clap::{Arg, App};

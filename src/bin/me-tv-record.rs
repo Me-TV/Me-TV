@@ -19,19 +19,12 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate clap;
-extern crate ctrlc;
-extern crate exitcode;
-extern crate glib;
-#[macro_use]
-extern crate gstreamer;
-
 use std::{thread, time};
-
 use std::error::Error;
 
 use clap::{Arg, App};
 
+use gstreamer::{gst_element_error, gst_element_warning};
 use gstreamer::prelude::*;
 
 fn main() {

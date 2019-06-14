@@ -22,6 +22,8 @@
 use std::fmt;
 use std::slice::Iter;
 
+use serde_derive::{Deserialize, Serialize};
+
 /// The various options for DVB delivery system the user is using.
 #[allow(non_camel_case_types)]
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]

@@ -19,41 +19,26 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate clap;
-extern crate fragile;
-extern crate gdk;
-extern crate gdk_pixbuf;
-extern crate gio;
-extern crate glib;
-extern crate glob;
-extern crate gstreamer as gst;
-extern crate gstreamer_mpegts as gst_mpegts;
-extern crate gtk;
-#[macro_use]
-extern crate lazy_static;
-extern crate libc;
+// TODO Find out how not to have to do this:
 #[macro_use]
 extern crate nix;
-extern crate notify;
-extern crate regex;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_yaml;
-extern crate tempfile;
-extern crate xdg;
-
-#[cfg(test)]
-#[macro_use]
-extern crate quickcheck;
 
 #[cfg(not(test))]
 use std::thread;
 
 #[cfg(not(test))]
+use clap;
+
+#[cfg(not(test))]
 use gio::prelude::*;
 #[cfg(not(test))]
 use gtk::prelude::*;
+
+#[cfg(not(test))]
+use gstreamer as gst;
+
+#[cfg(not(test))]
+use gstreamer_mpegts as gst_mpegts;
 
 mod about;
 mod channel_names;

@@ -25,15 +25,15 @@ use std::rc::Rc;
 use gtk;
 use gtk::prelude::*;
 
-use channel_names::encode_to_mrl;
-use control_window::ControlWindow;
-use dialogs::display_an_error_dialog;
-use frontend_manager::FrontendId;
-use frontend_window::FrontendWindow;
-use input_event_codes;
-use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
-use preferences;
-use remote_control::TargettedKeystroke;
+use crate::channel_names::encode_to_mrl;
+use crate::control_window::ControlWindow;
+use crate::dialogs::display_an_error_dialog;
+use crate::frontend_manager::FrontendId;
+use crate::frontend_window::FrontendWindow;
+use crate::input_event_codes;
+use crate::metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
+use crate::preferences;
+use crate::remote_control::TargettedKeystroke;
 
 /// A `ControlWindowButton` is a `gtk::Box` but there is no inheritance so use
 /// a bit of composition.

@@ -34,13 +34,13 @@ use gtk::prelude::*;
 
 use tempfile;
 
-use channel_names::{channels_file_path, get_names};
-use control_window_button::ControlWindowButton;
-use dialogs::display_an_error_dialog;
-use frontend_manager::FrontendId;
-use preferences;
-use remote_control::TargettedKeystroke;
-use transmitter_dialog;
+use crate::channel_names::{channels_file_path, get_names};
+use crate::control_window_button::ControlWindowButton;
+use crate::dialogs::display_an_error_dialog;
+use crate::frontend_manager::FrontendId;
+use crate::preferences;
+use crate::remote_control::TargettedKeystroke;
+use crate::transmitter_dialog;
 
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
 /// so use a bit of composition.

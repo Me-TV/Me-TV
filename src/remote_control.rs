@@ -28,13 +28,14 @@ use std::thread;
 use std::time::Duration;
 
 use glob::glob;
+use lazy_static::lazy_static;
 use libc;
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
 
-use control_window::Message;
-use frontend_manager::FrontendId;
-use input_event_codes;
+use crate::control_window::Message;
+use crate::frontend_manager::FrontendId;
+use crate::input_event_codes;
 
 #[derive(Debug)]
 pub struct RemoteControl {

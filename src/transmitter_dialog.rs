@@ -25,9 +25,9 @@ use std::path;
 use gtk;
 use gtk::prelude::*;
 
-use dialogs::display_an_error_dialog;
-use dvb;
-use preferences;
+use crate::dialogs::display_an_error_dialog;
+use crate::dvb;
+use crate::preferences;
 
 struct TransmitterSelector {
     transmitter: gtk::ComboBoxText,

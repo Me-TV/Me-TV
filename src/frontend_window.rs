@@ -29,11 +29,11 @@ use gdk::prelude::*;
 use gtk;
 use gtk::prelude::*;
 
-use channel_names::encode_to_mrl;
-use control_window_button::ControlWindowButton;
-use gstreamer_engine::GStreamerEngine;
-use metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
-use preferences;
+use crate::channel_names::encode_to_mrl;
+use crate::control_window_button::ControlWindowButton;
+use crate::gstreamer_engine::GStreamerEngine;
+use crate::metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
+use crate::preferences;
 
 /// In fullscreen mode this holds the last time there was mouse movement
 /// or key press activity: it is used to provide a timeout for hiding the fullscreen

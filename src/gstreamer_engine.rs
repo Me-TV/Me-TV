@@ -29,17 +29,17 @@ use glib::translate::*;
 use gtk;
 use gtk::prelude::*;
 
-use gst;
+use gstreamer as gst;
 use gst::prelude::*;
 
-use gst_mpegts;
+use gstreamer_mpegts as gst_mpegts;
 
 use fragile::Fragile;
 
-use dialogs::display_an_error_dialog;
-use epg_event;
-use frontend_manager::FrontendId;
-use preferences;
+use crate::dialogs::display_an_error_dialog;
+use crate::epg_event;
+use crate::frontend_manager::FrontendId;
+use crate::preferences;
 
 /// Is nouveau the device driver?
 ///

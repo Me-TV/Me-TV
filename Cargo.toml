@@ -7,6 +7,7 @@ keywords = ["dvb", "video", "audio", "player", "atsc"]
 license = "GPL-3.0"
 description = "Me TV is a GTK+/GStreamer desktop application for playing DVB, digital video broadcasting."
 readme = "README.md"
+edition = "2018"
 
 [dependencies]
 chrono = "*"
