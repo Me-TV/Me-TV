@@ -359,6 +359,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts"
 version = "0.0.0"
+source = "git+https://gitlab.com/Russel/gstreamer_mpegts.git#890c2b43b87a8ff3f30359cf26e4fdcb7f55ba2e"
 dependencies = [
  "glib 0.7.0 (git+https://github.com/gtk-rs/glib)",
  "glib-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
@@ -515,7 +516,7 @@ dependencies = [
  "glib 0.7.0 (git+https://github.com/gtk-rs/glib)",
  "glob 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gstreamer 0.14.0 (git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs)",
- "gstreamer-mpegts 0.0.0",
+ "gstreamer-mpegts 0.0.0 (git+https://gitlab.com/Russel/gstreamer_mpegts.git)",
  "gtk 0.6.0 (git+https://github.com/gtk-rs/gtk)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.58 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1116,6 +1117,7 @@ dependencies = [
 "checksum gobject-sys 0.8.0 (git+https://github.com/gtk-rs/sys)" = "<none>"
 "checksum gstreamer 0.14.0 (git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs)" = "<none>"
 "checksum gstreamer-base-sys 0.8.0 (git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys)" = "<none>"
+"checksum gstreamer-mpegts 0.0.0 (git+https://gitlab.com/Russel/gstreamer_mpegts.git)" = "<none>"
 "checksum gstreamer-mpegts-sys 0.8.0 (git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys)" = "<none>"
 "checksum gstreamer-sys 0.8.0 (git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys)" = "<none>"
 "checksum gtk 0.6.0 (git+https://github.com/gtk-rs/gtk)" = "<none>"

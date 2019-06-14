@@ -28,8 +28,8 @@ glob = "*"
 gtk = {git="https://github.com/gtk-rs/gtk", features=["v3_18"]}
 #gstreamer = {version = "*", features = ["v1_16"]}
 gstreamer = {git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs", features=["v1_16"]}
-#gstreamer-mpegts = {git="https://gitlab.com/Russel/gstreamer_mpegts.git"}
-gstreamer-mpegts = {path="../../Masters/Public/GStreamer_MPEGTS"}
+#gstreamer-mpegts = "*"
+gstreamer-mpegts = {git="https://gitlab.com/Russel/gstreamer_mpegts.git"}
 lazy_static = "*"
 libc = "*"
 nix = "*"
