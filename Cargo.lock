@@ -294,7 +294,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.7.0"
-source = "git+https://github.com/gtk-rs/glib#c5e26321a1277c4fa4955389708b1ca190b888de"
+source = "git+https://github.com/gtk-rs/glib#123a5abbcb51de1552b0cb07bc36eb3bce97812b"
 dependencies = [
  "bitflags 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
@@ -330,7 +330,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.14.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#4f024af7d6489bfc2af7dae05dbde182f4f2fb3a"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#24d9dc620935709bf63eaee97f069a2d50dda708"
 dependencies = [
  "bitflags 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -347,7 +347,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-base-sys"
 version = "0.8.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys#6bc25c6b6629b9ae3cd6650129caa3bacb18aa2e"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys#ac2cf29fb17d1ab2933516764da2dde79ab9bc18"
 dependencies = [
  "glib-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
  "gobject-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
@@ -359,7 +359,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts"
 version = "0.0.0"
-source = "git+https://gitlab.com/Russel/gstreamer_mpegts.git#890c2b43b87a8ff3f30359cf26e4fdcb7f55ba2e"
+source = "git+https://gitlab.com/Russel/gstreamer_mpegts.git#b5a0b7f967b37777102068cf046f619d1c1de83f"
 dependencies = [
  "glib 0.7.0 (git+https://github.com/gtk-rs/glib)",
  "glib-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
@@ -373,7 +373,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts-sys"
 version = "0.8.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys#6bc25c6b6629b9ae3cd6650129caa3bacb18aa2e"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys#ac2cf29fb17d1ab2933516764da2dde79ab9bc18"
 dependencies = [
  "glib-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
  "gobject-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
@@ -386,7 +386,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-sys"
 version = "0.8.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys#6bc25c6b6629b9ae3cd6650129caa3bacb18aa2e"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs-sys#ac2cf29fb17d1ab2933516764da2dde79ab9bc18"
 dependencies = [
  "glib-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
  "gobject-sys 0.8.0 (git+https://github.com/gtk-rs/sys)",
@@ -397,7 +397,7 @@ dependencies = [
 [[package]]
 name = "gtk"
 version = "0.6.0"
-source = "git+https://github.com/gtk-rs/gtk#aed7c942b7a579c45359832b0ec07048c7358310"
+source = "git+https://github.com/gtk-rs/gtk#d84be1a6ba2f3216504645e8884dd110924db420"
 dependencies = [
  "atk 0.6.0 (git+https://github.com/gtk-rs/atk)",
  "bitflags 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
