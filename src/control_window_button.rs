@@ -123,7 +123,7 @@ impl ControlWindowButton {
     fn toggle_button(control_window_button: &Rc<ControlWindowButton>) { // Used in control_window.rs
         if control_window_button.frontend_button.get_active() {
             if control_window_button.control_window.is_channels_store_loaded() {
-                let frontend_window = match FrontendWindow::new(&control_window_button) {
+                let frontend_window = match FrontendWindow::new(control_window_button.clone()) {
                     Ok(frontend_window) => frontend_window,
                     Err(_) => {
                         display_an_error_dialog(Some(&control_window_button.control_window.window), "Could not create a frontend window, most likely because\na GStreamer engine could not be created.");

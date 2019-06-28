@@ -20,12 +20,13 @@
  */
 
 use std::process::Command;
+use std::rc::Rc;
 
 //use gio;
 //use gio::prelude::*;
 use glib;
 use glib::prelude::*;
-use glib::translate::*;
+//use glib::translate::*;
 use gtk;
 use gtk::prelude::*;
 
@@ -36,9 +37,9 @@ use gstreamer_mpegts as gst_mpegts;
 
 use fragile::Fragile;
 
+use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
-use crate::epg_event;
-use crate::frontend_manager::FrontendId;
+use crate::epg_manager;
 use crate::preferences;
 
 /// Is nouveau the device driver?
@@ -61,7 +62,10 @@ pub struct GStreamerEngine {
 }
 
 impl GStreamerEngine {
-    pub fn new(application: &gtk::Application, frontend_id: &FrontendId) -> Result<GStreamerEngine, ()> {
+    pub fn new(control_window_button: Rc<ControlWindowButton>) -> Result<GStreamerEngine, ()> {
+        let application = control_window_button.control_window.window.get_application().unwrap();
+        let frontend_id = &control_window_button.frontend_id;
+
         let playbin = gst::ElementFactory::make("playbin", Some("playbin")).expect("Failed to create playbin element");
         playbin.connect("element-setup",  false, {
             let fei = frontend_id.clone();
@@ -104,28 +108,28 @@ impl GStreamerEngine {
                             "dvb-frontend-stats" => {},
                             "eit" => {
                                 if let Some(mut section) = gst_mpegts::Section::from_element(&element) {
-                                    // println!("Element is a Section: {:?}", element);
                                     if section.get_section_type() == gst_mpegts::SectionType::Eit {
-                                        // println!("Section is an EIT section: {:?}", section);
-                                        /*
                                         if let Some(eit) = section.get_eit() {
-                                            let mut events: Vec<epg_event::EPGEvent> = vec![];
+                                            let mut events: Vec<epg_manager::EPGEvent> = vec![];
                                             for event in eit.event_iterator() {
-                                                //  TODO  The event_id may already exist and this is extra data for the event.
-                                                //    need to send enough data to the EPG Manager to synthesise all the data
-                                                //    for the event..
-                                                let mut e = epg_event::EPGEvent::new();
-                                                e.service_id = section.get_subtable_extension();
-                                                e.event_id = event.get_event_id();
-                                                e.start_time = event.get_start_time();
-                                                e.duration = event.get_duration();
-                                                events.push(e);
+                                                events.push(epg_manager::EPGEvent::new(
+                                                    section.get_subtable_extension(),
+                                                    event.get_event_id(),
+                                                    event.get_start_time(),
+                                                    event.get_duration(),
+                                                ));
                                             }
+                                            // TODO Send all the events, which should all relate to the same service_id
+                                            //   to the EPG Manager.
+                                            /*
+                                            for e in events {
+                                                to_epg_manager.send(e);
+                                            }
+                                            */
                                             println!("Events are {:?}", events);
                                         } else {
                                             panic!("************    Could not get an EIT from an EIT Section: {:?}", section);
                                         }
-                                        */
                                     } else {
                                         panic!("************  EIT Section is not an EIT Section: {:?}", section);
                                     }

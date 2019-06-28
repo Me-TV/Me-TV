@@ -19,8 +19,11 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use glib;
 
 use gstreamer as gst;
+
+use crate::control_window::Message;
 
 #[derive(Debug)]
 pub struct EPGEvent {
@@ -32,15 +35,23 @@ pub struct EPGEvent {
 
 impl EPGEvent {
 
-    pub fn new() -> EPGEvent {
+    pub fn new(service_id: u16, event_id: u16, start_time: gst::DateTime, duration: u32) -> EPGEvent {
         EPGEvent{
-            service_id: 0,
-            event_id: 0,
-            start_time: gst::DateTime::new_now_local_time(),
-            duration: 0,
+            service_id,
+            event_id,
+            start_time,
+            duration,
         }
     }
 
 }
 
 unsafe impl Send for EPGEvent {}
+unsafe impl Sync for EPGEvent {}
+
+pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Receiver<EPGEvent>) {
+    loop {
+        let event = from_gstreamer.recv();
+        println!("EPG Manager received: {:?}", &event);
+    }
+}

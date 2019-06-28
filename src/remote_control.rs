@@ -286,7 +286,6 @@ pub fn run(to_cw: glib::Sender<Message>) {
             Err(e) => println!("remote_control::run: watch error: {:?}", e),
         }
     }
-    println!("remote_control::run terminated.");
 }
 
 #[cfg(test)]

@@ -31,6 +31,7 @@ use gtk::prelude::*;
 
 use crate::channel_names::encode_to_mrl;
 use crate::control_window_button::ControlWindowButton;
+use crate::epg_manager::EPGEvent;
 use crate::gstreamer_engine::GStreamerEngine;
 use crate::metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
 use crate::preferences;
@@ -61,9 +62,8 @@ pub struct FrontendWindow {
 }
 
 impl FrontendWindow {
-    pub fn new(control_window_button: &Rc<ControlWindowButton>) -> Result<Rc<FrontendWindow>, ()> {
-        let application = control_window_button.control_window.window.get_application().unwrap();
-        let engine = match GStreamerEngine::new(&application, &control_window_button.frontend_id) {
+    pub fn new(control_window_button: Rc<ControlWindowButton>) -> Result<Rc<FrontendWindow>, ()> {
+        let engine = match GStreamerEngine::new(control_window_button.clone()) {
             Ok(engine) => engine,
             Err(_) => { return Err(()); },
         };
@@ -283,7 +283,7 @@ impl FrontendWindow {
         engine.play();
         preferences::set_last_channel(channel_name, true);
         window.show();
-        let inhibitor = application.inhibit(
+        let inhibitor = control_window_button.control_window.window.get_application().unwrap().inhibit(
             Some(&window),
             gtk::ApplicationInhibitFlags::SUSPEND | gtk::ApplicationInhibitFlags::IDLE,
             Some("Me TV inhibits when playing a channel."),

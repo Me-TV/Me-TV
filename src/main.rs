@@ -42,7 +42,7 @@ mod control_window;
 mod control_window_button;
 mod dialogs;
 mod dvb;
-mod epg_event;
+mod epg_manager;
 mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
@@ -85,8 +85,9 @@ fn main() {
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(Some(&application_menu));
-        let (to_cw, from_fem) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);
-        let control_window = control_window::ControlWindow::new(&app, from_fem);
+        let (to_control_window, from_manager) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);
+        let (to_epg_manager, from_gstreamer) = std::sync::mpsc::channel::<epg_manager::EPGEvent>();
+        let control_window = control_window::ControlWindow::new(&app, from_manager, to_epg_manager);
         let preferences_action = gio::SimpleAction::new("preferences", None);
         preferences_action.connect_activate({
             let c_w = control_window.clone();
@@ -105,7 +106,14 @@ fn main() {
             move |_, _| a.quit()
         });
         app.add_action(&quit_action);
-        thread::spawn(||{ frontend_manager::run(to_cw); });
+        thread::spawn({
+            let t_c_w = to_control_window.clone();
+            move ||{ frontend_manager::run(t_c_w); }
+        });
+        thread::spawn({
+            let t_c_w = to_control_window.clone();
+            move ||{ epg_manager::run(t_c_w, from_gstreamer); }
+        });
     });
     // Get a glib-gio warning if activate is not handled.
     application.connect_activate(move |_| { });
