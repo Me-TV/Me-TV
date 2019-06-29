@@ -63,12 +63,9 @@ pub struct GStreamerEngine {
 
 impl GStreamerEngine {
     pub fn new(control_window_button: Rc<ControlWindowButton>) -> Result<GStreamerEngine, ()> {
-        let application = control_window_button.control_window.window.get_application().unwrap();
-        let frontend_id = &control_window_button.frontend_id;
-
         let playbin = gst::ElementFactory::make("playbin", Some("playbin")).expect("Failed to create playbin element");
         playbin.connect("element-setup",  false, {
-            let fei = frontend_id.clone();
+            let fei = control_window_button.frontend_id.clone();
             move |values| {
                 // values[0] .get::<gst::Element>() is an Option on the playbin itself.
                 let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
@@ -95,6 +92,7 @@ impl GStreamerEngine {
         // The compiler cannot determine that the bus watch callback will be executed by the same thread that
         // the gtk::Application object is created with, which must be the case, and so fails to compile unless we
         // use a Fragile.
+        let application = &control_window_button.control_window.window.get_application().unwrap();
         let application_clone = Fragile::new(application.clone());
         let application_clone_for_bus_watch = Fragile::new(application.clone());
         bus.add_watch(move |_, msg| {
