@@ -62,6 +62,7 @@ pub struct GStreamerEngine {
 }
 
 impl GStreamerEngine {
+
     pub fn new(control_window_button: Rc<ControlWindowButton>) -> Result<GStreamerEngine, ()> {
         let playbin = gst::ElementFactory::make("playbin", Some("playbin")).expect("Failed to create playbin element");
         playbin.connect("element-setup",  false, {
@@ -89,81 +90,79 @@ impl GStreamerEngine {
             }
         }).expect("Could not connect a handler to the element-setup signal.");
         let bus = playbin.get_bus().unwrap();
-        // The compiler cannot determine that the bus watch callback will be executed by the same thread that
-        // the gtk::Application object is created with, which must be the case, and so fails to compile unless we
-        // use a Fragile.
+        // The compiler cannot determine that the bus watch callback will be executed
+        // by the same thread that the gtk::Application and ControlWindowButtons objects
+        // are created with, which must be the case, and so fails to compile unless we
+        // use Fragile.
         let application = &control_window_button.control_window.window.get_application().unwrap();
         let application_clone = Fragile::new(application.clone());
-        let application_clone_for_bus_watch = Fragile::new(application.clone());
-        bus.add_watch(move |_, msg| {
-            let application_for_bus_watch = application_clone_for_bus_watch.get();
-            match msg.view() {
-                gst::MessageView::Element(element) => {
-                    if let Some(structure) = element.get_structure() {
-                        match structure.get_name() {
-                            "cat" => {},
-                            "dvb-adapter" => {},
-                            "dvb-frontend-stats" => {},
-                            "eit" => {
-                                if let Some(mut section) = gst_mpegts::Section::from_element(&element) {
-                                    if section.get_section_type() == gst_mpegts::SectionType::Eit {
-                                        if let Some(eit) = section.get_eit() {
-                                            let mut events: Vec<epg_manager::EPGEvent> = vec![];
-                                            for event in eit.event_iterator() {
-                                                events.push(epg_manager::EPGEvent::new(
-                                                    section.get_subtable_extension(),
-                                                    event.get_event_id(),
-                                                    event.get_start_time(),
-                                                    event.get_duration(),
-                                                ));
+        bus.add_watch({
+            let application_clone = Fragile::new(application.clone());
+            let control_window_button_clone = Fragile::new(control_window_button.clone());
+            move |_, msg| {
+                let application = application_clone.get();
+                let control_window_button = control_window_button_clone.get();
+                match msg.view() {
+                    gst::MessageView::Element(element) => {
+                        if let Some(structure) = element.get_structure() {
+                            match structure.get_name() {
+                                "cat" => {},
+                                "dvb-adapter" => {},
+                                "dvb-frontend-stats" => {},
+                                "eit" => {
+                                    if let Some(mut section) = gst_mpegts::Section::from_element(&element) {
+                                        if section.get_section_type() == gst_mpegts::SectionType::Eit {
+                                            if let Some(eit) = section.get_eit() {
+                                                for event in eit.event_iterator() {
+                                                    let e = epg_manager::EPGEvent::new(
+                                                        section.get_subtable_extension(),
+                                                        event.get_event_id(),
+                                                        event.get_start_time(),
+                                                        event.get_duration(),
+                                                    );
+                                                    // TODO Send the event to the EPG Manager.
+                                                    control_window_button.control_window.to_epg_manager.send(e).unwrap();
+                                                }
+                                            } else {
+                                                panic!("************    Could not get an EIT from an EIT Section: {:?}", section);
                                             }
-                                            // TODO Send all the events, which should all relate to the same service_id
-                                            //   to the EPG Manager.
-                                            /*
-                                            for e in events {
-                                                to_epg_manager.send(e);
-                                            }
-                                            */
-                                            println!("Events are {:?}", events);
                                         } else {
-                                            panic!("************    Could not get an EIT from an EIT Section: {:?}", section);
+                                            panic!("************  EIT Section is not an EIT Section: {:?}", section);
                                         }
                                     } else {
-                                        panic!("************  EIT Section is not an EIT Section: {:?}", section);
+                                        panic!("************  Could not get a Section from an EIT Section Element: {:?}", element);
                                     }
-                                } else {
-                                    panic!("************  Could not get a Section from an EIT Section Element: {:?}", element);
-                                }
-                            },
-                            "GstNavigationMessage" => {},
-                            "nit" => {},
-                            "pat" => {},
-                            "pmt" =>{},
-                            "sdt" => {},
-                            "section" => {},
-                            "tdt" => {},
-                            "tot" => {},
-                            _ => println!("Unknown Element types: {:?}", element),
+                                },
+                                "GstNavigationMessage" => {},
+                                "nit" => {},
+                                "pat" => {},
+                                "pmt" =>{},
+                                "sdt" => {},
+                                "section" => {},
+                                "tdt" => {},
+                                "tot" => {},
+                                _ => println!("Unknown Element types: {:?}", element),
+                            }
+                        } else {
+                            panic!("Element has no Structure: {:?}", element);
                         }
-                    } else {
-                        panic!("Element has no Structure: {:?}", element);
-                    }
-                },
-                gst::MessageView::Eos(..) => {
-                    display_an_error_dialog(
-                        Some(&application_for_bus_watch.get_windows()[0]),
-                        "There was an end of stream in the GStreamer system"
-                    );
-                },
-                gst::MessageView::Error(error) => {
-                    display_an_error_dialog(
-                        Some(&application_for_bus_watch.get_windows()[0]),
-                        &format!("There was an error reported on the GStreamer bus.\n\n'{}'\n\nBest bet is to close this channel window and start a new one from the control window.", error.get_error())
-                    );
-                },
-                _ => (),
-            };
-            glib::Continue(true)
+                    },
+                    gst::MessageView::Eos(..) => {
+                        display_an_error_dialog(
+                            Some(&application.get_windows()[0]),
+                            "There was an end of stream in the GStreamer system"
+                        );
+                    },
+                    gst::MessageView::Error(error) => {
+                        display_an_error_dialog(
+                            Some(&application.get_windows()[0]),
+                            &format!("There was an error reported on the GStreamer bus.\n\n'{}'\n\nBest bet is to close this channel window and start a new one from the control window.", error.get_error())
+                        );
+                    },
+                    _ => (),
+                };
+                glib::Continue(true)
+            }
         });
         let create_non_gl_element_and_widget = || {
             match gst::ElementFactory::make("gtksink", None) {
