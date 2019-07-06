@@ -203,16 +203,16 @@ mod test {
 
     #[rstest_parametrize(
         datum, expected,
-        case("20181229T181533", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
-        case("2018-12-29T18:15:33", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
-        case("2018-12-29 18:15:33", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)")),
-        case("20181229T1815", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
-        case("2018-12-29T18:15", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
-        case("2018-12-29 18:15", Unwrap("NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)")),
-        case("181513", Unwrap("Local::today().naive_local().and_hms(18, 15, 13)")),
-        case("18:15:13", Unwrap("Local::today().naive_local().and_hms(18, 15, 13)")),
-        case("1815", Unwrap("Local::today().naive_local().and_hms(18, 15, 00)")),
-        case("18:15", Unwrap("Local::today().naive_local().and_hms(18, 15, 00)")),
+        case("20181229T181533", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)),
+        case("2018-12-29T18:15:33", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)),
+        case("2018-12-29 18:15:33", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)),
+        case("20181229T1815", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)),
+        case("2018-12-29T18:15", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)),
+        case("2018-12-29 18:15", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 00)),
+        case("181513", Local::today().naive_local().and_hms(18, 15, 13)),
+        case("18:15:13", Local::today().naive_local().and_hms(18, 15, 13)),
+        case("1815", Local::today().naive_local().and_hms(18, 15, 00)),
+        case("18:15", Local::today().naive_local().and_hms(18, 15, 00)),
     )]
     fn parse_datetime_string(datum: &str, expected: NaiveDateTime) {
         match parse_to_datetime(datum) {
