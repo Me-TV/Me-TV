@@ -22,36 +22,45 @@
 use glib;
 
 use gstreamer as gst;
+use gstreamer_mpegts::EITDescriptor;
 
 use crate::control_window::Message;
 
 #[derive(Debug)]
-pub struct EPGEvent {
+pub struct EPGEventMessage {
     pub service_id: u16,
     pub event_id: u16,
     pub start_time: gst::DateTime,
     pub duration: u32,
+    pub descriptors: Vec<EITDescriptor>
 }
 
-impl EPGEvent {
+impl EPGEventMessage {
 
-    pub fn new(service_id: u16, event_id: u16, start_time: gst::DateTime, duration: u32) -> EPGEvent {
-        EPGEvent{
+    pub fn new(service_id: u16, event_id: u16, start_time: gst::DateTime, duration: u32, descriptors: Vec<EITDescriptor>) -> EPGEventMessage {
+        EPGEventMessage {
             service_id,
             event_id,
             start_time,
             duration,
+            descriptors,
         }
     }
 
 }
 
-unsafe impl Send for EPGEvent {}
-unsafe impl Sync for EPGEvent {}
+unsafe impl Send for EPGEventMessage {}
+unsafe impl Sync for EPGEventMessage {}
 
-pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Receiver<EPGEvent>) {
+pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Receiver<EPGEventMessage>) {
     loop {
         let event = from_gstreamer.recv();
-        println!("EPG Manager received: {:?}", &event);
+        //println!("EPG Manager received: {:?}", &event);
+        //
+        // What is the best data structure for the EPG? The rendering will
+        // be by channel number and date/time, so these seem to be the
+        // indexes needed. The question is how to structure the indexes.
+        // The issue is whether date/time first then channel number.
+        //
     }
 }

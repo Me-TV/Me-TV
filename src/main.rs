@@ -86,7 +86,7 @@ fn main() {
         let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
         app.set_app_menu(Some(&application_menu));
         let (to_control_window, from_manager) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);
-        let (to_epg_manager, from_gstreamer) = std::sync::mpsc::channel::<epg_manager::EPGEvent>();
+        let (to_epg_manager, from_gstreamer) = std::sync::mpsc::channel::<epg_manager::EPGEventMessage>();
         let control_window = control_window::ControlWindow::new(&app, from_manager, to_epg_manager);
         let preferences_action = gio::SimpleAction::new("preferences", None);
         preferences_action.connect_activate({

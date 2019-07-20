@@ -37,7 +37,7 @@ use tempfile;
 use crate::channel_names::{channels_file_path, get_names};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
-use crate::epg_manager::EPGEvent;
+use crate::epg_manager::EPGEventMessage;
 use crate::frontend_manager::FrontendId;
 use crate::preferences;
 use crate::remote_control::TargettedKeystroke;
@@ -54,7 +54,7 @@ pub struct ControlWindow {
     pub channel_names_store: gtk::ListStore, // Used by ControlWindowButton and FrontendWindow.
     channel_names_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
-    pub to_epg_manager: std::sync::mpsc::Sender<EPGEvent>, // Used by ControlWindowButton.
+    pub to_epg_manager: std::sync::mpsc::Sender<EPGEventMessage>, // Used by ControlWindowButton.
 }
 
 /// All the message types that  can be sent to the ControllerWindow.
@@ -69,7 +69,7 @@ impl ControlWindow {
     /// Constructor (obviously :-). Creates the window to hold the widgets representing the
     /// frontends available. It is assumed this is called in the main thread that then runs the
     /// GTK event loop.
-    pub fn new(application: &gtk::Application, message_channel: glib::Receiver<Message>, to_epg_manager: std::sync::mpsc::Sender<EPGEvent>) -> Rc<ControlWindow> {
+    pub fn new(application: &gtk::Application, message_channel: glib::Receiver<Message>, to_epg_manager: std::sync::mpsc::Sender<EPGEventMessage>) -> Rc<ControlWindow> {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         window.set_border_width(10);

@@ -110,18 +110,18 @@ impl GStreamerEngine {
                                 "dvb-adapter" => {},
                                 "dvb-frontend-stats" => {},
                                 "eit" => {
-                                    if let Some(mut section) = gst_mpegts::Section::from_element(&element) {
+                                    if let Some(section) = gst_mpegts::Section::from_element(&element) {
                                         if section.get_section_type() == gst_mpegts::SectionType::Eit {
                                             if let Some(eit) = section.get_eit() {
                                                 for event in eit.event_iterator() {
-                                                    let e = epg_manager::EPGEvent::new(
+                                                    let event_message = epg_manager::EPGEventMessage::new(
                                                         section.get_subtable_extension(),
                                                         event.get_event_id(),
                                                         event.get_start_time(),
                                                         event.get_duration(),
+                                                        event.get_descriptors(),
                                                     );
-                                                    // TODO Send the event to the EPG Manager.
-                                                    control_window_button.control_window.to_epg_manager.send(e).unwrap();
+                                                    control_window_button.control_window.to_epg_manager.send(event_message).unwrap();
                                                 }
                                             } else {
                                                 panic!("************    Could not get an EIT from an EIT Section: {:?}", section);

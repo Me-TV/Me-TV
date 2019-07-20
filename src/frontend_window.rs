@@ -31,7 +31,6 @@ use gtk::prelude::*;
 
 use crate::channel_names::encode_to_mrl;
 use crate::control_window_button::ControlWindowButton;
-use crate::epg_manager::EPGEvent;
 use crate::gstreamer_engine::GStreamerEngine;
 use crate::metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
 use crate::preferences;
