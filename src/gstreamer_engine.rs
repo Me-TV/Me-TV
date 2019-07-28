@@ -134,7 +134,21 @@ impl GStreamerEngine {
                                     }
                                 },
                                 "GstNavigationMessage" => {},
-                                "nit" => {},
+                                "nit" => {
+                                    if let Some(section) = gst_mpegts::Section::from_element(&element) {
+                                        if section.get_section_type() == gst_mpegts::SectionType::Nit {
+                                            if let Some(nit) = section.get_nit() {
+                                                println!("========  Got a NIT {:?}", nit);
+                                            }else {
+                                                panic!("************    Could not get a NIT from a NIT Section: {:?}", section);
+                                            }
+                                        } else {
+                                            panic!("************  NIT Section is not an NIT Section: {:?}", section);
+                                        }
+                                    } else {
+                                        panic!("************  Could not get a Section from a NIT Section Element: {:?}", element);
+                                    }
+                                },
                                 "pat" => {},
                                 "pmt" =>{},
                                 "sdt" => {},
