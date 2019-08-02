@@ -21,8 +21,8 @@
 
 use glib;
 
-use gstreamer as gst;
-use gstreamer_mpegts::EITDescriptor;
+use gst;
+use gst_mpegts::EITDescriptor;
 
 use crate::control_window::Message;
 

@@ -30,10 +30,10 @@ use glib::prelude::*;
 use gtk;
 use gtk::prelude::*;
 
-use gstreamer as gst;
+use gst;
 use gst::prelude::*;
 
-use gstreamer_mpegts as gst_mpegts;
+use gst_mpegts;
 
 use fragile::Fragile;
 

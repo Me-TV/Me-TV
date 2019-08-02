@@ -31,10 +31,10 @@ use gio::prelude::*;
 use gtk::prelude::*;
 
 #[cfg(not(test))]
-use gstreamer as gst;
+use gst;
 
 #[cfg(not(test))]
-use gstreamer_mpegts as gst_mpegts;
+use gst_mpegts;
 
 mod about;
 mod channel_names;
