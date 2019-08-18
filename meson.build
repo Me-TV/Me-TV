@@ -11,7 +11,7 @@ prefix = get_option('prefix')
 bindir = get_option('bindir')
 datadir = get_option('datadir')
 applicationsdir = join_paths(datadir, 'applications')
-pixmapsdir = join_paths(datadir, 'pixmaps')
+iconsdir = join_paths(datadir, 'icons')
 
 cargo = find_program('cargo')
 cargo_script = find_program('scripts/cargo.sh')
@@ -66,5 +66,5 @@ configure_file(
     install_dir: applicationsdir,
 )
 
-install_data('src/resources/images/me-tv.png', install_dir: pixmapsdir)
+install_data('src/resources/images/me-tv.png', install_dir: iconsdir)
 install_man('doc/me-tv.1')
