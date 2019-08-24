@@ -57,14 +57,6 @@ me_tv_schedule = custom_target(
     command: [cargo_script, '@CURRENT_SOURCE_DIR@', '@OUTPUT@']
 )
 
-conf_data = configuration_data()
-conf_data.set('PREFIX', prefix)
-configure_file(
-    input: 'data/me-tv.desktop.in',
-    output: 'me-tv.desktop',
-    configuration: conf_data,
-    install_dir: applicationsdir,
-)
-
 install_data('src/resources/images/me-tv.png', install_dir: iconsdir)
+install_data('data/me-tv.desktop', install_dir: applicationsdir)
 install_man('doc/me-tv.1')
