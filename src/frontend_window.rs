@@ -68,7 +68,7 @@ impl FrontendWindow {
         };
         let window = {
             let w = gtk::Window::new(gtk::WindowType::Toplevel);
-            w.set_title("Me TV");
+            w.set_title(&("Me TV – ".to_string() + &control_window_button.channel_selector.get_active_text().unwrap()));
             w.set_default_size(480, 270);
             w
         };
@@ -109,7 +109,7 @@ impl FrontendWindow {
         };
         let header_bar = {
             let h_b = gtk::HeaderBar::new();
-            h_b.set_title(Some("Me TV"));
+            h_b.set_title(Some(("Me TV – ".to_string() + &control_window_button.channel_selector.get_active_text().unwrap()).as_str()));
             h_b.set_show_close_button(false);  // TODO Why have a special close button instead of the standard one?
             h_b.pack_end(&close_button);
             h_b.pack_end(&fullscreen_button);
