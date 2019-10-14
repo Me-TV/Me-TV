@@ -81,31 +81,12 @@ fn main() {
     let application = gtk::Application::new(Some("uk.org.russel.me-tv"), gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
     application.connect_startup(move |app| {
-        // It seems that the application menu must be added before creating the control window.
-        let menu_builder = gtk::Builder::new_from_string(include_str!("resources/application_menu.xml"));
-        let application_menu = menu_builder.get_object::<gio::Menu>("application_menu").expect("Could not construct the application menu.");
-        app.set_app_menu(Some(&application_menu));
         let (to_control_window, from_manager) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);
         let (to_epg_manager, from_gstreamer) = std::sync::mpsc::channel::<epg_manager::EPGEventMessage>();
+        //  TODO This variable is no longer used since the application menu was
+        //    removed, but the `ControlWindow` instance must be created at this time.
+        //    Or is there a better way of doing this?
         let control_window = control_window::ControlWindow::new(&app, from_manager, to_epg_manager);
-        let preferences_action = gio::SimpleAction::new("preferences", None);
-        preferences_action.connect_activate({
-            let c_w = control_window.clone();
-            move |_, _| preferences_dialog::present(&c_w)
-        });
-        app.add_action(&preferences_action);
-        let about_action = gio::SimpleAction::new("about", None);
-        about_action.connect_activate({
-            let c_w = control_window.clone();
-            move |_, _| about::present(Some(&c_w.window))
-        });
-        app.add_action(&about_action);
-        let quit_action = gio::SimpleAction::new("quit", None);
-        quit_action.connect_activate({
-            let a = app.clone();
-            move |_, _| a.quit()
-        });
-        app.add_action(&quit_action);
         thread::spawn({
             let t_c_w = to_control_window.clone();
             move ||{ frontend_manager::run(t_c_w); }

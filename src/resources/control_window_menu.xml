@@ -1,14 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <menu id='control_window_menu'>
-    <item>
-      <attribute name='label' translatable='yes'>_EPG</attribute>
-      <attribute name='action'>win.epg</attribute>
-      <attribute name='accel'>&lt;Primary&gt;e</attribute>
-    </item>
-    <item>
-      <attribute name='label' translatable='yes'>_Create channels file</attribute>
-      <attribute name='action'>win.create_channels_file</attribute>
-      <attribute name='accel'>&lt;Primary&gt;c</attribute>
-    </item> </menu>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_EPG</attribute>
+        <attribute name='action'>win.epg</attribute>
+        <attribute name='accel'>&lt;Primary&gt;e</attribute>
+      </item>
+      <item>
+        <attribute name='label' translatable='yes'>_Create channels file</attribute>
+        <attribute name='action'>win.create_channels_file</attribute>
+        <attribute name='accel'>&lt;Primary&gt;c</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_Preferences</attribute>
+        <attribute name='action'>win.preferences</attribute>
+        <attribute name='accel'>&lt;Primary&gt;p</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name='label' translatable='yes'>_About Me TV</attribute>
+        <attribute name='action'>win.about</attribute>
+        <attribute name='accel'>&lt;Primary&gt;a</attribute>
+      </item>
+    </section>
+  </menu>
 </interface>

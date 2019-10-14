@@ -34,12 +34,14 @@ use gtk::prelude::*;
 
 use tempfile;
 
+use crate::about;
 use crate::channel_names::{channels_file_path, get_names};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
 use crate::epg_manager::EPGEventMessage;
 use crate::frontend_manager::FrontendId;
 use crate::preferences;
+use crate::preferences_dialog;
 use crate::remote_control::TargettedKeystroke;
 use crate::transmitter_dialog;
 
@@ -91,6 +93,10 @@ impl ControlWindow {
         window.add_action(&epg_action);
         let channels_file_action = gio::SimpleAction::new("create_channels_file", None);
         window.add_action(&channels_file_action);
+        let preferences_action = gio::SimpleAction::new("preferences", None);
+        window.add_action(&preferences_action);
+        let about_action = gio::SimpleAction::new("about", None);
+        window.add_action(&about_action);
         menu_button.set_menu_model(Some(&window_menu));
         header_bar.pack_end(&menu_button);
         window.set_titlebar(Some(&header_bar));
@@ -130,6 +136,14 @@ impl ControlWindow {
                     ensure_channel_file_present(&c_w);
                 }
             }
+        });
+        preferences_action.connect_activate({
+            let c_w = control_window.clone();
+            move |_, _| preferences_dialog::present(&c_w)
+        });
+        about_action.connect_activate({
+            let c_w = control_window.clone();
+            move |_, _| about::present(Some(&c_w.window))
         });
         {
             let c_w = control_window.clone();
