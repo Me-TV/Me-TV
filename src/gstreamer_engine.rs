@@ -109,6 +109,10 @@ impl GStreamerEngine {
                                 "cat" => {},
                                 "dvb-adapter" => {},
                                 "dvb-frontend-stats" => {},
+                                "dvb-read-failure" => {
+                                    // TODO What should be done on a read failure?
+                                    println!("********    Got a DVB read failure.");
+                                },
                                 "eit" => {
                                     if let Some(section) = gst_mpegts::Section::from_element(&element) {
                                         if section.get_section_type() == gst_mpegts::SectionType::Eit {
@@ -124,7 +128,10 @@ impl GStreamerEngine {
                                                     control_window_button.control_window.to_epg_manager.send(event_message).unwrap();
                                                 }
                                             } else {
-                                                panic!("************    Could not get an EIT from an EIT Section: {:?}", section);
+                                                //  TODO This seems to happen, and yet it shouldn't.
+                                                println!("********    Could not get an EIT from a supposed EIT Section: {:?}", section);
+                                                println!("********        Section type: {:?}", section.get_section_type());
+                                                println!("********        EIT: {:?}", section.get_eit());
                                             }
                                         } else {
                                             panic!("************  EIT Section is not an EIT Section: {:?}", section);
@@ -155,7 +162,7 @@ impl GStreamerEngine {
                                 "section" => {},
                                 "tdt" => {},
                                 "tot" => {},
-                                _ => println!("Unknown Element types: {:?}", element),
+                                _ => println!("Unknown Element type: {:?}", element),
                             }
                         } else {
                             panic!("Element has no Structure: {:?}", element);
