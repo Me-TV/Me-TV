@@ -19,7 +19,7 @@ before_install:
 
 before_script:
   - sudo apt-get -qq update
-  - sudo apt-get install -y libgtk-3-dev libatk1.0-dev libpango1.0-dev
+  - sudo apt-get install -y libgtk-3-dev
 
 script:
   - cargo build
