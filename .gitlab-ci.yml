@@ -9,12 +9,12 @@ before_script:
   - export PATH=$PATH:$PWD/gstreamer/bin
   - export RUST_BACKTRACE=1
   - apt-get update -yq
-  - apt-get install -y libgtk-3-dev
+  - apt-get install -y libgtk-3-dev xvfb
 #  - apt-get install -y libgstreamer-plugins-bad1.0-dev
 
 test:cargo:
   script:
   - rustc --version && cargo --version
   - cargo build --verbose
-  - cargo test --verbose
+  - xvfb-run cargo test --verbose
   - cargo build --verbose --release
