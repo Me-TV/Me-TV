@@ -1,6 +1,14 @@
 # ChangeLog
 
 ## [Unreleased]
+### Added
+ - Add processing of MPEG-TS messages on GStreamer bus to create EPG. [WiP]
+### Changed
+ - Require GStreamer 1.16 so as to use MPEG-TS library.
+ - Use Rust 2018 Edition and amend the way Cargo is used for crate names.
+ - Amend the installation paths to correct places.
+ - Switch from old style applications menu to new style applications menu.
+ - Switch to using GitLab for CI/CD rather than GitHub/Travis-CI/Bintray.
 
 ## [3.0.9] - 2019-04-19
 ### Changed
