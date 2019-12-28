@@ -280,14 +280,14 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                             // TODO What to do if None is returned?
                             if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
                                 loop {
-                                    if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>() {
+                                    if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>().unwrap() {
                                         if target_channel_name == channel_name {
                                             match control_window.channel_names_store.get_path(&iterator) {
                                                 Some(mut tree_path) => {
                                                     let index = tree_path.get_indices_with_depth()[0];
                                                     if index < 0 { panic!("index cannot be a negative integer"); }
-                                                    c_w_b.channel_selector.set_active(Some(index as u32));
-                                                    c_w_b.frontend_button.set_active(true);
+                                                    c_w_b.channel_selector.set_active(Some(index as u32));  // Option<u32> required no matter what CLion says.
+                                                    c_w_b.frontend_button.set_active(true);  // bool required no matter what CLion says.
                                                 },
                                                 None => panic!("Failed to get the path of the iterator."),
                                             }

@@ -99,15 +99,23 @@ A channel name and a duration must be provided.
             let frontend_number = frontend;
             move |values| {
                 // values[0] .get::<gst::Element>() is an Option on the uridecodebin itself.
-                let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
+                let element = values[1].get::<gst::Element>()
+                    .expect("Failed to get a handle on the Element being created")
+                    .expect("Option on Element was None");
                 if let Some(element_factory) = element.get_factory() {
                     if element_factory.get_name() == "dvbbasebin" {
                         let current_adapter_number = element
-                            .get_property("adapter").expect("Could not retrieve adapter number Value")
-                            .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
+                            .get_property("adapter")
+                            .expect("Could not retrieve adapter number Value")
+                            .get::<i32>()
+                            .expect("Could not get the i32 value from the adapter number Value")
+                            .expect("Option on u32 returned None") as u8;
                         let current_frontend_number = element
-                            .get_property("frontend").expect("Could not retrieve frontend number Value.")
-                            .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
+                            .get_property("frontend")
+                            .expect("Could not retrieve frontend number Value.")
+                            .get::<i32>()
+                            .expect("Could not get the i32 value from the frontend number Value")
+                            .expect ("Option on u32 returned None") as u8;
                         if current_adapter_number != adapter_number {
                             element.set_property("adapter", &(adapter_number as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
                         }

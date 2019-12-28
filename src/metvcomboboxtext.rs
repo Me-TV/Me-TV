@@ -57,7 +57,7 @@ impl MeTVComboBoxTextExt for MeTVComboBoxText {
             Some(model) => {
                 match self.get_active_iter() {
                     Some(iterator) => {
-                        let x = model.get_value(&iterator, 0).get::<String>().unwrap();
+                        let x = model.get_value(&iterator, 0).get::<String>().unwrap().unwrap();
                         Some(x)
                     },
                     None => None,
@@ -73,7 +73,7 @@ impl MeTVComboBoxTextExt for MeTVComboBoxText {
                 match model.get_iter_first() {
                     Some(iterator) => {
                         loop {
-                            if let Some(name) = model.get_value(&iterator, 0).get::<String>() {
+                            if let Some(name) = model.get_value(&iterator, 0).get::<String>().unwrap() {
                                 if target_name == name {
                                     self.set_active_iter(Some(&iterator));
                                     return true;

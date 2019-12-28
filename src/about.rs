@@ -58,7 +58,7 @@ fn create() -> gtk::AboutDialog {
     loader.close().unwrap();
     let image = loader.get_pixbuf().unwrap();
     about.set_logo(Some(&image));
-    about.set_name("Me TV");
+    //  about.set_name("Me TV");  // TODO What is the replacement for set_name?
     about.set_translator_credits(Some(""));
     about.set_version(Some(env!("CARGO_PKG_VERSION")));
     about

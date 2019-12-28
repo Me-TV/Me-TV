@@ -27,8 +27,8 @@ use clap;
 
 #[cfg(not(test))]
 use gio::prelude::*;
-#[cfg(not(test))]
-use gtk::prelude::*;
+//#[cfg(not(test))]
+//use gtk::prelude::*;
 
 #[cfg(not(test))]
 use gst;
@@ -86,7 +86,7 @@ fn main() {
         //  TODO This variable is no longer used since the application menu was
         //    removed, but the `ControlWindow` instance must be created at this time.
         //    Or is there a better way of doing this?
-        let control_window = control_window::ControlWindow::new(&app, from_manager, to_epg_manager);
+        let _control_window = control_window::ControlWindow::new(&app, from_manager, to_epg_manager);
         thread::spawn({
             let t_c_w = to_control_window.clone();
             move ||{ frontend_manager::run(t_c_w); }
