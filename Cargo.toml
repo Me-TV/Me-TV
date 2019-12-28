@@ -40,7 +40,7 @@ serde = "*"
 serde_derive = "*"
 serde_yaml = "*"
 tempfile = "*"
-time = "*"
+time = "0.1.42"  # chrono requires this version not 0.2.0
 xdg = "*"
 
 [dev-dependencies]
