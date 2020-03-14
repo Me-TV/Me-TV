@@ -199,9 +199,9 @@ for example 0559 or 05:59, basically hhmm[ss] or hh:mm:[:ss].
 mod test {
     use super::*;
     use chrono::NaiveDate;
-    use rstest::rstest_parametrize;
+    use rstest::rstest;
 
-    #[rstest_parametrize(
+    #[rstest(
         datum, expected,
         case("20181229T181533", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)),
         case("2018-12-29T18:15:33", NaiveDate::from_ymd(2018, 12, 29).and_hms(18, 15, 33)),
