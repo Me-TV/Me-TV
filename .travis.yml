@@ -8,6 +8,9 @@ language: rust
 
 #cache: cargo
 
+# Xenial has GStreamer 1.8.2 in packaging. Me TV 3.1.x requires GStreamer 1.16.x so
+# install it from Slomo's collection of pre-built GStreamer.
+
 before_install:
   - curl -L https://people.freedesktop.org/~slomo/gstreamer-1.16.1.tar.xz | tar -x --xz
   - sed -i "s;prefix=/root/gstreamer;prefix=$PWD/gstreamer;g" $PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig/*.pc
@@ -20,6 +23,7 @@ before_install:
 before_script:
   - sudo apt-get -qq update
   - sudo apt-get install -y libgtk-3-dev
+#  - sudo apt-get install -y libgstreamer-plugins-bad1.0-dev
 
 script:
   - cargo build

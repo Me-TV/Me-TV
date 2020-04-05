@@ -1,5 +1,9 @@
 image: "rust:latest"
 
+# Debian buster is the OS on this CoreOS instance as at 2020-04-05 but that has GStreamer 1.14.4
+# whereas Me TV 3.1.x needs GStreamer 1.16.x as minimum. Hence the installation of GStreamer
+# from Slomo's collection rather than packaging.
+
 before_script:
   - uname -a
   - curl -L https://people.freedesktop.org/~slomo/gstreamer-1.16.1.tar.xz | tar -x --xz
