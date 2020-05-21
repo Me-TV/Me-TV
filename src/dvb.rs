@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2018, 2019  Russel Winder
+ *  Copyright © 2018–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 
 use std::fmt;
 use std::slice::Iter;
+
+use serde_derive::{Deserialize, Serialize};
 
 /// The various options for DVB delivery system the user is using.
 #[allow(non_camel_case_types)]

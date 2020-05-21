@@ -22,14 +22,16 @@
 use std::cell::Cell;
 use std::sync::Mutex;
 
+use lazy_static::lazy_static;
+
 use gtk;
 use gtk::prelude::*;
 
-use control_window::ControlWindow;
-use dvb;
-use metvcomboboxtext::MeTVComboBoxText;
-use metvcomboboxtext::MeTVComboBoxTextExt;
-use preferences;
+use crate::control_window::ControlWindow;
+use crate::dvb;
+use crate::metvcomboboxtext::MeTVComboBoxText;
+use crate::metvcomboboxtext::MeTVComboBoxTextExt;
+use crate::preferences;
 
 lazy_static! {
     static ref PREFERENCES: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
@@ -42,7 +44,7 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
         for delivery_system in dvb::DeliverySystem::iterator() {
             comboboxtext.append_text(&delivery_system.to_string());
         }
-        comboboxtext.set_active(preferences::get_delivery_system().get_index());
+        comboboxtext.set_active(Some(preferences::get_delivery_system().get_index()));
         comboboxtext.connect_changed(
             move |selector| preferences::set_delivery_system(selector.get_active_text().unwrap().as_str().into(), true)
         );
@@ -95,7 +97,7 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
     };
     let preferences_dialog = {
         let window = menu_builder.get_object::<gtk::Window>("preferences_dialog").unwrap();
-        window.set_transient_for(&control_window.window);
+        window.set_transient_for(Some(&control_window.window));
         window.show_all();
         window
     };

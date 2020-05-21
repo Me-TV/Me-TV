@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017–2019  Russel Winder
+ *  Copyright © 2017–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ use glib;
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
 
-use control_window::Message;
-use remote_control;
+use crate::control_window::Message;
+use crate::remote_control;
 
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.
@@ -193,6 +193,8 @@ pub fn run(mut to_cw: glib::Sender<Message>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use quickcheck::quickcheck;
 
     quickcheck! {
         fn adapter_path_is_correct(id: u8) -> bool {

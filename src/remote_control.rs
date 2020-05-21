@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2019  Russel Winder
+ *  Copyright © 2019, 2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,12 +29,14 @@ use std::time::Duration;
 
 use glob::glob;
 use libc;
+use lazy_static::lazy_static;
+use nix::ioctl_write_int;
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
 
-use control_window::Message;
-use frontend_manager::FrontendId;
-use input_event_codes;
+use crate::control_window::Message;
+use crate::frontend_manager::FrontendId;
+use crate::input_event_codes;
 
 #[derive(Debug)]
 pub struct RemoteControl {

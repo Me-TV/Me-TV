@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2018  Russel Winder
+ *  Copyright © 2018, 2019  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ impl MeTVComboBoxTextExt for MeTVComboBoxText {
     }
 
     fn set_new_model(&mut self, model: &gtk::ListStore) {
-        self.set_model(model);
+        self.set_model(Some(model));
         let renderer = gtk::CellRendererText::new();
         self.pack_start(&renderer, true);
         self.add_attribute(&renderer, "text", 0);
@@ -57,7 +57,7 @@ impl MeTVComboBoxTextExt for MeTVComboBoxText {
             Some(model) => {
                 match self.get_active_iter() {
                     Some(iterator) => {
-                        let x = model.get_value(&iterator, 0).get::<String>().unwrap();
+                        let x = model.get_value(&iterator, 0).get::<String>().unwrap().unwrap();
                         Some(x)
                     },
                     None => None,
@@ -73,7 +73,7 @@ impl MeTVComboBoxTextExt for MeTVComboBoxText {
                 match model.get_iter_first() {
                     Some(iterator) => {
                         loop {
-                            if let Some(name) = model.get_value(&iterator, 0).get::<String>() {
+                            if let Some(name) = model.get_value(&iterator, 0).get::<String>().unwrap() {
                                 if target_name == name {
                                     self.set_active_iter(Some(&iterator));
                                     return true;
@@ -117,18 +117,18 @@ mod tests {
         }
         let store = gtk::ListStore::new(&[String::static_type()]);
         let mut thingy = MeTVComboBoxText::new_and_set_model(&store);
-        thingy.set_active(1); // TODO Should this fail in some way?
+        thingy.set_active(Some(1)); // TODO Should this fail in some way?
         assert_eq!(thingy.get_active_text(), None);
 
         let store = create_test_model();
         thingy.set_new_model(&store);
-        thingy.set_active(0);
+        thingy.set_active(Some(0));
         assert_eq!(thingy.get_active_text().unwrap(), "fred");
 
-        thingy.set_active(2);
+        thingy.set_active(Some(2));
         assert_eq!(thingy.get_active_text().unwrap(), "jo");
 
-        thingy.set_active(1);
+        thingy.set_active(Some(1));
         assert_eq!(thingy.get_active_text().unwrap(), "jane");
 
         let mut another_thingy = MeTVComboBoxText::new_and_set_model(&store);

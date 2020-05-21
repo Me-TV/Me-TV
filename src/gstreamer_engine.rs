@@ -20,11 +20,13 @@
  */
 
 use std::process::Command;
+use std::rc::Rc;
 
 //use gio;
 //use gio::prelude::*;
 use glib;
 use glib::prelude::*;
+//use glib::translate::*;
 use gtk;
 use gtk::prelude::*;
 
@@ -33,9 +35,10 @@ use gst::prelude::*;
 
 use fragile::Fragile;
 
-use dialogs::display_an_error_dialog;
-use frontend_manager::FrontendId;
-use preferences;
+use crate::control_window_button::ControlWindowButton;
+use crate::dialogs::display_an_error_dialog;
+use crate::frontend_manager::FrontendId;
+use crate::preferences;
 
 /// Is nouveau the device driver?
 ///
@@ -58,20 +61,29 @@ pub struct GStreamerEngine {
 
 impl GStreamerEngine {
     pub fn new(application: &gtk::Application, frontend_id: &FrontendId) -> Result<GStreamerEngine, ()> {
-        let playbin = gst::ElementFactory::make("playbin", "playbin").expect("Failed to create playbin element");
+        let playbin = gst::ElementFactory::make("playbin", Some("playbin")).expect("Failed to create playbin element");
         playbin.connect("element-setup",  false, {
             let fei = frontend_id.clone();
             move |values| {
                 // values[0] .get::<gst::Element>() is an Option on the playbin itself.
-                let element = values[1].get::<gst::Element>().expect("Failed to get a handle on the Element being created");
+                let element = values[1]
+                    .get::<gst::Element>()
+                    .expect("Failed to get a handle on the Element being created")
+                    .expect("Got None rather than an Some<Element>");
                 if let Some(element_factory) = element.get_factory() {
                     if element_factory.get_name() == "dvbsrc" {
                         let adapter_number = element
-                            .get_property("adapter").expect("Could not retrieve adapter number Value")
-                            .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
+                            .get_property("adapter")
+                            .expect("Could not retrieve adapter number Value")
+                            .get::<i32>()
+                            .expect("Could not get the i32 value from the adapter number Value")
+                            .expect("Got None rather than Some<u32>") as u8;
                         let frontend_number = element
-                            .get_property("frontend").expect("Could not retrieve frontend number Value.")
-                            .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
+                            .get_property("frontend")
+                            .expect("Could not retrieve frontend number Value.")
+                            .get::<i32>()
+                            .expect("Could not get the i32 value from the frontend number Value")
+                            .expect("Got None rather than Some<u32>") as u8;
                         if adapter_number != fei.adapter {
                             element.set_property("adapter", &(fei.adapter as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
                         }
@@ -110,11 +122,11 @@ impl GStreamerEngine {
         });
         let create_non_gl_element_and_widget = || {
             match gst::ElementFactory::make("gtksink", None) {
-                Some(sink) =>{
+                Ok(sink) =>{
                     let widget = sink.get_property("widget").expect("Could not get 'widget' property.");
-                    (Some(sink), widget.get::<gtk::Widget>())
+                    (Some(sink), widget.get::<gtk::Widget>().unwrap())
                 },
-                None => {
+                Err(_) => {
                     display_an_error_dialog(
                         Some(&application_clone.get().get_windows()[0]),
                         "Could not create a 'gtksink'\n\nIs the gstreamer1.0-gtk3 package installed?"
@@ -127,14 +139,14 @@ impl GStreamerEngine {
             create_non_gl_element_and_widget()
         } else {
             match gst::ElementFactory::make("gtkglsink", None) {
-                Some(gtkglsink) => {
+                Ok(gtkglsink) => {
                     match gst::ElementFactory::make("glsinkbin", None) {
-                        Some(glsinkbin) => {
+                        Ok(glsinkbin) => {
                             glsinkbin.set_property("sink", &gtkglsink.to_value()).expect("Could not set 'sink'property.");
                             let widget = gtkglsink.get_property("widget").expect("Could not get 'widget' property.");
-                            (Some(glsinkbin), widget.get::<gtk::Widget>())
+                            (Some(glsinkbin), widget.get::<gtk::Widget>().unwrap())
                         },
-                        None => {
+                        Err(_) => {
                             display_an_error_dialog(
                                 Some(&application_clone.get().get_windows()[0]),
                                 "Could not create a 'glsinkbin'\n\nIs the gstreamer1.0-gl package installed?."
@@ -143,7 +155,7 @@ impl GStreamerEngine {
                         }
                     }
                 },
-                None => create_non_gl_element_and_widget()
+                Err(_) => create_non_gl_element_and_widget()
             }
         };
         if video_element.is_none() || video_widget.is_none() {
@@ -190,7 +202,7 @@ impl GStreamerEngine {
     }
 
     pub fn get_volume(&self) -> f64 {
-        self.playbin.get_property("volume").unwrap().get().unwrap()
+        self.playbin.get_property("volume").unwrap().get().unwrap().unwrap()
     }
 
     pub fn set_volume(&self, value: f64) {

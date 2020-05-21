@@ -19,20 +19,13 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern crate clap;
-extern crate ctrlc;
-extern crate exitcode;
-extern crate glib;
-#[macro_use]
-extern crate gstreamer;
-
 use std::{thread, time};
-
 use std::error::Error;
 
 use clap::{Arg, App};
 
-use gstreamer::prelude::*;
+use gst::{gst_element_error, gst_element_warning};
+use gst::prelude::*;
 
 fn main() {
     let matches = App::new("me-tv-record")
@@ -96,25 +89,33 @@ A channel name and a duration must be provided.
     //
     //    gst-launch-1.0 -e uridecodebin uri=dvb://<channel> name=d ! queue ! x264enc ! mp4mux name=m ! filesink location=<output-path> d. ! queue ! avenc_ac3 ! m.
     //
-    gstreamer::init().unwrap();
-    let pipeline = gstreamer::Pipeline::new(None);
+    gst::init().unwrap();
+    let pipeline = gst::Pipeline::new(None);
     let uridecodebin = {
-        let element = gstreamer::ElementFactory::make("uridecodebin", None).expect("cannot make uridecodebin");
+        let element = gst::ElementFactory::make("uridecodebin", None).expect("cannot make uridecodebin");
         element.set_property("uri", &format!("dvb://{}", channel)).expect("cannot set uri property on uridecodebin");
         element.connect("source-setup",  false, {
             let adapter_number = adapter;
             let frontend_number = frontend;
             move |values| {
                 // values[0] .get::<gst::Element>() is an Option on the uridecodebin itself.
-                let element = values[1].get::<gstreamer::Element>().expect("Failed to get a handle on the Element being created");
+                let element = values[1].get::<gst::Element>()
+                    .expect("Failed to get a handle on the Element being created")
+                    .expect("Option on Element was None");
                 if let Some(element_factory) = element.get_factory() {
                     if element_factory.get_name() == "dvbbasebin" {
                         let current_adapter_number = element
-                            .get_property("adapter").expect("Could not retrieve adapter number Value")
-                            .get::<i32>().expect("Could not get the i32 value from the adapter number Value") as u8;
+                            .get_property("adapter")
+                            .expect("Could not retrieve adapter number Value")
+                            .get::<i32>()
+                            .expect("Could not get the i32 value from the adapter number Value")
+                            .expect("Option on u32 returned None") as u8;
                         let current_frontend_number = element
-                            .get_property("frontend").expect("Could not retrieve frontend number Value.")
-                            .get::<i32>().expect("Could not get the i32 value from the frontend number Value") as u8;
+                            .get_property("frontend")
+                            .expect("Could not retrieve frontend number Value.")
+                            .get::<i32>()
+                            .expect("Could not get the i32 value from the frontend number Value")
+                            .expect ("Option on u32 returned None") as u8;
                         if current_adapter_number != adapter_number {
                             element.set_property("adapter", &(adapter_number as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
                         }
@@ -128,14 +129,14 @@ A channel name and a duration must be provided.
         }).expect("Could not connect a handler to the source-setup signal.");
         element
     };
-    let mp4mux = gstreamer::ElementFactory::make("mp4mux", None).expect("cannot make mp4mux");
+    let mp4mux = gst::ElementFactory::make("mp4mux", None).expect("cannot make mp4mux");
     let filesink = {
-        let element = gstreamer::ElementFactory::make("filesink", None).expect("cannot make filesrc");
+        let element = gst::ElementFactory::make("filesink", None).expect("cannot make filesrc");
         element.set_property("location", &output_path).expect("cannot set location for filesrc");
         element
     };
     pipeline.add_many(&[&uridecodebin, &mp4mux, &filesink]).expect("could not add elements to pipeline");
-    gstreamer::Element::link_many(&[&mp4mux, &filesink]).expect("could not link elements in pipeline");
+    gst::Element::link_many(&[&mp4mux, &filesink]).expect("could not link elements in pipeline");
     // Heed the warnings about strong references, circular references and memory leaks.
     let pipeline_weak_ref = pipeline.downgrade();
     uridecodebin.connect_pad_added(move |d_b, src_pad| {
@@ -153,7 +154,7 @@ A channel name and a duration must be provided.
             match media_type {
                 Some(media_type) => media_type,
                 None => {
-                    gst_element_warning!(d_b, gstreamer::CoreError::Negotiation, ("Failed to get media type from pad {}", src_pad.get_name()));
+                    gst_element_warning!(d_b, gst::CoreError::Negotiation, ("Failed to get media type from pad {}", src_pad.get_name()));
                     return;
                 },
             }
@@ -161,15 +162,15 @@ A channel name and a duration must be provided.
         let insert_sink = |is_audio, is_video| -> Result<(), ()> {
             if is_audio && is_video { panic!("sink is both audio and video at the same time"); }
             if ! is_audio && ! is_video { return Ok(()); }
-            let queue = gstreamer::ElementFactory::make("queue", None).expect("cannot make a queue");
+            let queue = gst::ElementFactory::make("queue", None).expect("cannot make a queue");
             let new_element = if is_audio {
-                gstreamer::ElementFactory::make("avenc_ac3", None).expect("cannot make a avenc_ac3")
+                gst::ElementFactory::make("avenc_ac3", None).expect("cannot make a avenc_ac3")
             } else {
-                gstreamer::ElementFactory::make("x264enc", None).expect("cannot make a x264enc")
+                gst::ElementFactory::make("x264enc", None).expect("cannot make a x264enc")
             };
             let elements = &[&queue, &new_element];
             pipeline.add_many(elements).expect("could not add elements to pipeline");
-            gstreamer::Element::link_many(elements).expect("could not link elements in pipeline");
+            gst::Element::link_many(elements).expect("could not link elements in pipeline");
             for e in elements {
                 e.sync_state_with_parent().expect("could not sync state of elements with parent");
             }
@@ -183,10 +184,10 @@ A channel name and a duration must be provided.
         };
         if let Err(err) = insert_sink(is_audio, is_video) {
             //  TODO why are the parentheses needed around the string?
-            gst_element_error!(d_b, gstreamer::LibraryError::Failed, ("Failed to insert sink"), ["{:?}", err]);
+            gst_element_error!(d_b, gst::LibraryError::Failed, ("Failed to insert sink"), ["{:?}", err]);
         }
     });
-    pipeline.set_state(gstreamer::State::Playing).unwrap();
+    pipeline.set_state(gst::State::Playing).unwrap();
     thread::spawn({
         let pipeline_weak_ref = pipeline.downgrade();
         move || {
@@ -195,7 +196,7 @@ A channel name and a duration must be provided.
                 Some(pipeline) => pipeline,
                 None => panic!("no access to the pipeline"),
             };
-            pipeline.send_event(gstreamer::Event::new_eos().build());
+            pipeline.send_event(gst::Event::new_eos().build());
         }
     });
     ctrlc::set_handler({
@@ -205,16 +206,16 @@ A channel name and a duration must be provided.
                 Some(pipeline) => pipeline,
                 None => panic!("no access to the pipeline"),
             };
-            pipeline.send_event(gstreamer::Event::new_eos().build());
+            pipeline.send_event(gst::Event::new_eos().build());
         }
     }).expect("Error setting ctrl-c handler.");
     let bus = pipeline.get_bus().expect("Pipeline without bus. Shouldn't happen!");
-    while let Some(msg) = bus.timed_pop(gstreamer::CLOCK_TIME_NONE) {
-        use gstreamer::MessageView;
+    while let Some(msg) = bus.timed_pop(gst::CLOCK_TIME_NONE) {
+        use gst::MessageView;
         match msg.view() {
             MessageView::Eos(..) => break,
             MessageView::Error(err) => {
-                pipeline.set_state(gstreamer::State::Null).unwrap();
+                pipeline.set_state(gst::State::Null).unwrap();
                 println!("Error: {} {} {} {}",
                          err.get_src().map(|s| s.get_path_string()).unwrap_or_else(|| glib::GString::from("None")),
                          err.get_error().description(),
@@ -237,5 +238,5 @@ A channel name and a duration must be provided.
             _ => (),
         }
     }
-    pipeline.set_state(gstreamer::State::Null).unwrap();
+    pipeline.set_state(gst::State::Null).unwrap();
 }

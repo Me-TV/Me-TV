@@ -34,13 +34,15 @@ use gtk::prelude::*;
 
 use tempfile;
 
-use channel_names::{channels_file_path, get_names};
-use control_window_button::ControlWindowButton;
-use dialogs::display_an_error_dialog;
-use frontend_manager::FrontendId;
-use preferences;
-use remote_control::TargettedKeystroke;
-use transmitter_dialog;
+use crate::about;
+use crate::channel_names::{channels_file_path, get_names};
+use crate::control_window_button::ControlWindowButton;
+use crate::dialogs::display_an_error_dialog;
+use crate::frontend_manager::FrontendId;
+use crate::preferences;
+use crate::preferences_dialog;
+use crate::remote_control::TargettedKeystroke;
+use crate::transmitter_dialog;
 
 /// A `ControlWindow` is an `gtk::ApplicationWindow` but there is no inheritance
 /// so use a bit of composition.
@@ -79,21 +81,25 @@ impl ControlWindow {
             }
         });
         let header_bar = gtk::HeaderBar::new();
-        header_bar.set_title("Me TV");
+        header_bar.set_title(Some("Me TV"));
         header_bar.set_show_close_button(true);
         let menu_button = gtk::MenuButton::new();
-        menu_button.set_image(&gtk::Image::new_from_icon_name("open-menu-symbolic", gtk::IconSize::Button.into()));
+        menu_button.set_image(Some(&gtk::Image::new_from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Button.into())));
         let menu_builder = gtk::Builder::new_from_string(include_str!("resources/control_window_menu.xml"));
         let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").unwrap();
         let epg_action = gio::SimpleAction::new("epg", None);
         window.add_action(&epg_action);
         let channels_file_action = gio::SimpleAction::new("create_channels_file", None);
         window.add_action(&channels_file_action);
-        menu_button.set_menu_model(&window_menu);
+        let preferences_action = gio::SimpleAction::new("preferences", None);
+        window.add_action(&preferences_action);
+        let about_action = gio::SimpleAction::new("about", None);
+        window.add_action(&about_action);
+        menu_button.set_menu_model(Some(&window_menu));
         header_bar.pack_end(&menu_button);
-        window.set_titlebar(&header_bar);
+        window.set_titlebar(Some(&header_bar));
         let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        let label = gtk::Label::new("\nNo frontends available.\n");
+        let label = gtk::Label::new(Some("\nNo frontends available.\n"));
         let frontends_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
         main_box.pack_start(&label, true, true, 0);
         window.add(&main_box);
@@ -127,6 +133,14 @@ impl ControlWindow {
                     ensure_channel_file_present(&c_w);
                 }
             }
+        });
+        preferences_action.connect_activate({
+            let c_w = control_window.clone();
+            move |_, _| preferences_dialog::present(&c_w)
+        });
+        about_action.connect_activate({
+            let c_w = control_window.clone();
+            move |_, _| about::present(Some(&c_w.window))
         });
         {
             let c_w = control_window.clone();
@@ -263,14 +277,14 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                             // TODO What to do if None is returned?
                             if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
                                 loop {
-                                    if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>() {
+                                    if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>().unwrap() {
                                         if target_channel_name == channel_name {
                                             match control_window.channel_names_store.get_path(&iterator) {
                                                 Some(mut tree_path) => {
                                                     let index = tree_path.get_indices_with_depth()[0];
                                                     if index < 0 { panic!("index cannot be a negative integer"); }
-                                                    c_w_b.channel_selector.set_active(index as u32);
-                                                    c_w_b.frontend_button.set_active(true);
+                                                    c_w_b.channel_selector.set_active(Some(index as u32));  // Option<u32> required no matter what CLion says.
+                                                    c_w_b.frontend_button.set_active(true);  // bool required no matter what CLion says.
                                                 },
                                                 None => panic!("Failed to get the path of the iterator."),
                                             }
