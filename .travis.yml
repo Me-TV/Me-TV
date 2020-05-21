@@ -1,5 +1,5 @@
 sudo: true
-dist: xenial
+dist: bionic
 language: rust
 
 #  After discussion with the Travis-CI folk, this Rust build requires too big a cache for it to
@@ -8,7 +8,7 @@ language: rust
 
 #cache: cargo
 
-# Xenial has GStreamer 1.8.2 in packaging. Me TV 3.1.x requires GStreamer 1.16.x so
+# Bionic has GStreamer 1.14.0 in packaging. Me TV 3.1.x requires GStreamer 1.16.x so
 # install it from Slomo's collection of pre-built GStreamer.
 
 before_install:
