@@ -1,0 +1,16 @@
+image: "rust:latest"
+
+# Debian buster is the OS on this CoreOS instance as at 2020-04-05 it has GStreamer 1.14.4.
+
+before_script:
+  - uname -a
+  - export RUST_BACKTRACE=1
+  - apt-get update -yq
+  - apt-get install -y libgtk-3-dev libgstreamer-plugins-bad1.0-dev xvfb
+
+test:cargo:
+  script:
+  - rustc --version && cargo --version
+  - cargo build --verbose
+  - xvfb-run cargo test --verbose
+  - cargo build --verbose --release
