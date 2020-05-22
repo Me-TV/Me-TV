@@ -191,7 +191,7 @@ pub fn run(mut to_cw: glib::Sender<Message>) {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     use quickcheck::quickcheck;

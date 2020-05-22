@@ -66,7 +66,7 @@ pub fn encode_to_mrl(channel_name: &String) -> String {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use std::io::{Write, Seek, SeekFrom};
 
     use tempfile;
