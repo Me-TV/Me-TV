@@ -28,8 +28,8 @@ use std::thread;
 use std::time::Duration;
 
 use glob::glob;
-use libc;
 use lazy_static::lazy_static;
+use libc;
 use nix::ioctl_write_int;
 use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
@@ -52,8 +52,7 @@ static ref REMOTES: Mutex<Vec<Arc<RemoteControl>>> = Mutex::new(vec![]);
 }
 
 /// Given a /dev/lircX path return the appropriate /sys/class/rc/rcY path.
-fn get_sys_path_from_lirc_path(lirc_path: &PathBuf) -> Option<PathBuf> {
-    // TODO Should this be a Result rather than an Option returning function?
+fn get_sys_path_from_lirc_path(lirc_path: &PathBuf) -> Result<PathBuf, String> {
     let rc_devices_lirc_paths = match glob::glob("/sys/class/rc/rc*/lirc*") {
         Ok(paths) => paths.map(|x| x.unwrap()).collect::<Vec<PathBuf>>(),
         Err(e) => panic!("Glob failure: {}", e),
@@ -61,16 +60,27 @@ fn get_sys_path_from_lirc_path(lirc_path: &PathBuf) -> Option<PathBuf> {
     let rc_paths = rc_devices_lirc_paths.iter()
         .filter(|pb| pb.file_name() == lirc_path.file_name())
         .collect::<Vec<&PathBuf>>();
-    if rc_paths.len() == 0 { None }
-    else {
-        assert_eq!(rc_paths.len(), 1);
+    if rc_paths.len() == 1 {
         let mut rv = rc_paths[0].to_path_buf();
-        assert!(rv.pop());
-        Some(rv)
+        rv.pop();
+        Ok(rv)
+    } else {
+        Err(format!("Failed to correctly process path {:?}, {:?}", rc_devices_lirc_paths, rc_paths))
     }
 }
 
-/// Create an /dev/inputs/eventsX `PathBuf` from the /sys/class/rc/rcY `PathBuf`.
+/// Name of the IR event file.
+///
+/// PC-TV 282e, PC-TV 292e and WinTV-soloHD create a remote control control file with
+/// event as the final component but WinTV-dualHD creates a remote control control file
+/// with event-ir as the final component.
+fn get_rc_event_file_final_component(base: &str) -> &'static str {
+    let extension = "-event-ir";
+    if Path::new(&(base.to_string() + extension)).exists() { extension }
+    else { "-event" }
+}
+
+/// Create an /dev/inputs/by-path event `PathBuf` from the /sys/class/rc/rcY `PathBuf`.
 ///
 /// This has been constructed from the data observed on Debian Sid.
 /// It is assumed that all Linux post 4.6 will be the same.
@@ -83,7 +93,7 @@ fn create_event_path_from_sys_path(path: &PathBuf) -> PathBuf {
     event_path_string += components[4];
     event_path_string += "-usb-0:";
     event_path_string += components[components.len() - 3].split("-").collect::<Vec<&str>>()[1]; // TODO Seems overcomplicated.
-    event_path_string += "-event";
+    event_path_string += get_rc_event_file_final_component(&event_path_string);
     PathBuf::from(event_path_string)
 }
 
@@ -116,14 +126,18 @@ ioctl_write_int!(ioctl_eviocgrab, b'E', 0x90);
 
 impl RemoteControl {
     fn new(lirc_path: &PathBuf) -> Result<RemoteControl, String> {
-        let sys_rc_path = get_sys_path_from_lirc_path(lirc_path).unwrap(); // TODO Is it certain this will not fail?
+        let sys_rc_path = match get_sys_path_from_lirc_path(lirc_path) {
+            Ok(rc_path) => rc_path,
+            Err(e) => return Err(format!("Failed to get sys path for {:?}: {}", lirc_path, e)),
+        };
         let frontend_ids = find_frontends_for_remote_control(&sys_rc_path);
         let device_event_path= match sys_rc_path.read_link() {
             Ok(path) => create_event_path_from_sys_path(&path),
-            Err(e) => panic!("Could not read symbolic link for remote control: {}", e),
+            Err(e) => return Err(format!("Could not read symbolic link for remote control: {}", e)),
         };
         while ! device_event_path.exists() {
             // TODO Need to avoid an infinite loop here.
+            //   Is there a timeout value that makes sense for the file not going to be created?
             thread::sleep(Duration::from_millis(500));
         }
         let device_file = match OpenOptions::new().read(true).open(&device_event_path) {
@@ -131,7 +145,10 @@ impl RemoteControl {
             Err(_) => return Err(format!("Cannot open the event stream {}", device_event_path.to_str().unwrap())),
         };
         unsafe {
-            ioctl_eviocgrab(device_file.as_raw_fd(), 1).unwrap();
+            match ioctl_eviocgrab(device_file.as_raw_fd(), 1) {
+                Ok(_) => {},
+                Err(e) => return Err(format!("Failed to apply grab to {:?}", device_file)),
+            }
         }
         Ok(RemoteControl {
             frontend_ids,
@@ -214,14 +231,28 @@ fn add_already_installed_remotes() {
     if  lirc_devices.is_empty() { return; };
     match REMOTES.lock () {
         Ok(mut data) => {
-            for rc in lirc_devices.iter()
-                .filter(|lirc_path| get_sys_path_from_lirc_path(lirc_path).is_some())
-                .map(|lirc_path| RemoteControl::new(lirc_path)) {
-                match rc {
-                    Ok(r_c) => data.push(Arc::new(r_c)),
-                    Err(e) => println!("Error adding a remote control: {}\nPerhaps the user is not in group input?", e),
-                }
-            }
+            lirc_devices.iter()
+                .filter(|lirc_path| match get_sys_path_from_lirc_path(lirc_path) {
+                    Ok(rc_path) => true,
+                    Err(e) => { println!("get_sys_path_from_lirc_path failed on {:?}", lirc_path); false },
+                })
+                .map(|lirc_path| {
+                    // TODO deal with -event → -event-ir name change in Linux.
+                    println!("###### {:?}", lirc_path);
+                    let r_c = match RemoteControl::new(lirc_path) {
+                        Ok(rc) => Some(rc),
+                        Err(e) => { println!("Failed to create a remote control: {:?}.\nEither the dynamic filename is wrong or maybe the user is not in group input.", e); None},
+                    };
+                    println!("====== {:?}", r_c);
+                    r_c
+                })
+                .for_each(|rc|{
+                    // TODO is this the right way to do this or use if and is_ok?
+                    match rc {
+                        Some(r_c) => data.push(Arc::new(r_c)),
+                        None => {},
+                    }
+                });
         },
         Err(_) => panic!("Couldn't lock REMOTES for addition. ")
     };
@@ -231,7 +262,7 @@ fn add_already_installed_remotes() {
 fn add_appeared_remote_control(lirc_path: PathBuf) {
     // TODO is a delay required here to ensure the /sys filestore has been updated
     //   on the presence of the /dev/lircX?
-    if get_sys_path_from_lirc_path(&lirc_path).is_some() {
+    if get_sys_path_from_lirc_path(&lirc_path).is_ok() {
         match REMOTES.lock() {
             Ok(mut data) => {
                 match RemoteControl::new(&lirc_path) {
@@ -286,7 +317,6 @@ pub fn run(to_cw: glib::Sender<Message>) {
             Err(e) => println!("remote_control::run: watch error: {:?}", e),
         }
     }
-    println!("remote_control::run terminated.");
 }
 
 #[cfg(test)]
@@ -294,31 +324,61 @@ mod test {
     use super::*;
 
     #[test]
-    fn rc0_on_lynet_debian_linux() {
-        assert_eq!(
-            create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-1/2-1:1.0/rc/rc0")),
-            PathBuf::from("/dev/input/by-path/pci-0000:00:14.0-usb-0:1:1.0-event"));
+    fn sys_path_from_lirc_path() {
+        // This test can only run if there is at alease one remote control device plugged in.
+        let lirc_path = PathBuf::from("/dev/lirc0");
+        if lirc_path.exists() {
+            match get_sys_path_from_lirc_path(&lirc_path) {
+                Ok(path) => assert_eq!(path, PathBuf::from("/sys/class/rc/rc0")),
+                Err(msg)  => assert!(false, msg),
+            }
+        }
+        let lirc_path = PathBuf::from("/dev/lirc1");
+        if lirc_path.exists() {
+            match get_sys_path_from_lirc_path(&lirc_path) {
+                Ok(path) => assert_eq!(path, PathBuf::from("/sys/class/rc/rc1")),
+                Err(msg)  => assert!(false, msg),
+            }
+        }
+    }
+
+    fn create_rc_event_file_name(base: &str) -> String {
+        base.to_string() + get_rc_event_file_final_component(base)
     }
 
     #[test]
     fn rc0_on_anglides_debian_linux() {
         assert_eq!(
             create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:1d.7/usb4/4-5/4-5.2/4-5.2.4/4-5.2.4.1/4-5.2.4.1.1/4-5.2.4.1.1:1.0/rc/rc0")),
-            PathBuf::from("/dev/input/by-path/pci-0000:00:1d.7-usb-0:5.2.4.1.1:1.0-event"));
+            PathBuf::from(create_rc_event_file_name("/dev/input/by-path/pci-0000:00:1d.7-usb-0:5.2.4.1.1:1.0")));
     }
 
     #[test]
-    fn rc0_on_lionors_debian_linux() {
+    fn rc0_on_lavaine_debian_linux() {
         assert_eq!(
-            create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:1a.0/usb1/1-1/1-1.1/1-1.1:1.0/rc/rc0")),
-            PathBuf::from("/dev/input/by-path/pci-0000:00:1a.0-usb-0:1.1:1.0-event"));
+            create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-1/2-1:1.0/rc/rc0")),
+            PathBuf::from(create_rc_event_file_name("/dev/input/by-path/pci-0000:00:14.0-usb-0:1:1.0")));
+    }
+
+    #[test]
+    fn rc1_on_lavaine_debian_linux() {
+        assert_eq!(
+            create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-2/2-2:1.0/rc/rc1")),
+            PathBuf::from(create_rc_event_file_name("/dev/input/by-path/pci-0000:00:14.0-usb-0:2:1.0")));
+    }
+
+    #[test]
+    fn rc0_on_lynet_debian_linux() {
+        assert_eq!(
+            create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-1/2-1:1.0/rc/rc0")),
+            PathBuf::from(create_rc_event_file_name("/dev/input/by-path/pci-0000:00:14.0-usb-0:1:1.0")));
     }
 
     #[test]
     fn rc1_on_lynet_debian_linux() {
         assert_eq!(
             create_event_path_from_sys_path(&PathBuf::from("../../devices/pci0000:00/0000:00:14.0/usb2/2-3/2-3:1.0/rc/rc1")),
-            PathBuf::from("/dev/input/by-path/pci-0000:00:14.0-usb-0:3:1.0-event"));
+            PathBuf::from(create_rc_event_file_name("/dev/input/by-path/pci-0000:00:14.0-usb-0:3:1.0")));
     }
 
     #[test]

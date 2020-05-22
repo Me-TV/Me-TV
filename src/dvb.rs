@@ -50,14 +50,14 @@ static DELIVERY_SYSTEMS: [DeliverySystem;  6] = [
 impl DeliverySystem {
     /// Iterate over the `DeliverySystem` variants.
     pub fn iterator() -> Iter<'static, DeliverySystem> {
-        DELIVERY_SYSTEMS.into_iter()
+        DELIVERY_SYSTEMS.iter()
     }
 
     /// Return the position of the `DeliverySystem` in the sequence of all possibilities.
     pub fn get_index(&self) -> u32 {
         // TODO This is hideous code.
         let mut i = 0;
-        for d_s in DELIVERY_SYSTEMS.into_iter() {
+        for d_s in DELIVERY_SYSTEMS.iter() {
             if d_s == self {
                 return i
             }

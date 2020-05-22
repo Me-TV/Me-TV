@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017, 2018  Russel Winder
+ *  Copyright © 2017–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -108,17 +108,17 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_to_mrl_with_no_spaces() {
+    fn encode_to_mrl_with_no_spaces() {
         assert_eq!(encode_to_mrl(&"ITV".to_owned()), "dvb://ITV");
     }
 
     #[test]
-    fn test_encode_to_mrl_with_one_space() {
+    fn encode_to_mrl_with_one_space() {
         assert_eq!(encode_to_mrl(&"BBC NEWS".to_owned()), "dvb://BBC%20NEWS");
     }
 
     #[test]
-    fn test_encode_to_mrl_with_two_spaces() {
+    fn encode_to_mrl_with_two_spaces() {
         assert_eq!(encode_to_mrl(&"BBC One Lon".to_owned()), "dvb://BBC%20One%20Lon");
     }
 
