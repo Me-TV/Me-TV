@@ -24,7 +24,13 @@ use std::io::BufReader;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
+use percent_encoding;
 use xdg;
+
+/// https://url.spec.whatwg.org/#fragment-percent-encode-set
+const FRAGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
+/// https://url.spec.whatwg.org/#path-percent-encode-set
+const PATH: &percent_encoding::AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
 
 /// An internal function that can be tested.
 fn get_names_from_file(file: &File) -> Vec<String> {
@@ -62,7 +68,7 @@ pub fn get_names() -> Option<Vec<String>> {
 
 /// Encode a string as used for display to one suitable to be an MRL.
 pub fn encode_to_mrl(channel_name: &String) -> String {
-    "dvb://".to_owned() + &channel_name.replace(" ", "%20")
+    "dvb://".to_owned() + &percent_encoding::utf8_percent_encode(channel_name, PATH).to_string()
 }
 
 #[cfg(test)]
@@ -82,7 +88,7 @@ mod tests {
 
     fn some_channel_blocks() {
         let mut tmpfile = tempfile::tempfile().unwrap();
-        let result = vec!["one two", "three four", "five six"];
+        let result = vec!["one two", "three four", "five six", "seven eight "];
         for item in result.iter() {
             tmpfile.write_all(format!("\n[{}]\n", item).as_bytes()).unwrap();
             tmpfile.write_all("\
@@ -120,6 +126,11 @@ mod tests {
     #[test]
     fn encode_to_mrl_with_two_spaces() {
         assert_eq!(encode_to_mrl(&"BBC One Lon".to_owned()), "dvb://BBC%20One%20Lon");
+    }
+
+    #[test]
+    fn test_encode_to_mrl_with_hash() {
+        assert_eq!(encode_to_mrl(&"Channel #1".to_owned()), "dvb://Channel%20%231");
     }
 
 }
