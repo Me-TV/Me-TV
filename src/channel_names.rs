@@ -34,7 +34,7 @@ fn get_names_from_file(file: &File) -> Vec<String> {
         .filter(|i|{ i.is_ok() })
         .map(|i|{ String::from(i.unwrap().trim()) })
         .filter(|i|{ i.starts_with('[') && i.ends_with(']') })
-        .map(|i|{ String::from(i[1..(i.len() - 1)].trim()) })
+        .map(|i|{ String::from(&i[1..(i.len() - 1)]) })
         .collect()
 }
 
