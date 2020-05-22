@@ -1,10 +1,19 @@
-[![Travis-CI](https://travis-ci.org/Me-TV/Me-TV.svg?branch=master)](https://travis-ci.org/Me-TV/Me-TV)
-[![Licence](https://img.shields.io/badge/license-GPL_3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-[![Download](https://api.bintray.com/packages/me-tv/Downloads/Me-TV/images/download.svg)](https://bintray.com/me-tv/Downloads/Me-TV)
-
 # Me TV – it's TV for me computer
 
 Me TV is a DVB – digital video broadcast – viewer based on GTK+3 and GStreamer.
+
+GitLab Master [![GitLab build status](https://gitlab.com/Russel/me-tv/badges/master/pipeline.svg)](https://gitlab.com/Russel/me-tv)
+&nbsp;&nbsp;
+GitLab v3.0.x [![GitLab build status](https://gitlab.com/Russel/me-tv/badges/v3.0.x/pipeline.svg)](https://gitlab.com/Russel/me-tv)
+&nbsp;&nbsp;&nbsp;&nbsp;
+Travis-CI Master: [![Travis-CI](https://travis-ci.org/Me-TV/Me-TV.svg?branch=master)](https://travis-ci.org/Me-TV/Me-TV)
+&nbsp;&nbsp;
+Travis-CI v3.0.x: [![Travis-CI](https://travis-ci.org/Me-TV/Me-TV.svg?branch=v3.0.x)](https://travis-ci.org/Me-TV/Me-TV)
+
+Licence: [![Licence](https://img.shields.io/badge/license-GPL_3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+&nbsp;&nbsp;&nbsp;&nbsp;
+Download precompiled executables from Bintray:
+[![Download](https://api.bintray.com/packages/me-tv/Downloads/Me-TV/images/download.svg)](https://bintray.com/me-tv/Downloads/Me-TV)
 
 *NB This is a rewrite of Me TV for GTK+3 and GStreamer using the Rust programming language and the gtk-rs
 and gstreamer-rs bindings.*
