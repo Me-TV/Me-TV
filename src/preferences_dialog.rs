@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2018, 2019  Russel Winder
+ *  Copyright © 2018–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,6 +94,34 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
             move |selector: &MeTVComboBoxText| preferences::set_default_channel(selector.get_active_text().unwrap(), true)
         );
         combobox
+    };
+    let _nongl_deinterlace_method_selector = {
+        let comboboxtext = menu_builder.get_object::<gtk::ComboBoxText>("nongl_deinterlace_method").unwrap();
+        if let Some(method) = preferences::get_nongl_deinterlace_method() {
+            if method != "" {
+                if ! comboboxtext.set_active_id(Some(&method)) {
+                    panic!("Could not set the Non-GL deinterlacing method.");
+                }
+            }
+        }
+        comboboxtext.connect_changed(
+            move |selector| preferences::set_nongl_deinterlace_method(selector.get_active_id().unwrap().as_str().into(), true)
+        );
+        comboboxtext
+    };
+    let _gl_deinterlace_method_selector = {
+        let comboboxtext = menu_builder.get_object::<gtk::ComboBoxText>("gl_deinterlace_method").unwrap();
+        if let Some(method) = preferences::get_gl_deinterlace_method() {
+            if method != "" {
+                if ! comboboxtext.set_active_id(Some(&method)) {
+                    panic!("Could not set the Non-GL deinterlacing method: {}", &method);
+                }
+            }
+        }
+        comboboxtext.connect_changed(
+            move |selector| preferences::set_gl_deinterlace_method(selector.get_active_id().unwrap().as_str().into(), true)
+        );
+        comboboxtext
     };
     let preferences_dialog = {
         let window = menu_builder.get_object::<gtk::Window>("preferences_dialog").unwrap();

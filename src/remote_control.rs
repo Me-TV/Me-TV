@@ -237,13 +237,10 @@ fn add_already_installed_remotes() {
                     Err(e) => { println!("get_sys_path_from_lirc_path failed on {:?}", lirc_path); false },
                 })
                 .map(|lirc_path| {
-                    // TODO deal with -event → -event-ir name change in Linux.
-                    println!("###### {:?}", lirc_path);
                     let r_c = match RemoteControl::new(lirc_path) {
                         Ok(rc) => Some(rc),
                         Err(e) => { println!("Failed to create a remote control: {:?}.\nEither the dynamic filename is wrong or maybe the user is not in group input.", e); None},
                     };
-                    println!("====== {:?}", r_c);
                     r_c
                 })
                 .for_each(|rc|{

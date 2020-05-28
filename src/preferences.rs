@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2018, 2019  Russel Winder
+ *  Copyright © 2018–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ struct Preferences {
     use_last_channel: bool,
     default_channel: String,
     last_channel: String,
+    nongl_deinterlace_method: String,
+    gl_deinterlace_method: String,
 }
 
 lazy_static! {
@@ -50,6 +52,8 @@ lazy_static! {
         use_last_channel: false,
         default_channel: String::from(""),
         last_channel: String::from(""),
+        nongl_deinterlace_method: "".to_string(),
+        gl_deinterlace_method: "".to_string(),
     }));
 }
 
@@ -96,7 +100,7 @@ pub fn init() {
                 },
                 Err(_) => {
                     // TODO Missing field. Should not just assume default, need to carry
-                    // forward the options that could be picked up
+                    //   forward the options that could be picked up
                 }
             }
         }
@@ -160,3 +164,9 @@ create_setter!(set_default_channel, default_channel, String);
 
 create_option_getter!(get_last_channel, last_channel, String, None);
 create_setter!(set_last_channel, last_channel, String);
+
+create_option_getter!(get_nongl_deinterlace_method, nongl_deinterlace_method, String, None);
+create_setter!(set_nongl_deinterlace_method, nongl_deinterlace_method, String);
+
+create_option_getter!(get_gl_deinterlace_method, gl_deinterlace_method, String, None);
+create_setter!(set_gl_deinterlace_method, gl_deinterlace_method, String);
