@@ -105,8 +105,7 @@ impl GStreamerEngine {
                         let new_method_nick = preferences::get_nongl_deinterlace_method().expect("Failed to get nongl_deinterlace_method.");
                         if new_method_nick != "" && new_method_nick != method_nick {
                             let new_method = enum_class.get_value_by_nick(&new_method_nick).expect(&format!("Failed to get new method EnumValue for {}", &new_method_nick));
-                            let new_method_value = new_method.to_value();
-                            element.set_property("method", &new_method_value).expect("Failed to set method property.");
+                            element.set_property("method", &new_method.to_value()).expect("Failed to set method property.");
                         }
                     }
                 }
@@ -246,6 +245,11 @@ impl GStreamerEngine {
                                     let flags_builder = flags_class.builder_with_value(flags).expect("Could not get the flags FlagsBuilder.");
                                     let flags = flags_builder.unset_by_nick("deinterlace").build().expect("Could not remove 'deinterlace' from the set of elements playbin might use.");
                                     playbin.set_property("flags", &flags).expect("Could not set the new 'flags' value on playbin.");
+                                    // TODO A gst::Bin does not have the properties of a video
+                                    //   sink and so when the pipeline diagram is drawn there
+                                    //   are a lot of missing properties that are trying to be
+                                    //   found. Should consider creating a subclass of Bin with
+                                    //   all the relevant properties to avoid all the warnings.
                                     let the_bin = gst::Bin::new(None);
                                     the_bin.add(&gldeinterlace).expect("Could not add the gldeinterlace element to the new bin.");
                                     the_bin.add(&gtkglsink).expect("Could not add the gtkglsink to the new bin.");
@@ -263,8 +267,7 @@ impl GStreamerEngine {
                                     let new_method_nick = preferences::get_gl_deinterlace_method().expect("Failed to get gl_deinterlace_method.");
                                     if new_method_nick != "" && new_method_nick != method_nick {
                                         let new_method = enum_class.get_value_by_nick(&new_method_nick).expect(&format!("Failed to get new method EnumValue for {}", &new_method_nick));
-                                        let new_method_value = new_method.to_value();
-                                        gldeinterlace.set_property("method", &new_method_value).expect("Failed to set method property.");
+                                        gldeinterlace.set_property("method", &new_method.to_value()).expect("Failed to set method property.");
                                     }
                                     glsinkbin.set_property("sink", &the_bin.to_value()).expect("Could not set 'sink'property.");
                                 },
