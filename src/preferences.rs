@@ -164,3 +164,9 @@ create_setter!(set_default_channel, default_channel, String);
 
 create_option_getter!(get_last_channel, last_channel, String, None);
 create_setter!(set_last_channel, last_channel, String);
+
+create_option_getter!(get_nongl_deinterlace_method, nongl_deinterlace_method, String, None);
+create_setter!(set_nongl_deinterlace_method, nongl_deinterlace_method, String);
+
+create_option_getter!(get_gl_deinterlace_method, gl_deinterlace_method, String, None);
+create_setter!(set_gl_deinterlace_method, gl_deinterlace_method, String);
