@@ -5,7 +5,7 @@ Me TV is a DVB – digital video broadcast – viewer based on GTK+3 and GStream
 GitLab Master [![GitLab build status](https://gitlab.com/Russel/me-tv/badges/master/pipeline.svg)](https://gitlab.com/Russel/me-tv)
 &nbsp;&nbsp;
 GitLab v3.0.x [![GitLab build status](https://gitlab.com/Russel/me-tv/badges/v3.0.x/pipeline.svg)](https://gitlab.com/Russel/me-tv)
-&nbsp;&nbsp;&nbsp;&nbsp;
+
 Travis-CI Master: [![Travis-CI](https://travis-ci.org/Me-TV/Me-TV.svg?branch=master)](https://travis-ci.org/Me-TV/Me-TV)
 &nbsp;&nbsp;
 Travis-CI v3.0.x: [![Travis-CI](https://travis-ci.org/Me-TV/Me-TV.svg?branch=v3.0.x)](https://travis-ci.org/Me-TV/Me-TV)

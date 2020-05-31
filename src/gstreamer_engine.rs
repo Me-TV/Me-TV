@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017–2019  Russel Winder
+ *  Copyright © 2017–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,7 +41,8 @@ use crate::preferences;
 
 /// Is nouveau the device driver?
 ///
-/// Cannot use GL stuff on Nouveau, so it is important to know if this is running on a Nouveau system.
+/// Cannot use GL stuff on Nouveau, so it is important to know if this is running on a Nouveau
+/// system.
 // There is likely a much easier, and quicker, way of making this test.
 fn is_using_nouveau() -> bool {
     let lsmod_output = Command::new("lsmod").output().unwrap().stdout;
@@ -49,8 +50,8 @@ fn is_using_nouveau() -> bool {
     lsmod_output.contains("nouveau")
 }
 
-/// The GStreamer elements and GTK+ widgets that are the bits that do the work of rendering
-/// the television or radio channel.
+/// The GStreamer elements and GTK+ widgets that are the bits that do the work of rendering the
+/// television or radio channel.
 #[derive(Debug)]
 pub struct GStreamerEngine {
     playbin: gst::Element,
@@ -91,15 +92,27 @@ impl GStreamerEngine {
                             element.set_property("frontend", &(fei.frontend as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
                         }
                     }
+                    else if element_factory.get_name() == "deinterlace" {
+                        // Assumption is that we are using non-GL. Should never get here if GL
+                        // is being used.
+                        let method = element.get_property("method").expect("Could not get method from deinterlace element.");
+                        let method_enumvalue = glib::EnumValue::from_value(&method).expect("Could not get EnumValue from Value.");
+                        let method_nick = method_enumvalue.get_nick();
+                        let enum_class = glib::EnumClass::new(method.type_()).expect("Could not get EnumClass for method.");
+                        let new_method_nick = preferences::get_nongl_deinterlace_method().expect("Failed to get nongl_deinterlace_method.");
+                        if new_method_nick != "" && new_method_nick != method_nick {
+                            let new_method = enum_class.get_value_by_nick(&new_method_nick).expect(&format!("Failed to get new method EnumValue for {}", &new_method_nick));
+                            element.set_property("method", &new_method.to_value()).expect("Failed to set method property.");
+                        }
+                    }
                 }
                 None
             }
         }).expect("Could not connect a handler to the element-setup signal.");
         let bus = playbin.get_bus().unwrap();
-        // The compiler cannot determine that the bus watch callback will be executed
-        // by the same thread that the gtk::Application and ControlWindowButtons objects
-        // are created with, which must be the case, and so fails to compile unless we
-        // use Fragile.
+        // The compiler cannot determine that the bus watch callback will be executed by the
+        // same thread that the gtk::Application and ControlWindowButtons objects are created
+        // with, which must be the case, and so fails to compile unless we use Fragile.
         let application = &control_window_button.control_window.window.get_application().unwrap();
         let application_clone = Fragile::new(application.clone());
         bus.add_watch({
@@ -148,20 +161,66 @@ impl GStreamerEngine {
                 Ok(gtkglsink) => {
                     match gst::ElementFactory::make("glsinkbin", None) {
                         Ok(glsinkbin) => {
-                            glsinkbin.set_property("sink", &gtkglsink.to_value()).expect("Could not set 'sink'property.");
+                            match gst::ElementFactory::make("gldeinterlace", None) {
+                                Ok(gldeinterlace) => {
+                                    let flags = playbin.get_property("flags").expect("Could not get 'flags' property.");
+                                    let flags_class = glib::FlagsClass::new(flags.type_()).expect("Could not get the flags FlagClass.");
+                                    let flags_builder = flags_class.builder_with_value(flags).expect("Could not get the flags FlagsBuilder.");
+                                    let flags = flags_builder.unset_by_nick("deinterlace").build().expect("Could not remove 'deinterlace' from the set of elements playbin might use.");
+                                    playbin.set_property("flags", &flags).expect("Could not set the new 'flags' value on playbin.");
+                                    // TODO A gst::Bin does not have the properties of a video
+                                    //   sink and so when the pipeline diagram is drawn there
+                                    //   are a lot of missing properties that are trying to be
+                                    //   found. Should consider creating a subclass of Bin with
+                                    //   all the relevant properties to avoid all the warnings.
+                                    let the_bin = gst::Bin::new(None);
+                                    the_bin.add(&gldeinterlace).expect("Could not add the gldeinterlace element to the new bin.");
+                                    the_bin.add(&gtkglsink).expect("Could not add the gtkglsink to the new bin.");
+                                    gldeinterlace.link(&gtkglsink).expect("Could not link the gldeinterlace element to the gtkglsink element.");
+                                    let sink_pad = gst::GhostPad::new(
+                                        Some("sink"),
+                                        &gldeinterlace.get_static_pad("sink").expect("Could not get sink pad of gldeinterlace element.")
+                                    ).expect("Could not create ghost pad.");
+                                    the_bin.add_pad(&sink_pad).expect("Could not add the sink pad to the bin.");
+                                    // Set the deinterlacing method as per the preferences.
+                                    let method = gldeinterlace.get_property("method").expect("Could not get method from gldeinterlace element.");
+                                    let method_enumvalue = glib::EnumValue::from_value(&method).expect("Could not get EnumValue from Value.");
+                                    let method_nick = method_enumvalue.get_nick();
+                                    let enum_class = glib::EnumClass::new(method.type_()).expect("Could not get EnumClass for method.");
+                                    let new_method_nick = preferences::get_gl_deinterlace_method().expect("Failed to get gl_deinterlace_method.");
+                                    if new_method_nick != "" && new_method_nick != method_nick {
+                                        let new_method = enum_class.get_value_by_nick(&new_method_nick).expect(&format!("Failed to get new method EnumValue for {}", &new_method_nick));
+                                        gldeinterlace.set_property("method", &new_method.to_value()).expect("Failed to set method property.");
+                                    }
+                                    glsinkbin.set_property("sink", &the_bin.to_value()).expect("Could not set 'sink'property.");
+                                },
+                                Err(e) => {
+                                    display_an_error_dialog(
+                                        Some(&application_clone.get().get_windows()[0]),
+                                        "Could not create an OpenGL deinterlace element,\ncontinuing without deinterlacing."
+                                    );
+                                    glsinkbin.set_property("sink", &gtkglsink.to_value()).expect("Could not set 'sink'property.");
+                                },
+                            };
                             let widget = gtkglsink.get_property("widget").expect("Could not get 'widget' property.");
                             (Some(glsinkbin), widget.get::<gtk::Widget>().unwrap())
                         },
                         Err(_) => {
                             display_an_error_dialog(
                                 Some(&application_clone.get().get_windows()[0]),
-                                "Could not create a 'glsinkbin'\n\nIs the gstreamer1.0-gl package installed?."
+                                "Could not create a 'glsinkbin element.'\n\nIs the gstreamer1.0-gl package installed?.\n\nContinuing without OpenGL support."
                             );
-                            (None, None)
-                        }
+                            create_non_gl_element_and_widget()
+                        },
                     }
                 },
-                Err(_) => create_non_gl_element_and_widget()
+                Err(_) => {
+                    display_an_error_dialog(
+                        Some(&application_clone.get().get_windows()[0]),
+                        "Could not create a 'gtkglsink element.'\n\nIs the gstreamer1.0-gl package installed?.\n\nContinuing without OpenGL support."
+                    );
+                    create_non_gl_element_and_widget()
+                },
             }
         };
         if video_element.is_none() || video_widget.is_none() {
@@ -169,17 +228,18 @@ impl GStreamerEngine {
                 Some(&application_clone.get().get_windows()[0]),
                 "Since the GStreamer system could not be initialised\nMe TV cannot work as required and so is quitting."
             );
-            return Err(())
+            Err(())
+        } else {
+            let engine = GStreamerEngine {
+                playbin,
+                video_element: video_element.expect("'video_element' is None, this cannot happen."),
+                video_widget: video_widget.expect("'video_widget is None, this cannot happen."),
+            };
+            engine.video_element.set_property("force-aspect-ratio", &true.to_value()).expect("Could not set 'force-aspect-ration' property");
+            engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
+            engine.set_subtitles_showing(false);
+            Ok(engine)
         }
-        let engine = GStreamerEngine {
-            playbin,
-            video_element: video_element.expect("'video_element' is not None, this cannot happen."),
-            video_widget: video_widget.expect("'video_widget is not None, this cannot happen."),
-        };
-        engine.video_element.set_property("force-aspect-ratio", &true.to_value()).expect("Could not set 'force-aspect-ration' property");
-        engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
-        engine.set_subtitles_showing(false);
-        Ok(engine)
     }
 
     pub fn set_mrl(&self, mrl: &str) {
