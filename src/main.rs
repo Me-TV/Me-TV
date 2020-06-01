@@ -78,7 +78,7 @@ fn main() {
     }
     gst::init().unwrap();
     gst_mpegts::initialise();
-    let application = gtk::Application::new(Some("uk.org.russel.me-tv"), gio::ApplicationFlags::empty()).expect("Application creation failed");
+    let application = gtk::Application::new(Some("uk.org.winder.me-tv"), gio::ApplicationFlags::empty()).expect("Application creation failed");
     glib::set_application_name("Me TV");
     application.connect_startup(move |app| {
         let (to_control_window, from_manager) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);

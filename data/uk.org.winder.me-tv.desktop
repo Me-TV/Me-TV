@@ -1,8 +1,8 @@
 [Desktop Entry]
-Type=Application
-Encoding=UTF-8
 Name=Me TV
 Comment=A digital television (DVB) viewer for GTK+3
+Type=Application
+Encoding=UTF-8
 Exec=me-tv
 Icon=me-tv
 Terminal=false

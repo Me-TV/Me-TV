@@ -54,7 +54,7 @@ fn create() -> gtk::AboutDialog {
     about.set_documenters(&documentors);
     about.set_license(Some("This program is licenced under GNU General Public Licence (GPL) version 3."));
     let loader = PixbufLoader::new();
-    loader.write(include_bytes!("resources/images/me-tv.png")).unwrap();
+    loader.write(include_bytes!("resources/images/uk.org.winder.me-tv.png")).unwrap();
     loader.close().unwrap();
     let image = loader.get_pixbuf().unwrap();
     about.set_logo(Some(&image));
