@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Russel Winder 2020 <russel@winder.org.uk> -->
+<component type="desktop-application">
+  <id>uk.org.russel.me-tv</id>
+  <metadata_license>CC0</metadata_license>
+  <project_license>GPL-3.0+</project_license>
+  <name>Me TV</name>
+  <summary>It's TV for me computer</summary>
+  <description>
+    <p>A GTK+/GStreamer client for watching and recording DVB.</p>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://github.com/Me-TV/Me-TV/raw/master/data/screenshots/bbc_news.png</image>
+      <caption>Main Window with a Channel Window</caption>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/Me-TV/Me-TV/</url>
+  <content_rating type="oars-1.0" />
+  <releases>
+    <release version="0.0.1" date="2020-00-01">
+      <description>
+        <p>Me TV 3.0.10</p>
+      </description>
+    </release>
+  </releases>
+  <kudos>
+    <kudo>rust</kudo>
+    <kudo>GTK+</kudo>
+    <kudo>gtk-rs</kudo>
+    <kudo>GStreamer</kudo>
+    <kudo>gstreamer-rs</kudo>
+  </kudos>
+  <developer_name>Russel Winder</developer_name>
+  <update_contact>russel@winder.org.uk</update_contact>
+
+  <launchable type="desktop-id">me-tv.desktop</launchable>
+</component>
