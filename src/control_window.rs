@@ -49,7 +49,7 @@ use crate::transmitter_dialog;
 /// so use a bit of composition.
 #[derive(Debug)]
 pub struct ControlWindow {
-    pub window: gtk::ApplicationWindow, // main.rs needs this for putting application menus dialogues over this window.
+    pub window: gtk::ApplicationWindow, // Used in a number of places.
     main_box: gtk::Box,
     frontends_box: gtk::Box,
     label: gtk::Label,

@@ -149,7 +149,28 @@ impl ControlWindowButton {
         let status = control_window_button.frontend_button.get_active();
         if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
             if status {
+                // Do not stop the frontend completely just change what is being displayed on it.
                 frontend_window.engine.stop();
+                // TODO Need to clear the area in the gtk::DrawingArea or a gtk::GLArea
+                //   to avoid keeping the last video frame when it is a switch to radio.
+                //   See https://github.com/Me-TV/Me-TV/issues/29
+                let w = frontend_window.engine.video_widget.clone();
+                match w.clone().downcast::<gtk::DrawingArea>() {
+                    Ok(d) => {
+                        // TODO Clear the background area.
+                    },
+                    Err(_) => {
+                        match w.clone().downcast::<gtk::GLArea>() {
+                            Ok(g) => {
+                                let c = g.get_context().unwrap();
+                                // TODO Clear the background area.
+                            },
+                            Err(e) => panic!("Widget is neither gtk::DrawingArea or gtk::GLArea.")
+                        }
+                    },
+                }
+                println!("AAAAAA.");
+                // TODO Why does changing channel on the FrontendWindow result in three calls here.
             }
             control_window_button.set_channel_index(channel_index);
             let channel_name = control_window_button.channel_selector.get_active_text().unwrap();
