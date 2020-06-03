@@ -148,6 +148,11 @@ capability.
 
 Hopefully the UI is intuitive and gives a good UX. If not please feel free to submit an issue.
 
+Here is a screenshot of Me TV playing BBC NEWS. The USB device was a Hauppauge! WinTV-dualHD
+hence there appearing to be two tuners.
+
+![Main Me TV Window with a Channel Window showing BBC NEWS](data/screenshots/bbc_news.png)
+
 ## Recording
 
 The main Me TV program is a GUI for watching TV. With it come two command line programs:
