@@ -19,8 +19,8 @@ gdk = "*"
 # gdk = {git="https://github.com/gtk-rs/gdk"}
 gdk-pixbuf = "*"
 # gdk-pixbuf = {git="https://github.com/gtk-rs/gdk-pixbuf"}
-gio = "*"
-# gio = {git="https://github.com/gtk-rs/gio"}
+gio = {version="*", features=["v2_56"]}
+# gio = {git="https://github.com/gtk-rs/gio", features=["v2_56"]}
 glib = {version="*", features=["v2_56"]}
 # glib = {git="https://github.com/gtk-rs/glib", features=["v2_56"]}
 glob = "*"

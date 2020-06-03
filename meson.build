@@ -3,7 +3,7 @@
 project(
     'Me TV',
     'rust',
-    #version: '', # This is not used due to the way things are built, so don't have it.
+    version: '3.1.0', # Ensure this is the same as the version number in Cargo.toml
     default_options: ['buildtype=release'],
     license: 'GPLv3',
 )
@@ -13,16 +13,14 @@ application_id = 'uk.org.winder.me-tv'
 prefix = get_option('prefix')
 bindir = get_option('bindir')
 datadir = get_option('datadir')
-applicationsdir = join_paths(datadir, 'applications')
-iconsdir = join_paths(datadir, 'icons', 'hicolor', '48x48', 'apps')
 
-dependency('glib-2.0')
-dependency('gio-2.0')
-dependency('gtk+-3.0')
-dependency('gstreamer-1.0')
-dependency('gstreamer-plugins-base-1.0')
-dependency('gstreamer-plugins-bad-1.0')
-dependency('gstreamer-mpegts-1.0')
+dependency('glib-2.0', version: '>= 2.56') # 2.60.6 on flatpak
+dependency('gio-2.0', version: '>= 2.56') # 2.60.6 on flatpak
+dependency('gtk+-3.0', version: '>= 3.22') # 3.24.20 on flatpak
+dependency('gstreamer-1.0', version: '>= 1.16') # 1.16.2 on flatpak
+dependency('gstreamer-plugins-base-1.0', version: '>= 1.16') # 1.16.2 on flatpak
+dependency('gstreamer-plugins-bad-1.0', version: '>= 1.16') # 1.16.2 on flatpak
+dependency('gstreamer-mpegts-1.0', version: '>= 1.16') # 1.16.2 on flatpak
 
 cargo = find_program('cargo')
 cargo_script = find_program('scripts/cargo.sh')
@@ -83,4 +81,10 @@ install_data(
 install_data(
     'src/resources/images/@0@.png'.format(application_id),
     install_dir: datadir / 'icons' / 'hicolor' / '48x48' / 'apps'
+)
+
+meson.add_dist_script(
+  'scripts/dist-vendor.sh',
+  meson.build_root() / 'meson-dist' / meson.project_name() + '-' + meson.project_version(),
+  meson.source_root()
 )

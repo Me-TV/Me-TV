@@ -18,21 +18,18 @@
   <url type="homepage">https://github.com/Me-TV/Me-TV/</url>
   <content_rating type="oars-1.0" />
   <releases>
-    <release version="0.0.1" date="2020-00-01">
+    <release version="3.1.0" date="2020-06-02">
       <description>
-        <p>Me TV 3.0.10</p>
+        <p>Me TV 3.1.0</p>
       </description>
     </release>
   </releases>
   <kudos>
-    <kudo>rust</kudo>
-    <kudo>GTK+</kudo>
-    <kudo>gtk-rs</kudo>
-    <kudo>GStreamer</kudo>
-    <kudo>gstreamer-rs</kudo>
+    <kudo>ModernToolkit</kudo>
+    <kudo>UserDocs</kudo>
   </kudos>
   <developer_name>Russel Winder</developer_name>
   <update_contact>russel@winder.org.uk</update_contact>
 
-  <launchable type="desktop-id">me-tv.desktop</launchable>
+  <launchable type="desktop-id">uk.org.winder.me-tv.desktop</launchable>
 </component>

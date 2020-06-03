@@ -1,0 +1,39 @@
+app-id: uk.org.winder.me-tv
+runtime: org.freedesktop.Platform
+runtime-version: "19.08"
+sdk: org.freedesktop.Sdk
+sdk-extensions: [
+  org.freedesktop.Sdk.Extension.rust-stable,
+]
+command: me-tv
+finish-args: [
+  --share=ipc,
+  --socket=fallback-x11,
+  --socket=wayland,
+  --socket=pulseaudio,
+  --device=dri,
+  --filesystem=/dev,
+  --filesystem=/sys,
+]
+build-options: {
+  append-path: /usr/lib/sdk/rust-stable/bin,
+  build-args: [
+    --share=network
+  ],
+  env: {
+    RUSTFLAGS: --remap-path-prefix =../,
+    CARGO_HOME: /run/build/me-tv/cargo,
+  },
+}
+modules: [
+  {
+    name: me-tv,
+    buildsystem: meson,
+    sources: [
+      {
+        type: dir,
+        path: ../,
+      },
+    ],
+  },
+]

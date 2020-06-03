@@ -4,3 +4,6 @@
 /target/
 install.sh
 uninstall.sh
+/.flatpak-builder/
+/repo/
+/diagrams/
