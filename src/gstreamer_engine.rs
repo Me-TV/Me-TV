@@ -338,6 +338,12 @@ impl GStreamerEngine {
                 "Could not set play state, perhaps the aerial isn't connected?\n\nTry running with 'GST_DEBUG=3 me-tv' for details."
             );
         }
+        /*
+         * Add writing out the GStreamer pipeline to the event queue, but leave long
+         * enough for the pipeline to be formed.
+         *
+         * Comment out for now.
+         * /
         glib::timeout_add_seconds_local(8, {
             let the_bin = self.playbin.clone().downcast::<gst::Bin>().unwrap();
             move || {
@@ -346,6 +352,7 @@ impl GStreamerEngine {
                 Continue(false)
             }
         });
+        / * */
     }
 
     pub fn stop(&self) {
