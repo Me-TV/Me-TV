@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2018, 2019  Russel Winder
+ *  Copyright © 2018–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
  */
 
 use std::{thread, time};
-use std::error::Error;
 
 use clap::{Arg, App};
 
@@ -218,7 +217,7 @@ A channel name and a duration must be provided.
                 pipeline.set_state(gst::State::Null).unwrap();
                 println!("Error: {} {} {} {}",
                          err.get_src().map(|s| s.get_path_string()).unwrap_or_else(|| glib::GString::from("None")),
-                         err.get_error().description(),
+                         err.get_error().to_string(),
                          err.get_debug().unwrap_or_else(|| String::from("None")),
                          err.get_error(),
                 );
