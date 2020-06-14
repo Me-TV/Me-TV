@@ -147,7 +147,7 @@ impl RemoteControl {
         unsafe {
             match ioctl_eviocgrab(device_file.as_raw_fd(), 1) {
                 Ok(_) => {},
-                Err(e) => return Err(format!("Failed to apply grab to {:?}", device_file)),
+                Err(e) => return Err(format!("Failed to apply grab to {:?}: {}", device_file, e)),
             }
         }
         Ok(RemoteControl {
@@ -233,8 +233,8 @@ fn add_already_installed_remotes() {
         Ok(mut data) => {
             lirc_devices.iter()
                 .filter(|lirc_path| match get_sys_path_from_lirc_path(lirc_path) {
-                    Ok(rc_path) => true,
-                    Err(e) => { println!("get_sys_path_from_lirc_path failed on {:?}", lirc_path); false },
+                    Ok(_) => true,
+                    Err(e) => { println!("get_sys_path_from_lirc_path failed on {:?}: {}", lirc_path, e); false },
                 })
                 .map(|lirc_path| {
                     let r_c = match RemoteControl::new(lirc_path) {
