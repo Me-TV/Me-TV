@@ -161,14 +161,14 @@ impl GStreamerEngine {
                                             } else {
                                                 //  TODO This seems to happen, and yet it shouldn't.
                                                 println!("********    Could not get an EIT from a supposed EIT Section: {:?}", section);
-                                                println!("********        Section type: {:?}", section.get_section_type());
+                                                println!("********        Section name {:?}, section type: {:?}", structure.get_name(), section.get_section_type());
                                                 println!("********        EIT: {:?}", section.get_eit());
                                             }
                                         } else {
-                                            panic!("************  EIT Section is not an EIT Section: {:?}", section);
+                                            println!("************  EIT Section is not an EIT Section: {:?}", section);
                                         }
                                     } else {
-                                        panic!("************  Could not get a Section from an EIT Section Element: {:?}", element);
+                                        println!("************  Could not get a Section from an EIT Section Element: {:?}", element);
                                     }
                                 },
                                 "GstNavigationMessage" => {},
@@ -178,13 +178,13 @@ impl GStreamerEngine {
                                             if let Some(nit) = section.get_nit() {
                                                 println!("========  Got a NIT {:?}", nit);
                                             }else {
-                                                panic!("************    Could not get a NIT from a NIT Section: {:?}", section);
+                                                println!("************    Could not get a NIT from a NIT Section: {:?}", section);
                                             }
                                         } else {
-                                            panic!("************  NIT Section is not an NIT Section: {:?}", section);
+                                            println!("************  NIT Section is not an NIT Section: {:?}", section);
                                         }
                                     } else {
-                                        panic!("************  Could not get a Section from a NIT Section Element: {:?}", element);
+                                        println!("************  Could not get a Section from a NIT Section Element: {:?}", element);
                                     }
                                 },
                                 "pat" => {},
@@ -196,7 +196,7 @@ impl GStreamerEngine {
                                 _ => println!("Unknown Element type: {:?}", element),
                             }
                         } else {
-                            panic!("Element has no Structure: {:?}", element);
+                            println!("Element has no Structure: {:?}", element);
                         }
                     },
                     gst::MessageView::Eos(..) => {
