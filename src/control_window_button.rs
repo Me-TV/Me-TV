@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017–2019  Russel Winder
+ *  Copyright © 2017–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -146,6 +146,7 @@ impl ControlWindowButton {
 
     /// Callback for an observed channel change.
     pub fn on_channel_changed(control_window_button: &Rc<ControlWindowButton>, channel_index: u32) { // Used in frontend_window.rs
+        // TODO status is Option<u32> apparently which isn't a great bool value.
         let status = control_window_button.frontend_button.get_active();
         if let Some(ref frontend_window) = *control_window_button.frontend_window.borrow() {
             if status {
@@ -156,20 +157,20 @@ impl ControlWindowButton {
                 //   See https://github.com/Me-TV/Me-TV/issues/29
                 let w = frontend_window.engine.video_widget.clone();
                 match w.clone().downcast::<gtk::DrawingArea>() {
-                    Ok(d) => {
+                    Ok(_d) => {
                         // TODO Clear the background area.
                     },
                     Err(_) => {
                         match w.clone().downcast::<gtk::GLArea>() {
                             Ok(g) => {
-                                let c = g.get_context().unwrap();
+                                let _c = g.get_context().unwrap();
                                 // TODO Clear the background area.
                             },
-                            Err(e) => panic!("Widget is neither gtk::DrawingArea or gtk::GLArea.")
+                            Err(e) => panic!("Widget is neither gtk::DrawingArea or gtk::GLArea: {}", e),
                         }
                     },
                 }
-                println!("AAAAAA.");
+                println!("========  Channel changed callback called");
                 // TODO Why does changing channel on the FrontendWindow result in three calls here.
             }
             control_window_button.set_channel_index(channel_index);
