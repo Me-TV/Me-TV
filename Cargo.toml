@@ -29,8 +29,8 @@ gtk = {version="*", features=["v3_22"]}
 gst = {package="gstreamer", version = "*", features = ["v1_16"]}
 #gst = {package="gstreamer", git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs", features=["v1_16"]}
 #gst-mpegts = {package="gstreamer", version="*"}
-#gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.com/Russel/gstreamer_mpegts.git"}
-gst-mpegts = {package="gstreamer-mpegts", path="../../Masters/Public/GStreamer_MPEGTS"}
+gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.com/Russel/gstreamer_mpegts.git"}
+#gst-mpegts = {package="gstreamer-mpegts", path="../../Masters/Public/GStreamer_MPEGTS"}
 lazy_static = "*"
 libc = "*"
 nix = "*"

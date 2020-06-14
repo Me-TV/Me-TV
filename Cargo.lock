@@ -430,6 +430,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts"
 version = "0.1.0"
+source = "git+https://gitlab.com/Russel/gstreamer_mpegts.git#0be862d9728079b156ad0648ebd0a33c9986c349"
 dependencies = [
  "glib 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -593,7 +594,7 @@ dependencies = [
  "glib 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "glob 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gstreamer 0.15.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "gstreamer-mpegts 0.1.0",
+ "gstreamer-mpegts 0.1.0 (git+https://gitlab.com/Russel/gstreamer_mpegts.git)",
  "gtk 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.71 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1181,6 +1182,7 @@ dependencies = [
 "checksum gobject-sys 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31d1a804f62034eccf370006ccaef3708a71c31d561fee88564abe71177553d9"
 "checksum gstreamer 0.15.7 (registry+https://github.com/rust-lang/crates.io-index)" = "ce8664a114cd6ec16bece783d5eee59496919915b1f6884400ba4a953274a163"
 "checksum gstreamer-base-sys 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ba384f52174b3c586593fca32642680a9e67961fea9f4cd8419f678965023bed"
+"checksum gstreamer-mpegts 0.1.0 (git+https://gitlab.com/Russel/gstreamer_mpegts.git)" = "<none>"
 "checksum gstreamer-mpegts-sys 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "35bdcdb688178588eae501addad690812b46c3d9066d40b80d82c08d9a86aceb"
 "checksum gstreamer-sys 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "1d18da01b97d0ab5896acd5151e4c155acefd0e6c03c3dd24dd133ba054053db"
 "checksum gtk 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "87e1e8d70290239c668594002d1b174fcc7d7ef5d26670ee141490ede8facf8f"
