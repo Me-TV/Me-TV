@@ -128,7 +128,7 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
     }
 }
 
-/// The entry point for the thread that is the frontend manager process.
+/// The main dæmon for adapter/frontend management.
 ///
 /// Distributes "appeared" and "disappeared" messages to the GUI whenever an
 /// adaptor/frontend state changes.

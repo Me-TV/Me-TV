@@ -26,6 +26,54 @@ use gst_mpegts;
 
 use crate::control_window::Message;
 
+fn build_bat(bat: &gst_mpegts::BAT) {
+    println!("======== Got a BAT section {:?}, {:?}", &bat.get_descriptors(), &bat.get_streams());
+}
+
+fn build_cat(cat: &Vec<gst_mpegts::Descriptor>) {
+    if cat.len() > 0 {
+        println!("======== Got a non-empty CAT section {:?}", &cat);
+    }
+}
+
+fn build_eit(eit: &gst_mpegts::EIT) {
+    //println!("======== Got an EIT section {:?}", &eit.get_events());
+}
+
+fn build_nit(nit: &gst_mpegts::NIT) {
+    //println!("======== Got a NIT section {:?}, {:?}", &nit.get_descriptors(), &nit.get_streams());
+}
+
+fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
+    /*
+    for p in pat.iter() {
+        println!("======== {:?}", &p);
+    }
+     */
+}
+
+fn build_pmt(pmt: &gst_mpegts::PMT) {
+    //println!("======== Got a PMT section {:?}, {:?}, {:?}", &pmt.get_program_number(), &pmt.get_descriptors(), &pmt.get_streams());
+}
+
+fn build_sdt(sdt: &gst_mpegts::SDT) {
+    //println!("======== Got a SDT section {:?}, {:?}, {:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id(), &sdt.get_services());
+}
+
+fn build_tdt(tdt: &gst_mpegts::Section) {
+    //println!("======== Got a TDT section {:?}", &tdt);
+}
+
+fn build_tsdt(tsdt: &Vec<gst_mpegts::Descriptor>) {
+    //println!("======== Got a TSDT section {:?}", &tsdt);
+}
+
+fn build_tot(tot: &gst_mpegts::TOT) {
+    //println!("======== Got a TOT section {:?}, {:?}", &tot.get_utc_time(), &tot.get_descriptors());
+}
+
+/// The main dæmon for EPG management.
+///
 /// Process the `gst_mpegts::Section` instances sent on the `from_gstreamer` channel.
 ///
 /// This is a separate process executed by a thread other than the Glib event loop thread
@@ -43,19 +91,17 @@ pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Re
                     gst_mpegts::SectionType::AtscTvct => {},
                     gst_mpegts::SectionType::Bat => {
                         if let Some(bat) = section.get_bat() {
-                            println!("======== Got a BAT section {:?}", &bat);
+                            build_bat(&bat);
                         } else {
                             println!("******** Got a BAT that wasn't a BAT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Cat => {
-                        if let cat = section.get_cat() {
-                            println!("======== Got a CAT section {:?}", &cat);
-                        }
+                        build_cat(&section.get_cat());
                     },
                     gst_mpegts::SectionType::Eit => {
                         if let Some(eit) = section.get_eit() {
-                            println!("======== Got a EIT section {:?}", &eit);
+                            build_eit(&eit);
                         } else {
                             println!("********  Got an EIT that wasn't an EIT {:?}", &section);
                             println!("********      Section type: {:?}", &section.get_section_type());
@@ -64,43 +110,39 @@ pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Re
                     },
                     gst_mpegts::SectionType::Nit => {
                         if let Some(nit) = section.get_nit() {
-                            println!("======== Got a NIT section {:?}", &nit);
+                            build_nit(&nit);
                         } else {
                             println!("******** Got a NIT that wasn't a NIT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Pat => {
-                        if let pat = section.get_pat() {
-                            println!("======== Got a PAT section {:?}", &pat);
-                        }
+                        build_pat(&section.get_pat());
                     },
                     gst_mpegts::SectionType::Pmt => {
                         if let Some(pmt) = section.get_pmt() {
-                            println!("======== Got a PMT section {:?}", &pmt);
+                            build_pmt(&pmt);
                         } else {
                             println!("******** Got a PMT that wasn't a PMT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Sdt => {
                         if let Some(sdt) = section.get_sdt() {
-                            println!("======== Got a SDT section {:?}", &sdt);
+                            build_sdt(&sdt);
                         } else {
                             println!("******** Got a SDT that wasn't a SDT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Tdt => {
-                        println!("======== Got a TDT section {:?}", &section);
+                        build_tdt(&section);
+                    },
+                    gst_mpegts::SectionType::Tsdt => {
+                        build_tsdt(&section.get_tsdt());
                     },
                     gst_mpegts::SectionType::Tot => {
                         if let Some(tot) = section.get_tot() {
-                            println!("======== Got a TOT section {:?}", &tot);
+                            build_tot(&tot);
                         } else {
                             println!("******** Got a TOT that wasn't a TOT {:?}", &section);
-                        }
-                    },
-                    gst_mpegts::SectionType::Tsdt => {
-                        if let tsdt = section.get_tsdt() {
-                            println!("======== Got a TSDT section {:?}", &tsdt);
                         }
                     },
                     gst_mpegts::SectionType::Unknown => {

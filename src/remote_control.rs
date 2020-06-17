@@ -283,9 +283,9 @@ fn remove_disappeared_remote_control(lirc_path: PathBuf) {
     };
 }
 
-/// The main daemon for remote control management.
+/// The main dæmon for remote control management.
 ///
-/// Add all remote controls already present. Set of the event listener as a separate daemon.
+/// Add all remote controls already present. Set off the event listener as a separate daemon.
 /// Settle to listening for added and removed remote controls.
 pub fn run(to_cw: glib::Sender<Message>) {
     add_already_installed_remotes();

@@ -127,8 +127,9 @@ impl GStreamerEngine {
                 match msg.view() {
                     gst::MessageView::Element(element) => {
                         if let Some(structure) = element.get_structure() {
-                            // A function to check the consistency of the labelling and type of a section
-                            // and return a clone of the section for sending to the EPG manager process.
+                            // Check the consistency of the labelling and type of a section
+                            // and return a clone of the section for sending to the EPG
+                            // manager process.
                             let is_element_consistent = |section_type: gst_mpegts::SectionType| -> Option<gst_mpegts::Section> {
                                 match gst_mpegts::Section::from_element(&element) {
                                     Some(section) => {
