@@ -82,15 +82,21 @@ fn main() {
     glib::set_application_name("Me TV");
     application.connect_startup(move |app| {
         let (to_control_window, from_manager) = glib::MainContext::channel::<control_window::Message>(glib::PRIORITY_DEFAULT);
-        let (to_epg_manager, from_gstreamer) = std::sync::mpsc::channel::<epg_manager::EPGEventMessage>();
-        //  TODO This variable is no longer used since the application menu was
-        //    removed, but the `ControlWindow` instance must be created at this time.
-        //    Or is there a better way of doing this?
+        let (to_epg_manager, from_gstreamer) = std::sync::mpsc::channel::<gst_mpegts::Section>();
+        //  This variable is no longer used since the application menu was
+        //  removed, but the ControlWindow instance must be created at this time.
         let _control_window = control_window::ControlWindow::new(&app, from_manager, to_epg_manager);
+        // Spawn a thread to run the frontend manager process.
         thread::spawn({
             let t_c_w = to_control_window.clone();
             move ||{ frontend_manager::run(t_c_w); }
         });
+        // Spawn a thread to run the remote control manager process.
+        thread::spawn({
+            let t_c_w = to_control_window.clone();
+            move || remote_control::run(t_c_w)
+        });
+        // Spawn a thread to run the EPG (Section packet) management process.
         thread::spawn({
             let t_c_w = to_control_window.clone();
             move ||{ epg_manager::run(t_c_w, from_gstreamer); }

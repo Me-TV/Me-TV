@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017–2019  Russel Winder
+ *  Copyright © 2017–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,11 +34,12 @@ use gtk::prelude::*;
 
 use tempfile;
 
+use gst_mpegts;
+
 use crate::about;
 use crate::channel_names::{channels_file_path, get_names};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
-use crate::epg_manager::EPGEventMessage;
 use crate::frontend_manager::FrontendId;
 use crate::preferences;
 use crate::preferences_dialog;
@@ -56,7 +57,7 @@ pub struct ControlWindow {
     pub channel_names_store: gtk::ListStore, // Used by ControlWindowButton and FrontendWindow.
     channel_names_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
-    pub to_epg_manager: std::sync::mpsc::Sender<EPGEventMessage>, // Used by ControlWindowButton.
+    pub to_epg_manager: std::sync::mpsc::Sender<gst_mpegts::Section>, // Used by ControlWindowButton.
 }
 
 /// All the message types that  can be sent to the ControllerWindow.
@@ -71,7 +72,11 @@ impl ControlWindow {
     /// Constructor (obviously :-). Creates the window to hold the widgets representing the
     /// frontends available. It is assumed this is called in the main thread that then runs the
     /// GTK event loop.
-    pub fn new(application: &gtk::Application, message_channel: glib::Receiver<Message>, to_epg_manager: std::sync::mpsc::Sender<EPGEventMessage>) -> Rc<ControlWindow> {
+    pub fn new(
+        application: &gtk::Application,
+        message_channel: glib::Receiver<Message>,
+        to_epg_manager: std::sync::mpsc::Sender<gst_mpegts::Section>,
+    ) -> Rc<ControlWindow> {
         let window = gtk::ApplicationWindow::new(application);
         window.set_title("Me TV");
         window.set_border_width(10);

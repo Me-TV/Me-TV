@@ -137,10 +137,6 @@ fn frontend_id_from(path: &str) -> Option<FrontendId> {
 /// them differently. A separate daemon is spawned for this that then sends messages to
 /// the GUI as needed.
 pub fn run(mut to_cw: glib::Sender<Message>) {
-    thread::spawn({
-        let tocw = to_cw.clone();
-        || remote_control::run(tocw)
-    });
     add_already_installed_adaptors(&mut to_cw);
     let (transmit_end, receive_end) = channel();
     let mut watcher = raw_watcher(transmit_end).unwrap();

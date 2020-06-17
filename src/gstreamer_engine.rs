@@ -64,7 +64,7 @@ pub struct GStreamerEngine {
 
 impl GStreamerEngine {
 
-    pub fn new(control_window_button: Rc<ControlWindowButton>) -> Result<GStreamerEngine, ()> {
+    pub fn new(control_window_button: Rc<ControlWindowButton>) -> Result<Self, ()> {
         let playbin = gst::ElementFactory::make("playbin", Some("playbin")).expect("Failed to create playbin element");
         playbin.connect("element-setup",  false, {
             let fei = control_window_button.frontend_id.clone();
@@ -127,76 +127,95 @@ impl GStreamerEngine {
                 match msg.view() {
                     gst::MessageView::Element(element) => {
                         if let Some(structure) = element.get_structure() {
+                            // A function to check the consistency of the labelling and type of a section
+                            // and return a clone of the section for sending to the EPG manager process.
+                            let is_element_consistent = |section_type: gst_mpegts::SectionType| -> Option<gst_mpegts::Section> {
+                                match gst_mpegts::Section::from_element(&element) {
+                                    Some(section) => {
+                                        if section.get_section_type() == section_type {
+                                            Some(section.clone())
+                                        } else {
+                                            println!("********  Element with structure tagged {:?} is not of the correct type {:?}", structure.get_name(), section_type);
+                                            None
+                                        }
+                                    },
+                                    None => {
+                                        println!("********  Element does not have a Section.");
+                                        None
+                                    }
+                                }
+                            };
                             match structure.get_name() {
-                                "cat" => {},
+                                "cat" => {
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Cat) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
+                                    }
+                                },
                                 "dvb-adapter" => {
                                     // TODO Do we need to process this at all?  It seems there
-                                    // is only one of these sent, at the opening of a connection
-                                    // to an adapter.
+                                    //   is only one of these sent, at the opening of a connection
+                                    //   to an adapter.
+                                    //println!("========  Got a 'dvb-adaptor' message {:?}", &structure);
                                 },
                                 "dvb-frontend-stats" => {
                                     // TODO Do we need to process this at all?  Lots of these
-                                    // get sent out, but it is not clear what the benefit of
-                                    // processing them is – at least not at this time anyway.
+                                    //   get sent out, but it is not clear what the benefit of
+                                    //   processing them is – at least not at this time anyway.
+                                    //println!("========  Got a 'dvb-frontend-stats' message {:?}", &structure);
                                 },
                                 "dvb-read-failure" => {
                                     // TODO What should be done on a read failure?  For now the
-                                    // read fails are simply ignored.
-                                    println!("********    Got a DVB read failure.");
+                                    //   read fails are simply ignored.
+                                    println!("========  Got a DVB read failure message {:?}", &structure);
                                 },
                                 "eit" => {
-                                    if let Some(section) = gst_mpegts::Section::from_element(&element) {
-                                        if section.get_section_type() == gst_mpegts::SectionType::Eit {
-                                            if let Some(eit) = section.get_eit() {
-                                                for event in eit.event_iterator() {
-                                                    let event_message = epg_manager::EPGEventMessage::new(
-                                                        section.get_subtable_extension(),
-                                                        event.get_event_id(),
-                                                        event.get_start_time(),
-                                                        event.get_duration(),
-                                                        event.get_descriptors(),
-                                                    );
-                                                    control_window_button.control_window.to_epg_manager.send(event_message).unwrap();
-                                                }
-                                            } else {
-                                                //  TODO This seems to happen, and yet it shouldn't.
-                                                println!("********    Could not get an EIT from a supposed EIT Section: {:?}", section);
-                                                println!("********        Section name {:?}, section type: {:?}", structure.get_name(), section.get_section_type());
-                                                println!("********        EIT: {:?}", section.get_eit());
-                                            }
-                                        } else {
-                                            println!("************  EIT Section is not an EIT Section: {:?}", section);
-                                        }
-                                    } else {
-                                        println!("************  Could not get a Section from an EIT Section Element: {:?}", element);
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Eit) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
-                                "GstNavigationMessage" => {},
+                                "GstNavigationMessage" => {
+                                    // Get one of these when mouse moves over a window for example.
+                                    //println!("======== Got GstNavigationMessage {:?}", &structure);
+                                },
                                 "nit" => {
-                                    if let Some(section) = gst_mpegts::Section::from_element(&element) {
-                                        if section.get_section_type() == gst_mpegts::SectionType::Nit {
-                                            if let Some(nit) = section.get_nit() {
-                                                println!("========  Got a NIT {:?}", nit);
-                                            }else {
-                                                println!("************    Could not get a NIT from a NIT Section: {:?}", section);
-                                            }
-                                        } else {
-                                            println!("************  NIT Section is not an NIT Section: {:?}", section);
-                                        }
-                                    } else {
-                                        println!("************  Could not get a Section from a NIT Section Element: {:?}", element);
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Nit) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
-                                "pat" => {},
-                                "pmt" =>{},
-                                "sdt" => {},
-                                "section" => {},
-                                "tdt" => {},
-                                "tot" => {},
-                                _ => println!("Unknown Element type: {:?}", element),
+                                "pat" => {
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Pat) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
+                                    }
+                                },
+                                "pmt" =>{
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Pmt) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
+                                    }
+                                },
+                                "sdt" => {
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Sdt) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
+                                    }
+                                },
+                                "section" => {
+                                    // Not sure what these are but experiment indicates that the section pointer is NULL
+                                    // so are they just some form of padding?
+                                    //println!("========  Got an element with a section label {:?}", &structure);
+                                },
+                                "tdt" => {
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Tdt) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
+                                    }
+                                },
+                                "tot" => {
+                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Tot) {
+                                        control_window_button.control_window.to_epg_manager.send(section).unwrap();
+                                    }
+                                },
+                                _ => println!("************  Unknown Element type: {:?}", element),
                             }
                         } else {
-                            println!("Element has no Structure: {:?}", element);
+                            println!("************  Element has no Structure: {:?}", element);
                         }
                     },
                     gst::MessageView::Eos(..) => {
