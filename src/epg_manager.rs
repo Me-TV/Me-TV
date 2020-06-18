@@ -27,13 +27,24 @@ use gst_mpegts;
 use crate::control_window::Message;
 
 fn build_bat(bat: &gst_mpegts::BAT) {
-    println!("======== Got a BAT section {:?}, {:?}", &bat.get_descriptors(), &bat.get_streams());
+    /*
+    println!("======== Got a BAT section.");
+    for descriptor in bat.get_descriptors().iter() {
+        println!("         {:?}", descriptor);
+    }
+    println!("========");
+    for stream in bat.get_streams().iter() {
+        println!("         {:?}", stream);
+    }
+     */
 }
 
 fn build_cat(cat: &Vec<gst_mpegts::Descriptor>) {
+    /*
     if cat.len() > 0 {
         println!("======== Got a non-empty CAT section {:?}", &cat);
     }
+     */
 }
 
 fn build_eit(eit: &gst_mpegts::EIT) {
@@ -41,7 +52,32 @@ fn build_eit(eit: &gst_mpegts::EIT) {
 }
 
 fn build_nit(nit: &gst_mpegts::NIT) {
-    //println!("======== Got a NIT section {:?}, {:?}", &nit.get_descriptors(), &nit.get_streams());
+    println!("======== NIT section");
+    for descriptor in nit.get_descriptors().iter() {
+        match descriptor.get_tag() {
+            gst_mpegts::DVBDescriptorType::NetworkName => println!("    Network Name: {}", descriptor.parse_dvb_network_name().unwrap()),
+            gst_mpegts::DVBDescriptorType::Extension => println!("    Extension {}, {:?}", descriptor.get_tag_extension().unwrap(), descriptor.get_data()),
+            gst_mpegts::DVBDescriptorType::Linkage => println!("    Linkage: {:?}", descriptor.parse_dvb_linkage().unwrap()),
+            gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => println!("    Private Data Specifier: {:?}", descriptor.parse_dvb_private_data_specifier().unwrap()),
+            _ => println!("WTF"),
+        }
+    }
+    for stream in nit.get_streams().iter() {
+        println!("   transport_stream_id = {}, original_network_id = {}", stream.get_transport_stream_id(), stream.get_original_network_id());
+        for d in stream.get_descriptors().iter() {
+            match d.get_tag() {
+                gst_mpegts::DVBDescriptorType::ServiceList => {
+                    println!("    Service List");
+                    for item in d.parse_dvb_service_list().unwrap().iter() {
+                        println!("        {:?}", item);
+                    }
+                },
+                gst_mpegts::DVBDescriptorType::TerrestrialDeliverySystem => println!("    TerrestrialDeliverySystem {:?}", d.parse_terrestrial_delivery_system().unwrap()),
+                gst_mpegts::DVBDescriptorType::Extension => println!("    Extension {}", d.get_tag_extension().unwrap()),
+                _ => println!("WTF"),
+            }
+        }
+    }
 }
 
 fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {

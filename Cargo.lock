@@ -430,7 +430,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts"
 version = "0.1.0"
-source = "git+https://gitlab.com/Russel/gstreamer_mpegts.git#9534d70041c611d31299b0114654c51e892b1474"
+source = "git+https://gitlab.com/Russel/gstreamer_mpegts.git#85728a4dfd846de9f60ed7ed68ef165308885f80"
 dependencies = [
  "glib 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib-sys 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
