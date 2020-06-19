@@ -81,7 +81,7 @@ impl FrontendWindow {
         });
         let close_button = {
             let c_b = gtk::Button::new();
-            c_b.set_image(Some(&gtk::Image::new_from_icon_name(Some("window-close-symbolic"), gtk::IconSize::Button.into())));
+            c_b.set_image(Some(&gtk::Image::from_icon_name(Some("window-close-symbolic"), gtk::IconSize::Button.into())));
             c_b.connect_clicked({
                 let button = control_window_button.frontend_button.clone();
                 move |_| button.set_active(!button.get_active())
@@ -90,7 +90,7 @@ impl FrontendWindow {
         };
         let fullscreen_button = {
             let f_b = gtk::Button::new();
-            f_b.set_image(Some(&gtk::Image::new_from_icon_name(Some("view-fullscreen-symbolic"), gtk::IconSize::Button.into())));
+            f_b.set_image(Some(&gtk::Image::from_icon_name(Some("view-fullscreen-symbolic"), gtk::IconSize::Button.into())));
             // Can only set the fullscreen_button actions after fullscreen_toolbar has been defined.
             f_b
         };
@@ -119,7 +119,7 @@ impl FrontendWindow {
             h_b
         };
         window.set_titlebar(Some(&header_bar));
-        let fullscreen_toolbar_builder = gtk::Builder::new_from_string(include_str!("resources/frontend_window_fullscreen_toolbar.glade.xml"));
+        let fullscreen_toolbar_builder = gtk::Builder::from_string(include_str!("resources/frontend_window_fullscreen_toolbar.glade.xml"));
         let fullscreen_toolbar = {
             let f_t = fullscreen_toolbar_builder.get_object::<gtk::Toolbar>("fullscreen_control_toolbar").unwrap();
             f_t.set_halign(gtk::Align::Baseline);
@@ -256,7 +256,7 @@ impl FrontendWindow {
         window.connect_key_press_event({
             let f_t = fullscreen_toolbar.clone();
             move |a_w, key| {
-                if key.get_keyval() == gdk::enums::key::Escape {
+                if key.get_keyval() == gdk::keys::constants::Escape {
                     if a_w.get_window().unwrap().get_state().intersects(gdk::WindowState::FULLSCREEN) {
                         set_timeout(None);
                         f_t.hide();
@@ -326,7 +326,7 @@ impl FrontendWindow {
 
 fn hide_cursor(widget: &gtk::Widget) {
     if let Some(window) = widget.get_window() {
-        window.set_cursor(gdk::Cursor::new_from_name(&widget.get_display().unwrap(), "none").as_ref());
+        window.set_cursor(gdk::Cursor::from_name(&widget.get_display(), "none").as_ref());
     }
 }
 

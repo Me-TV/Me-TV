@@ -91,8 +91,8 @@ impl ControlWindow {
         header_bar.set_title(Some("Me TV"));
         header_bar.set_show_close_button(true);
         let menu_button = gtk::MenuButton::new();
-        menu_button.set_image(Some(&gtk::Image::new_from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Button.into())));
-        let menu_builder = gtk::Builder::new_from_string(include_str!("resources/control_window_menu.xml"));
+        menu_button.set_image(Some(&gtk::Image::from_icon_name(Some("open-menu-symbolic"), gtk::IconSize::Button.into())));
+        let menu_builder = gtk::Builder::from_string(include_str!("resources/control_window_menu.xml"));
         let window_menu = menu_builder.get_object::<gio::Menu>("control_window_menu").unwrap();
         let epg_action = gio::SimpleAction::new("epg", None);
         window.add_action(&epg_action);
@@ -206,7 +206,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                 &format!("Run:\n\n    dvbv5-scan {}\n\n?\n\nYou need to have already closed all open channel viewers for this to work.", path_to_transmitter_file.to_str().unwrap()),
             );
             let response = gtk::ResponseType::from(start_dialog.run());
-            start_dialog.destroy();
+            unsafe { start_dialog.destroy(); }
             if response== gtk::ResponseType::Ok {
                 let wait_dialog = gtk::MessageDialog::new(
                     Some(&control_window.window),
@@ -221,7 +221,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                     let c_w = control_window.clone();
                     let w_d = wait_dialog.clone();
                     receiver.attach(None, move |result| {
-                        w_d.destroy();
+                        unsafe { w_d.destroy(); }
                         if result {
                             c_w.update_channels_store();
                         } else {

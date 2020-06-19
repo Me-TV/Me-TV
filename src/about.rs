@@ -25,15 +25,7 @@ use std::sync::Mutex;
 use lazy_static::lazy_static;
 
 use gtk;
-// Can't use:
-//
-//use gtk::prelude::*;
-//
-// since it leads to a resolution problem, so have to explicitly list the bits needed.
-use gtk::AboutDialogExt;
-use gtk::DialogExt;
-use gtk::WidgetExt;
-use gtk::GtkWindowExt;
+use gtk::prelude::*;
 
 use gdk_pixbuf::PixbufLoader;
 use gdk_pixbuf::PixbufLoaderExt;
@@ -71,7 +63,7 @@ pub fn present(parent: Option<&gtk::ApplicationWindow>) {
             dialog.set_transient_for(parent);
             dialog.connect_response(move |d, _| {
                 if let Ok(active) = ABOUT.lock() {
-                    d.destroy();
+                    unsafe { d.destroy(); }
                     active.set(false);
                 }
             });

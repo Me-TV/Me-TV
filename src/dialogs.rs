@@ -31,6 +31,6 @@ pub fn display_an_error_dialog<T: IsA<gtk::Window>>(parent: Option<&T>, message:
         message,
     );
     message_dialog.run();
-    message_dialog.destroy();
+    unsafe { message_dialog.destroy(); }
 }
 

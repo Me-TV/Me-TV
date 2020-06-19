@@ -15,22 +15,25 @@ clap = "*"
 ctrlc = {version = "*", features = ["termination"]}
 exitcode = "*"
 fragile = "*"
-gdk = "*"
-#gdk = {git="https://github.com/gtk-rs/gdk"}
-gdk-pixbuf = "*"
-#gdk-pixbuf = {git="https://github.com/gtk-rs/gdk-pixbuf"}
-gio = {version="*", features=["v2_56"]}
-#gio = {git="https://github.com/gtk-rs/gio", features=["v2_56"]}
-glib = {version="*", features=["v2_56"]}
-#glib = {git="https://github.com/gtk-rs/glib", features=["v2_56"]}
-glob = "*"
-gtk = {version="*", features=["v3_22"]}
-#gtk = {git="https://github.com/gtk-rs/gtk", features=["v3_22"]}
-gst = {package="gstreamer", version = "*", features = ["v1_16"]}
-#gst = {package="gstreamer", git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs", features=["v1_16"]}
+#
+#gdk = "*"
+#gdk-pixbuf = "*"
+#gio = {version="*", features=["v2_56"]}
+#glib = {version="*", features=["v2_56"]}
+#gtk = {version="*", features=["v3_22"]}
+gdk = {git="https://github.com/gtk-rs/gdk"}
+gdk-pixbuf = {git="https://github.com/gtk-rs/gdk-pixbuf"}
+gio = {git="https://github.com/gtk-rs/gio", features=["v2_56"]}
+glib = {git="https://github.com/gtk-rs/glib", features=["v2_56"]}
+gtk = {git="https://github.com/gtk-rs/gtk", features=["v3_22"]}
+#
+#gst = {package="gstreamer", version = "*", features = ["v1_16"]}
+gst = {package="gstreamer", git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs", features=["v1_16"]}
 #gst-mpegts = {package="gstreamer", version="*"}
 gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.com/Russel/gstreamer_mpegts.git"}
 #gst-mpegts = {package="gstreamer-mpegts", path="../../Masters/Public/GStreamer_MPEGTS"}
+#
+glob = "*"
 lazy_static = "*"
 libc = "*"
 nix = "*"

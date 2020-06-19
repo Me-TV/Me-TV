@@ -57,7 +57,7 @@ impl ControlWindowButton {
     /// This function is executed in the GTK event loop thread.
     pub fn new(control_window: &Rc<ControlWindow>, fei: &FrontendId) -> Rc<ControlWindowButton> {
         let frontend_id = fei.clone();
-        let frontend_button = gtk::ToggleButton::new_with_label(
+        let frontend_button = gtk::ToggleButton::with_label(
             format!("adaptor{}\nfrontend{}", frontend_id.adapter, frontend_id.frontend).as_ref()
         );
         let channel_selector = MeTVComboBoxText::new_and_set_model(&control_window.channel_names_store);

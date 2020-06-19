@@ -148,7 +148,7 @@ impl GStreamerEngine {
                             };
                             match structure.get_name() {
                                 "cat" => {
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Cat) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Cat) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
@@ -170,7 +170,7 @@ impl GStreamerEngine {
                                     println!("========  Got a DVB read failure message {:?}", &structure);
                                 },
                                 "eit" => {
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Eit) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Eit) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
@@ -179,22 +179,22 @@ impl GStreamerEngine {
                                     //println!("======== Got GstNavigationMessage {:?}", &structure);
                                 },
                                 "nit" => {
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Nit) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Nit) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
                                 "pat" => {
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Pat) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Pat) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
                                 "pmt" =>{
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Pmt) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Pmt) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
                                 "sdt" => {
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Sdt) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Sdt) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
@@ -204,12 +204,12 @@ impl GStreamerEngine {
                                     //println!("========  Got an element with a section label {:?}", &structure);
                                 },
                                 "tdt" => {
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Tdt) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Tdt) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },
                                 "tot" => {
-                                    if let Some(mut section) = is_element_consistent(gst_mpegts::SectionType::Tot) {
+                                    if let Some(section) = is_element_consistent(gst_mpegts::SectionType::Tot) {
                                         control_window_button.control_window.to_epg_manager.send(section).unwrap();
                                     }
                                 },

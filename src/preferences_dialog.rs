@@ -38,7 +38,7 @@ lazy_static! {
 }
 
 fn create(control_window: &ControlWindow) -> gtk::Window {
-    let menu_builder = gtk::Builder::new_from_string(include_str!("resources/preferences_dialog.glade.xml"));
+    let menu_builder = gtk::Builder::from_string(include_str!("resources/preferences_dialog.glade.xml"));
     let _delivery_system_comboboxtext = {
         let comboboxtext = menu_builder.get_object::<gtk::ComboBoxText>("delivery_system").unwrap();
         for delivery_system in dvb::DeliverySystem::iterator() {
@@ -139,7 +139,7 @@ pub fn present(control_window: &ControlWindow) {
             let dialog = create(control_window);
             dialog.connect_destroy(move |d| {
                 if let Ok(active) = PREFERENCES.lock() {
-                    d.destroy();
+                    unsafe { d.destroy(); }
                     active.set(false);
                 }
             });

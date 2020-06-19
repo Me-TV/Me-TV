@@ -62,7 +62,7 @@ fn dvbt_transmitter_files_directory_path() -> Option<path::PathBuf> {
 /// generate a channels file for – if a list of transmitter files is present in the
 /// directory presented as the location of them.
 fn create(parent: Option<&gtk::ApplicationWindow>, transmitter_files_directory_path: &path::Path) -> Option<TransmitterSelector> {
-    let dialog = gtk::Dialog::new_with_buttons(
+    let dialog = gtk::Dialog::with_buttons(
         Some("Me TV Transmitter Chooser"),
         parent,
         gtk::DialogFlags::MODAL,
@@ -104,7 +104,7 @@ pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<path::PathBuf>
                 dialog.dialog.run();
                 let mut path = transmitter_files_directory_path;
                 path.push(dialog.transmitter.get_active_text().unwrap().as_str());
-                dialog.dialog.destroy();
+                unsafe { dialog.dialog.destroy(); }
                 Some(path)
             },
             None => {
