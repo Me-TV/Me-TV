@@ -56,12 +56,33 @@ fn build_nit(nit: &gst_mpegts::NIT) {
     for descriptor in nit.get_descriptors().iter() {
         match descriptor.get_tag() {
             gst_mpegts::DVBDescriptorType::NetworkName => println!("    Network Name: {}", descriptor.parse_dvb_network_name().unwrap()),
-            gst_mpegts::DVBDescriptorType::Extension => println!("    Extension {}, {:?}", descriptor.get_tag_extension().unwrap(), descriptor.get_data()),
+            gst_mpegts::DVBDescriptorType::Extension => {
+                match descriptor.get_tag_extension().unwrap() {
+                    gst_mpegts::DVBExtendedDescriptorType::TargetRegionName => {
+                        println!("    Extension:  TargetRegionName {:?}", descriptor.get_data());
+                        println!("        {:?}", &gst_mpegts::TargetRegionNameExtendedDescriptor::new(&descriptor).unwrap());
+                    },
+                    gst_mpegts::DVBExtendedDescriptorType::TargetRegion => {
+                        println!("    Extension:  TargetRegion {:?}", descriptor.get_data());
+                        println!("        {:?}", &gst_mpegts::TargetRegionExtendedDescriptor::new(&descriptor).unwrap());
+                    },
+                    gst_mpegts::DVBExtendedDescriptorType::Message => {
+                        println!("    Extension:  Message {:?}", descriptor.get_data());
+                        println!("        {:?}", &gst_mpegts::MessageExtendedDescriptor::new(&descriptor).unwrap());
+                    },
+                    gst_mpegts::DVBExtendedDescriptorType::UriLinkage => {
+                        println!("    Extension:  UriLinkage {:?}", descriptor.get_data());
+                        println!("        {:?}", &gst_mpegts::URILinkageExtendedDescriptor::new(&descriptor).unwrap());
+                    },
+                    x => println!("********  Got an extended descriptor type {:?}", x),
+                }
+            },
             gst_mpegts::DVBDescriptorType::Linkage => println!("    Linkage: {:?}", descriptor.parse_dvb_linkage().unwrap()),
             gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => println!("    Private Data Specifier: {:?}", descriptor.parse_dvb_private_data_specifier().unwrap()),
-            _ => println!("WTF"),
+            x => println!("********  Got a descriptor type {:?}", x),
         }
     }
+    /*
     for stream in nit.get_streams().iter() {
         println!("   transport_stream_id = {}, original_network_id = {}", stream.get_transport_stream_id(), stream.get_original_network_id());
         for d in stream.get_descriptors().iter() {
@@ -72,12 +93,14 @@ fn build_nit(nit: &gst_mpegts::NIT) {
                         println!("        {:?}", item);
                     }
                 },
-                gst_mpegts::DVBDescriptorType::TerrestrialDeliverySystem => println!("    TerrestrialDeliverySystem {:?}", d.parse_terrestrial_delivery_system().unwrap()),
+                gst_mpegts::DVBDescriptorType::TerrestrialDeliverySystem => println!("    TerrestrialDeliverySystem {:?}", "XXXXXXXX"), // d.parse_terrestrial_delivery_system().unwrap()),
                 gst_mpegts::DVBDescriptorType::Extension => println!("    Extension {}", d.get_tag_extension().unwrap()),
-                _ => println!("WTF"),
+                gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => println!("    Private Data Specifier "),
+                x => println!("********  Got a stream type {:?}", x),
             }
         }
     }
+     */
 }
 
 fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
