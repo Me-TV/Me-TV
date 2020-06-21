@@ -19,7 +19,10 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::panic;
+
 use glib;
+use glib::translate::{ToGlib};
 
 use gst;
 use gst_mpegts;
@@ -48,7 +51,53 @@ fn build_cat(cat: &Vec<gst_mpegts::Descriptor>) {
 }
 
 fn build_eit(eit: &gst_mpegts::EIT) {
-    //println!("======== Got an EIT section {:?}", &eit.get_events());
+    println!("======== Got an EIT section");
+    for event in eit.get_events().iter() {
+        println!("    event_id = {:?}", event.get_event_id());
+        for d in event.get_descriptors().iter() {
+            println!("        {:?}: {:?}", d.get_tag(), d.get_data());
+            match d.get_tag() {
+                gst_mpegts::DVBDescriptorType::Component => {
+                    let component = d.parse_dvb_component().unwrap();
+                    println!("            {:?}", &component);
+                },
+                gst_mpegts::DVBDescriptorType::Content => {
+                    let c = d.parse_dvb_content().unwrap();
+                    for item in c.iter() {
+                        println!("            {}", gst_mpegts::content_description(item.get_content_nibble_1().to_glib(), item.get_content_nibble_2()))
+                    }
+                },
+                gst_mpegts::DVBDescriptorType::ContentIdentifier => {
+                    println!("            Unknown processing technique");
+                },
+                gst_mpegts::DVBDescriptorType::Linkage => {
+                    let linkage = d.parse_dvb_linkage().unwrap();
+                    println!("            {:?}", &linkage);
+                }
+                gst_mpegts::DVBDescriptorType::ShortEvent =>{
+                    // TODO It seems this can panic
+                    //   assertion failed: !ptr.is_null()', /home/users/russel/.cargo/git/checkouts/glib-928cf7b282977403/3a64675/src/gstring.rs:51:9
+                    //   on real data from Freeview.
+                    //
+                    // See https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/-/issues/1333
+                    match panic::catch_unwind(|| {
+                        let (language_code, title, blurb) = d.parse_dvb_short_event().unwrap();
+                        println!("            {}, {}, {}", &language_code, &title, &blurb);
+                    }) {
+                        Ok(_) => {},
+                        Err(_) => println!("****************  parse_dvb_short_event paniced, assume there is a 0x1f encoding byte in the string."),
+                    }
+                },
+                gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
+                    println!("            {:?}", &d.parse_dvb_private_data_specifier());
+                },
+                gst_mpegts::DVBDescriptorType::FtaContentManagement => {
+                    println!("            Unknown processing technique");
+                },
+                x => println!("Unprocessed tag: {:?}", x),
+            }
+        }
+    }
 }
 
 fn build_nit(nit: &gst_mpegts::NIT) {
@@ -60,19 +109,19 @@ fn build_nit(nit: &gst_mpegts::NIT) {
                 match descriptor.get_tag_extension().unwrap() {
                     gst_mpegts::DVBExtendedDescriptorType::TargetRegionName => {
                         println!("    Extension:  TargetRegionName {:?}", descriptor.get_data());
-                        println!("        {:?}", &gst_mpegts::TargetRegionNameExtendedDescriptor::new(&descriptor).unwrap());
+                        println!("        {:?}", &descriptor.parse_target_region_name().unwrap());
                     },
                     gst_mpegts::DVBExtendedDescriptorType::TargetRegion => {
                         println!("    Extension:  TargetRegion {:?}", descriptor.get_data());
-                        println!("        {:?}", &gst_mpegts::TargetRegionExtendedDescriptor::new(&descriptor).unwrap());
+                        println!("        {:?}", &descriptor.parse_target_region().unwrap());
                     },
                     gst_mpegts::DVBExtendedDescriptorType::Message => {
                         println!("    Extension:  Message {:?}", descriptor.get_data());
-                        println!("        {:?}", &gst_mpegts::MessageExtendedDescriptor::new(&descriptor).unwrap());
+                        println!("        {:?}", &descriptor.parse_message().unwrap());
                     },
                     gst_mpegts::DVBExtendedDescriptorType::UriLinkage => {
                         println!("    Extension:  UriLinkage {:?}", descriptor.get_data());
-                        println!("        {:?}", &gst_mpegts::URILinkageExtendedDescriptor::new(&descriptor).unwrap());
+                        println!("        {:?}", &descriptor.parse_uri_linkage().unwrap());
                     },
                     x => println!("********  Got an extended descriptor type {:?}", x),
                 }
@@ -82,25 +131,34 @@ fn build_nit(nit: &gst_mpegts::NIT) {
             x => println!("********  Got a descriptor type {:?}", x),
         }
     }
-    /*
     for stream in nit.get_streams().iter() {
         println!("   transport_stream_id = {}, original_network_id = {}", stream.get_transport_stream_id(), stream.get_original_network_id());
         for d in stream.get_descriptors().iter() {
             match d.get_tag() {
                 gst_mpegts::DVBDescriptorType::ServiceList => {
-                    println!("    Service List");
+                    println!("    Service List {:?}", d.get_data());
                     for item in d.parse_dvb_service_list().unwrap().iter() {
-                        println!("        {:?}", item);
+                        println!("        service_id = {}, type = {:?}", item.get_service_id(), item.get_type());
                     }
                 },
-                gst_mpegts::DVBDescriptorType::TerrestrialDeliverySystem => println!("    TerrestrialDeliverySystem {:?}", "XXXXXXXX"), // d.parse_terrestrial_delivery_system().unwrap()),
-                gst_mpegts::DVBDescriptorType::Extension => println!("    Extension {}", d.get_tag_extension().unwrap()),
-                gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => println!("    Private Data Specifier "),
+                gst_mpegts::DVBDescriptorType::TerrestrialDeliverySystem => {
+                    println!("    TerrestrialDeliverySystem {:?}", d.get_data());
+                    //  TODO There seems to be a problem in the C MPEG-TS library that means
+                    //    this call creates a "panicked at 'not implemented'".
+                    //println!("    TerrestrialDeliverySystem {:?}", d.parse_terrestrial_delivery_system());
+                },
+                gst_mpegts::DVBDescriptorType::Extension => {
+                    println!("    Extension {:?}", d.get_data());
+                    println!("        {}", d.get_tag_extension().unwrap());
+                },
+                gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
+                    println!("    Private Data Specifier {:?}", d.get_data());
+                    println!("        {:?}", d.parse_dvb_private_data_specifier());
+                },
                 x => println!("********  Got a stream type {:?}", x),
             }
         }
     }
-     */
 }
 
 fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
