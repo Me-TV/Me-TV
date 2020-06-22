@@ -274,10 +274,22 @@ impl GStreamerEngine {
                                     the_bin.add(&gldeinterlace).expect("Could not add the gldeinterlace element to the new bin.");
                                     the_bin.add(&gtkglsink).expect("Could not add the gtkglsink to the new bin.");
                                     gldeinterlace.link(&gtkglsink).expect("Could not link the gldeinterlace element to the gtkglsink element.");
-                                    let sink_pad = gst::GhostPad::new(
-                                        Some("sink"),
-                                        &gldeinterlace.get_static_pad("sink").expect("Could not get sink pad of gldeinterlace element.")
-                                    ).expect("Could not create ghost pad.");
+                                    /*
+                                     * Using a builder.
+                                     */
+                                    let sink_pad = gst::GhostPad::builder(Some("sink"), gst::PadDirection::Src)
+                                        .build_with_target(
+                                            &gldeinterlace.get_static_pad("sink")
+                                                .expect("Could not get sink pad of gldeinterlace element."))
+                                        .expect("Could not create ghost pad.");
+                                    /*
+                                     * Using new.
+                                     *
+                                    let sink_pad = gst::GhostPad::new(Some("sink"), gst::PadDirection::Src);
+                                    sink_pad.set_target(
+                                        Some(&gldeinterlace.get_static_pad("sink").expect("Could not get sink pad of gldeinterlace element."))
+                                    ).expect("Could not set target on ghost pad.");
+                                     */
                                     the_bin.add_pad(&sink_pad).expect("Could not add the sink pad to the bin.");
                                     // Set the deinterlacing method as per the preferences.
                                     let method = gldeinterlace.get_property("method").expect("Could not get method from gldeinterlace element.");
