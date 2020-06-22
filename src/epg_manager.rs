@@ -82,7 +82,7 @@ fn build_eit(eit: &gst_mpegts::EIT) {
                     // See https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/-/issues/1333
                     match panic::catch_unwind(|| {
                         let (language_code, title, blurb) = d.parse_dvb_short_event().unwrap();
-                        println!("            {}, {}, {}", &language_code, &title, &blurb);
+                        println!("            {}, {:?}, {:?}", &language_code, &title, &blurb);
                     }) {
                         Ok(_) => {},
                         Err(_) => println!("****************  parse_dvb_short_event paniced, assume there is a 0x1f encoding byte in the string."),
