@@ -277,7 +277,7 @@ impl GStreamerEngine {
                                     /*
                                      * Using a builder.
                                      */
-                                    let sink_pad = gst::GhostPad::builder(Some("sink"), gst::PadDirection::Src)
+                                    let sink_pad = gst::GhostPad::builder(Some("sink"), gst::PadDirection::Sink)
                                         .build_with_target(
                                             &gldeinterlace.get_static_pad("sink")
                                                 .expect("Could not get sink pad of gldeinterlace element."))
