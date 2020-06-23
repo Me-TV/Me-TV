@@ -149,7 +149,7 @@ fn build_nit(nit: &gst_mpegts::NIT) {
                 },
                 gst_mpegts::DVBDescriptorType::Extension => {
                     println!("    Extension {:?}", d.get_data());
-                    println!("        {}", d.get_tag_extension().unwrap());
+                    println!("        {:?}", d.get_tag_extension().unwrap());
                 },
                 gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
                     println!("    Private Data Specifier {:?}", d.get_data());
