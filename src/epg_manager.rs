@@ -60,7 +60,7 @@ fn build_eit(eit: &gst_mpegts::EIT) {
             match d.get_tag() {
                 gst_mpegts::DVBDescriptorType::Component => {
                     let component = d.parse_dvb_component().unwrap();
-                    println!("            {:?}", &component);
+                    println!("            Component  {:?}", &component);
                 },
                 gst_mpegts::DVBDescriptorType::Content => {
                     let c = d.parse_dvb_content().unwrap();
@@ -73,7 +73,7 @@ fn build_eit(eit: &gst_mpegts::EIT) {
                 },
                 gst_mpegts::DVBDescriptorType::Linkage => {
                     let linkage = d.parse_dvb_linkage().unwrap();
-                    println!("            {:?}", &linkage);
+                    println!("            Linkage  {:?}", &linkage);
                 }
                 gst_mpegts::DVBDescriptorType::ShortEvent =>{
                     // TODO It seems this can panic
@@ -90,10 +90,10 @@ fn build_eit(eit: &gst_mpegts::EIT) {
                     }
                 },
                 gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
-                    println!("            {:?}", &d.parse_dvb_private_data_specifier());
+                    println!("            PrivateDataSpecifier  {:?}", &d.parse_dvb_private_data_specifier());
                 },
                 gst_mpegts::DVBDescriptorType::FtaContentManagement => {
-                    println!("            Unknown processing technique");
+                    println!("            FtaContentManagement  Unknown processing technique");
                 },
                 x => println!("Unprocessed tag: {:?}", x),
             }
@@ -103,13 +103,14 @@ fn build_eit(eit: &gst_mpegts::EIT) {
 }
 
 fn build_nit(nit: &gst_mpegts::NIT) {
+    /*
     println!("======== NIT section: actual_network = {}, network_id = {}", nit.get_actual_network(), nit.get_network_id());
     for descriptor in nit.get_descriptors().iter() {
         // EN 300 468 Table 12 states which descriptors are allowed.
         match descriptor.get_tag() {
             gst_mpegts::DVBDescriptorType::NetworkName => {
                 let name = descriptor.parse_dvb_network_name().unwrap();
-                println!("    Network Name:  {}", &name);
+                println!("    NetworkName:  {}", &name);
             },
             gst_mpegts::DVBDescriptorType::Extension => {
                 match descriptor.get_tag_extension().unwrap() {
@@ -157,7 +158,7 @@ fn build_nit(nit: &gst_mpegts::NIT) {
             gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
                 // It seems that this is the original_network_id being presented at the NIT section level.
                 let private_data = descriptor.parse_dvb_private_data_specifier().unwrap();
-                println!("    Private Data Specifier: {}, {:?}", &private_data.0, &private_data.1);
+                println!("    PrivateDataSpecifier: {}, {:?}", &private_data.0, &private_data.1);
             },
             x => println!("********  Got a not allowed descriptor type {:?}", x),
         }
@@ -169,7 +170,7 @@ fn build_nit(nit: &gst_mpegts::NIT) {
             match descriptor.get_tag() {
                 gst_mpegts::DVBDescriptorType::ServiceList => {
                     let service_list = descriptor.parse_dvb_service_list().unwrap();
-                    println!("        Service List:");
+                    println!("        ServiceList:");
                     for service in service_list.iter() {
                         println!("            service_id = {}, service_type = {:?}",
                                  &service.get_service_id(),
@@ -241,6 +242,7 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
             println!("            {:?}", &descriptor.get_data());
         }
     }
+     */
 }
 
 fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
@@ -256,7 +258,53 @@ fn build_pmt(pmt: &gst_mpegts::PMT) {
 }
 
 fn build_sdt(sdt: &gst_mpegts::SDT) {
-    //println!("======== Got a SDT section {:?}, {:?}, {:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id(), &sdt.get_services());
+    println!("======== Got a SDT section: original_network_id = {:?}, transport_stream_id ={:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id());
+    for service in sdt.get_services().iter() {
+        println!("    SDTService  service_id = {}, \
+eit_schedule_flag = {}, \
+eit_present_following = {}, \
+running_status = {:?}, \
+free_ca_mode = {}",
+                 service.get_service_id(),
+                 service.get_eit_schedule_flag(),
+                 service.get_eit_present_following_flag(),
+                 service.get_running_status(),
+                 service.get_free_ca_mode(),
+        );
+        for descriptor in service.get_descriptors().iter() {
+            match descriptor.get_tag() {
+                gst_mpegts::DVBDescriptorType::DefaultAuthority => {
+                    // It seems that the default authority is a name structures as a URI.
+                    let data = &descriptor.get_data()[2..];
+                    let (encoding, count) = gst_mpegts::select_encoding(data[0..3].to_vec());
+                    // TODO Better error handling required here.
+                    println!("        DefaultAuthority  {}", encoding.decode(&data[count..]).0.to_string());
+                },
+                // TODO Process Extension descriptors.
+                gst_mpegts::DVBDescriptorType::FtaContentManagement => {
+                    println!("        FtaContentManagement  {:?}", descriptor);
+                },
+                gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
+                    let private_data = descriptor.parse_dvb_private_data_specifier().unwrap();
+                    println!("        PrivateDataSpecifier: {}, {:?}", &private_data.0, &private_data.1);
+
+                },
+                gst_mpegts::DVBDescriptorType::Service => {
+                    let service = descriptor.parse_dvb_service();
+                    match service {
+                        Some((service_type, service_name, some_string_possibly_empty)) => {
+                            println!("        Service  {:?}, '{}', '{}'", service_type, service_name, some_string_possibly_empty);
+                        },
+                        None => {
+                            println!("************ Failed to parse as a service {:?}", descriptor);
+                        },
+                    }
+                },
+                x => println!("Got an unhandled descriptor of type {:?}", x)
+            }
+            println!("            {:?}", descriptor.get_data());
+        }
+    }
 }
 
 fn build_tdt(tdt: &gst_mpegts::Section) {

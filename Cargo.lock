@@ -458,7 +458,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.16.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#2f1b3306de10e59ee53a52b4db9528213daf022f"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#ddd3bbbf848ee0be18b41cb6a515282a7a028365"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
