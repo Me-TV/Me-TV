@@ -29,294 +29,384 @@ use gst_mpegts;
 
 use crate::control_window::Message;
 
+static PRINT_BAT:bool = false;
+static PRINT_CAT:bool = false;
+static PRINT_EIT:bool = false;
+static PRINT_NIT:bool = false;
+static PRINT_PAT:bool = false;
+static PRINT_PMT:bool = true;
+static PRINT_SDT:bool = false;
+static PRINT_TDT:bool = false;
+static PRINT_TSDT:bool = false;
+static PRINT_TOT:bool = false;
+
+static PRINT_DATA: bool = true;
+
 fn build_bat(bat: &gst_mpegts::BAT) {
-    /*
-    println!("======== Got a BAT section.");
-    for descriptor in bat.get_descriptors().iter() {
-        println!("         {:?}", descriptor);
+    // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
+    if PRINT_BAT {
+        println!("========  Got a BAT section.");
+        for descriptor in bat.get_descriptors().iter() {
+            println!("         {:?}", descriptor);
+        }
+        for stream in bat.get_streams().iter() {
+            println!("         {:?}", stream);
+        }
     }
-    println!("========");
-    for stream in bat.get_streams().iter() {
-        println!("         {:?}", stream);
-    }
-     */
 }
 
 fn build_cat(cat: &Vec<gst_mpegts::Descriptor>) {
-    /*
-    if cat.len() > 0 {
-        println!("======== Got a non-empty CAT section {:?}", &cat);
+    // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
+    if PRINT_CAT {
+        if cat.len() > 0 {
+            println!("========  Got a non-empty CAT section {:?}", &cat);
+        }
     }
-     */
 }
 
 fn build_eit(eit: &gst_mpegts::EIT) {
-    /*
-    println!("======== Got an EIT section");
-    for event in eit.get_events().iter() {
-        println!("    event_id = {:?}", event.get_event_id());
-        for d in event.get_descriptors().iter() {
-            println!("        {:?}: {:?}", d.get_tag(), d.get_data());
-            match d.get_tag() {
-                gst_mpegts::DVBDescriptorType::Component => {
-                    let component = d.parse_dvb_component().unwrap();
-                    println!("            Component  {:?}", &component);
-                },
-                gst_mpegts::DVBDescriptorType::Content => {
-                    let c = d.parse_dvb_content().unwrap();
-                    for item in c.iter() {
-                        println!("            {}", gst_mpegts::content_description(item.get_content_nibble_1().to_glib(), item.get_content_nibble_2()))
+    if PRINT_EIT {
+        println!("========  Got an EIT section");
+        for event in eit.get_events().iter() {
+            println!("    event_id = {:?}", event.get_event_id());
+            for d in event.get_descriptors().iter() {
+                println!("        {:?}: {:?}", d.get_tag(), d.get_data());
+                match d.get_tag() {
+                    gst_mpegts::DVBDescriptorType::Component => {
+                        let component = d.parse_dvb_component().unwrap();
+                        println!("            Component  {:?}", &component);
+                    },
+                    gst_mpegts::DVBDescriptorType::Content => {
+                        let c = d.parse_dvb_content().unwrap();
+                        for item in c.iter() {
+                            println!("            {}", gst_mpegts::content_description(item.get_content_nibble_1().to_glib(), item.get_content_nibble_2()))
+                        }
+                    },
+                    gst_mpegts::DVBDescriptorType::ContentIdentifier => {
+                        println!("            Unknown processing technique");
+                    },
+                    gst_mpegts::DVBDescriptorType::Linkage => {
+                        let linkage = d.parse_dvb_linkage().unwrap();
+                        println!("            Linkage  {:?}", &linkage);
                     }
-                },
-                gst_mpegts::DVBDescriptorType::ContentIdentifier => {
-                    println!("            Unknown processing technique");
-                },
-                gst_mpegts::DVBDescriptorType::Linkage => {
-                    let linkage = d.parse_dvb_linkage().unwrap();
-                    println!("            Linkage  {:?}", &linkage);
+                    gst_mpegts::DVBDescriptorType::ShortEvent => {
+                        // TODO It seems this can panic
+                        //   assertion failed: !ptr.is_null()', /home/users/russel/.cargo/git/checkouts/glib-928cf7b282977403/3a64675/src/gstring.rs:51:9
+                        //   on real data from Freeview.
+                        //
+                        // See https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/-/issues/1333
+                        match panic::catch_unwind(|| {
+                            let (language_code, title, blurb) = d.parse_dvb_short_event().unwrap();
+                            println!("            {}, {:?}, {:?}", &language_code, &title, &blurb);
+                        }) {
+                            Ok(_) => {},
+                            Err(_) => println!("************  parse_dvb_short_event paniced, assume there is a 0x1f encoding byte in the string."),
+                        }
+                    },
+                    gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
+                        println!("            PrivateDataSpecifier  {:?}", &d.parse_dvb_private_data_specifier());
+                    },
+                    gst_mpegts::DVBDescriptorType::FtaContentManagement => {
+                        println!("            FtaContentManagement  Unknown processing technique");
+                    },
+                    x => println!("************  Unprocessed tag: {:?}", x),
                 }
-                gst_mpegts::DVBDescriptorType::ShortEvent =>{
-                    // TODO It seems this can panic
-                    //   assertion failed: !ptr.is_null()', /home/users/russel/.cargo/git/checkouts/glib-928cf7b282977403/3a64675/src/gstring.rs:51:9
-                    //   on real data from Freeview.
-                    //
-                    // See https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad/-/issues/1333
-                    match panic::catch_unwind(|| {
-                        let (language_code, title, blurb) = d.parse_dvb_short_event().unwrap();
-                        println!("            {}, {:?}, {:?}", &language_code, &title, &blurb);
-                    }) {
-                        Ok(_) => {},
-                        Err(_) => println!("****************  parse_dvb_short_event paniced, assume there is a 0x1f encoding byte in the string."),
-                    }
-                },
-                gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
-                    println!("            PrivateDataSpecifier  {:?}", &d.parse_dvb_private_data_specifier());
-                },
-                gst_mpegts::DVBDescriptorType::FtaContentManagement => {
-                    println!("            FtaContentManagement  Unknown processing technique");
-                },
-                x => println!("Unprocessed tag: {:?}", x),
             }
         }
     }
-     */
 }
 
 fn build_nit(nit: &gst_mpegts::NIT) {
-    /*
-    println!("======== NIT section: actual_network = {}, network_id = {}", nit.get_actual_network(), nit.get_network_id());
-    for descriptor in nit.get_descriptors().iter() {
-        // EN 300 468 Table 12 states which descriptors are allowed.
-        match descriptor.get_tag() {
-            gst_mpegts::DVBDescriptorType::NetworkName => {
-                let name = descriptor.parse_dvb_network_name().unwrap();
-                println!("    NetworkName:  {}", &name);
-            },
-            gst_mpegts::DVBDescriptorType::Extension => {
-                match descriptor.get_tag_extension().unwrap() {
-                    gst_mpegts::DVBExtendedDescriptorType::TargetRegionName => {
-                        let target_region_name = descriptor.parse_target_region_name().unwrap();
-                        println!("    Extension:  TargetRegionName:   country_code = {}, iso_639_language_code = {}, region_data = {:?}",
-                                 &target_region_name.get_country_code(),
-                                 &target_region_name.get_iso_639_language_code(),
-                                 &target_region_name.get_region_data());
-                    },
-                    gst_mpegts::DVBExtendedDescriptorType::TargetRegion => {
-                        let target_region = &descriptor.parse_target_region().unwrap();
-                        println!("    Extension:  TargetRegion:  country_code = {}, additional_country_codes = {:?}",
-                                 &target_region.get_country_code(),
-                                 &target_region.get_additional_country_codes());
-                    },
-                    gst_mpegts::DVBExtendedDescriptorType::Message => {
-                        let message = descriptor.parse_message().unwrap();
-                        println!("    Extension:  Message:  message_id = {}, iso_639_language_code = {}, message = {}",
-                                 &message.get_message_id(),
-                                 &message.get_iso_639_language_code(),
-                                 &message.get_message());
-                    },
-                    gst_mpegts::DVBExtendedDescriptorType::UriLinkage => {
-                        let uri_linkage = descriptor.parse_uri_linkage().unwrap();
-                        println!("    Extension:  UriLinkage:  uri_linkage_type = {:?}, uri = {}, min_polling_interval = {}, private_data = {:?}",
-                                 &uri_linkage.get_uri_linkage_type(),
-                                 &uri_linkage.get_uri(),
-                                 &uri_linkage.get_min_polling_interval(),
-                                 &uri_linkage.get_private_data());
-                    },
-                    x => println!("********  Got an extended descriptor type {:?}", x),
-                }
-            },
-            gst_mpegts::DVBDescriptorType::Linkage => {
-                let linkage = descriptor.parse_dvb_linkage().unwrap();
-                println!("    Linkage:  transport_stream_id = {}, original_network_id = {}, service_id = {}, linkage_type = {:?}",
-                         linkage.get_transport_stream_id(),
-                         linkage.get_original_network_id(),
-                         linkage.get_service_id(),
-                         linkage.get_linkage_type());
-                // TODO get the event, extended event, mobile hand over
-                // TODO get private data.
-            },
-            gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
-                // It seems that this is the original_network_id being presented at the NIT section level.
-                let private_data = descriptor.parse_dvb_private_data_specifier().unwrap();
-                println!("    PrivateDataSpecifier: {}, {:?}", &private_data.0, &private_data.1);
-            },
-            x => println!("********  Got a not allowed descriptor type {:?}", x),
-        }
-        println!("        {:?}", descriptor.get_data());
-    }
-    for stream in nit.get_streams().iter() {
-        println!("    NITStream:  transport_stream_id = {}, original_network_id = {}", stream.get_transport_stream_id(), stream.get_original_network_id());
-        for descriptor in stream.get_descriptors().iter() {
+    if PRINT_NIT {
+        println!("======== NIT section: actual_network = {}, network_id = {}", nit.get_actual_network(), nit.get_network_id());
+        for descriptor in nit.get_descriptors().iter() {
+            // EN 300 468 Table 12 states which descriptors are allowed.
             match descriptor.get_tag() {
-                gst_mpegts::DVBDescriptorType::ServiceList => {
-                    let service_list = descriptor.parse_dvb_service_list().unwrap();
-                    println!("        ServiceList:");
-                    for service in service_list.iter() {
-                        println!("            service_id = {}, service_type = {:?}",
-                                 &service.get_service_id(),
-                                 &service.get_type())
-                    }
-                },
-                gst_mpegts::DVBDescriptorType::TerrestrialDeliverySystem => {
-                    let terrestrial_delivery_system = descriptor.parse_terrestrial_delivery_system().unwrap();
-                    println!("    TerrestrialDeliverySystem: \
-frequency = {}, bandwidth = {}, priority = {}, time_slicing = {}, mpe_fec = {}, constellation = {:?}, hierarchy = {:?}, \
-code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mode = {:?}, other_frequency = {}",
-                             &terrestrial_delivery_system.get_frequency(),
-                             &terrestrial_delivery_system.get_bandwidth(),
-                             &terrestrial_delivery_system.get_priority(),
-                             &terrestrial_delivery_system.get_time_slicing(),
-                             &terrestrial_delivery_system.get_mpe_fec(),
-                             &terrestrial_delivery_system.get_constellation(),
-                             &terrestrial_delivery_system.get_hierarchy(),
-                             &terrestrial_delivery_system.get_code_rate_hp(),
-                             &terrestrial_delivery_system.get_code_rate_lp(),
-                             &terrestrial_delivery_system.get_guard_interval(),
-                             &terrestrial_delivery_system.get_transmission_mode(),
-                             &terrestrial_delivery_system.get_other_frequency());
+                gst_mpegts::DVBDescriptorType::NetworkName => {
+                    let name = descriptor.parse_dvb_network_name().unwrap();
+                    println!("    NetworkName:  {}", &name);
                 },
                 gst_mpegts::DVBDescriptorType::Extension => {
                     match descriptor.get_tag_extension().unwrap() {
+                        gst_mpegts::DVBExtendedDescriptorType::TargetRegionName => {
+                            let target_region_name = descriptor.parse_target_region_name().unwrap();
+                            println!("    Extension:  TargetRegionName:   country_code = {}, iso_639_language_code = {}, region_data = {:?}",
+                                     &target_region_name.get_country_code(),
+                                     &target_region_name.get_iso_639_language_code(),
+                                     &target_region_name.get_region_data());
+                        },
                         gst_mpegts::DVBExtendedDescriptorType::TargetRegion => {
-                            let target_region = descriptor.parse_target_region().unwrap();
-                            println!("        Extension:  TargetRegion:  country_code = {}, additional_country_codes = {:?}",
+                            let target_region = &descriptor.parse_target_region().unwrap();
+                            println!("    Extension:  TargetRegion:  country_code = {}, additional_country_codes = {:?}",
                                      &target_region.get_country_code(),
                                      &target_region.get_additional_country_codes());
                         },
-                        gst_mpegts::DVBExtendedDescriptorType::T2DeliverySystem => {
-                            let t2_delivery_system = descriptor.parse_dvb_t2_delivery_system().unwrap();
-                            println!("        Extension:  T2DeliverySystem:  plp_id = {}, t2_system_id = {}, siso_miso = {}, bandwidth = {}, \
-                             guard_interval = {:?}, transmission_mode = {:?}, other_frequency = {}, tfs = {}, cells = {}",
-                                     &t2_delivery_system.get_plp_id(),
-                                     &t2_delivery_system.get_t2_system_id(),
-                                     &t2_delivery_system.get_siso_miso(),
-                                     &t2_delivery_system.get_bandwidth(),
-                                     &t2_delivery_system.get_guard_interval(),
-                                     &t2_delivery_system.get_transmission_mode(),
-                                     &t2_delivery_system.get_other_frequency(),
-                                     &t2_delivery_system.get_tfs(),
-                                     "", // &t2_delivery_system.get_cells(),
-                            );
+                        gst_mpegts::DVBExtendedDescriptorType::Message => {
+                            let message = descriptor.parse_message().unwrap();
+                            println!("    Extension:  Message:  message_id = {}, iso_639_language_code = {}, message = {}",
+                                     &message.get_message_id(),
+                                     &message.get_iso_639_language_code(),
+                                     &message.get_message());
                         },
-                        x => println!("********  Got an extended descriptor type {:?}", x),
+                        gst_mpegts::DVBExtendedDescriptorType::UriLinkage => {
+                            let uri_linkage = descriptor.parse_uri_linkage().unwrap();
+                            println!("    Extension:  UriLinkage:  uri_linkage_type = {:?}, uri = {}, min_polling_interval = {}, private_data = {:?}",
+                                     &uri_linkage.get_uri_linkage_type(),
+                                     &uri_linkage.get_uri(),
+                                     &uri_linkage.get_min_polling_interval(),
+                                     &uri_linkage.get_private_data());
+                        },
+                        x => println!("************  Got an extended descriptor type {:?}", x),
                     }
+                },
+                gst_mpegts::DVBDescriptorType::Linkage => {
+                    let linkage = descriptor.parse_dvb_linkage().unwrap();
+                    println!("    Linkage:  transport_stream_id = {}, original_network_id = {}, service_id = {}, linkage_type = {:?}",
+                             linkage.get_transport_stream_id(),
+                             linkage.get_original_network_id(),
+                             linkage.get_service_id(),
+                             linkage.get_linkage_type());
+                    // TODO get the event, extended event, mobile hand over
+                    // TODO get private data.
                 },
                 gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
                     // It seems that this is the original_network_id being presented at the NIT section level.
                     let private_data = descriptor.parse_dvb_private_data_specifier().unwrap();
-                    println!("    Private Data Specifier: {}, {:?}", &private_data.0, &private_data.1);
+                    println!("    PrivateDataSpecifier: {}, {:?}", &private_data.0, &private_data.1);
                 },
-                x => {
-                    // Get a lot of stream descriptor tag value 131 on Freeview. This is most
-                    // likely a gst_mpets::ScteStreamType::IsochData though there are also
-                    // gst_mpegts::MiscDescriptorType::DtgLogicalChannel and
-                    // gst_mpegts::ATSCDescriptorType::Ac3 as tags that have the value 131.
-                    if x == gst_mpegts::DVBDescriptorType::__Unknown(131) {
-                        // TODO Do something sensible here.
-                        println!("********  Got a stream with tag 131, not sure how to process it.");
-                    } else {
-                        println!("********  Got an unknown stream type {:?}", x)
-                    }
-                },
+                x => println!("************  Got a not allowed descriptor type {:?}", x),
             }
-            println!("            {:?}", &descriptor.get_data());
+            if PRINT_DATA {
+                println!("        {:?}", descriptor.get_data());
+            }
+        }
+        for stream in nit.get_streams().iter() {
+            println!("    NITStream:  transport_stream_id = {}, original_network_id = {}", stream.get_transport_stream_id(), stream.get_original_network_id());
+            for descriptor in stream.get_descriptors().iter() {
+                match descriptor.get_tag() {
+                    gst_mpegts::DVBDescriptorType::ServiceList => {
+                        let service_list = descriptor.parse_dvb_service_list().unwrap();
+                        println!("        ServiceList:");
+                        for service in service_list.iter() {
+                            println!("            service_id = {}, service_type = {:?}",
+                                     &service.get_service_id(),
+                                     &service.get_type())
+                        }
+                    },
+                    gst_mpegts::DVBDescriptorType::TerrestrialDeliverySystem => {
+                        let terrestrial_delivery_system = descriptor.parse_terrestrial_delivery_system().unwrap();
+                        println!("    TerrestrialDeliverySystem: \
+frequency = {}, bandwidth = {}, priority = {}, time_slicing = {}, mpe_fec = {}, constellation = {:?}, hierarchy = {:?}, \
+code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mode = {:?}, other_frequency = {}",
+                                 &terrestrial_delivery_system.get_frequency(),
+                                 &terrestrial_delivery_system.get_bandwidth(),
+                                 &terrestrial_delivery_system.get_priority(),
+                                 &terrestrial_delivery_system.get_time_slicing(),
+                                 &terrestrial_delivery_system.get_mpe_fec(),
+                                 &terrestrial_delivery_system.get_constellation(),
+                                 &terrestrial_delivery_system.get_hierarchy(),
+                                 &terrestrial_delivery_system.get_code_rate_hp(),
+                                 &terrestrial_delivery_system.get_code_rate_lp(),
+                                 &terrestrial_delivery_system.get_guard_interval(),
+                                 &terrestrial_delivery_system.get_transmission_mode(),
+                                 &terrestrial_delivery_system.get_other_frequency());
+                    },
+                    gst_mpegts::DVBDescriptorType::Extension => {
+                        match descriptor.get_tag_extension().unwrap() {
+                            gst_mpegts::DVBExtendedDescriptorType::TargetRegion => {
+                                let target_region = descriptor.parse_target_region().unwrap();
+                                println!("        Extension:  TargetRegion:  country_code = {}, additional_country_codes = {:?}",
+                                         &target_region.get_country_code(),
+                                         &target_region.get_additional_country_codes());
+                            },
+                            gst_mpegts::DVBExtendedDescriptorType::T2DeliverySystem => {
+                                let t2_delivery_system = descriptor.parse_dvb_t2_delivery_system().unwrap();
+                                println!("        Extension:  T2DeliverySystem:  plp_id = {}, t2_system_id = {}, siso_miso = {}, bandwidth = {}, \
+                             guard_interval = {:?}, transmission_mode = {:?}, other_frequency = {}, tfs = {}, cells = {}",
+                                         &t2_delivery_system.get_plp_id(),
+                                         &t2_delivery_system.get_t2_system_id(),
+                                         &t2_delivery_system.get_siso_miso(),
+                                         &t2_delivery_system.get_bandwidth(),
+                                         &t2_delivery_system.get_guard_interval(),
+                                         &t2_delivery_system.get_transmission_mode(),
+                                         &t2_delivery_system.get_other_frequency(),
+                                         &t2_delivery_system.get_tfs(),
+                                         "", // &t2_delivery_system.get_cells(),
+                                );
+                            },
+                            x => println!("************  Got an extended descriptor type {:?}", x),
+                        }
+                    },
+                    gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
+                        // It seems that this is the original_network_id being presented at the NIT section level.
+                        let private_data = descriptor.parse_dvb_private_data_specifier().unwrap();
+                        println!("    Private Data Specifier: {}, {:?}", &private_data.0, &private_data.1);
+                    },
+                    x => {
+                        // Get a lot of stream descriptor tag value 131 on Freeview. This is most
+                        // likely a gst_mpets::ScteStreamType::IsochData though there are also
+                        // gst_mpegts::MiscDescriptorType::DtgLogicalChannel and
+                        // gst_mpegts::ATSCDescriptorType::Ac3 as tags that have the value 131.
+                        if x == gst_mpegts::DVBDescriptorType::__Unknown(131) {
+                            // TODO Do something sensible here.
+                            println!("************  Got a stream with tag 131, not sure how to process it.");
+                        } else {
+                            println!("************  Got an unknown stream type {:?}", x)
+                        }
+                    },
+                }
+                if PRINT_DATA {
+                    println!("            {:?}", &descriptor.get_data());
+                }
+            }
         }
     }
-     */
 }
 
 fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
-    /*
-    for p in pat.iter() {
-        println!("======== {:?}", &p);
+    // Only seem to get a couple of these on BBC News on Freeview from Crystal Palace.
+    if PRINT_PAT {
+        println!("========  Got a PAT Section");
+        for p in pat.iter() {
+            println!("    PatProgram:  {}, {}", &p.get_program_number(), &p.get_network_or_program_map_pid());
+        }
     }
-     */
 }
 
 fn build_pmt(pmt: &gst_mpegts::PMT) {
-    //println!("======== Got a PMT section {:?}, {:?}, {:?}", &pmt.get_program_number(), &pmt.get_descriptors(), &pmt.get_streams());
+    if PRINT_PMT {
+        println!("========  Got a PMT section {:?}", &pmt.get_program_number());
+        for descriptor in pmt.get_descriptors().iter() {
+            match descriptor.get_tag() {
+                x => println!("************  Got an unhandled descriptor type {:?}", x)
+            }
+            if PRINT_DATA {
+                println!("            {:?}", descriptor.get_data());
+            }
+        }
+        for stream in pmt.get_streams().iter() {
+            println!("         PMTStream:  stream_type = {:?}, {}", stream.get_stream_type(), stream.get_pid());
+            for descriptor in stream.get_descriptors().iter() {
+                match descriptor.get_tag() {
+                    gst_mpegts::DVBDescriptorType::Extension => {
+                        match descriptor.get_tag_extension().unwrap() {
+                            gst_mpegts::DVBExtendedDescriptorType::SupplementaryAudio => {
+                                println!("            SupplementaryAudio: {:?}", descriptor);
+                            },
+                            x => println!("************  Got an unhandled extension descriptor type {:?}", x)
+                        }
+                    },
+                    gst_mpegts::DVBDescriptorType::StreamIdentifier => {
+                        let identifier = descriptor.parse_dvb_stream_identifier();
+                        println!("            StreamIdentifier:  {:?}", identifier);
+                    },
+                    gst_mpegts::DVBDescriptorType::Subtitling => {
+                        for item in descriptor.parse_dvb_subtitling_descriptor().unwrap().iter() {
+                            println!("            Subtitling:  iso_639_language_code = {}, subtitling_type = {}, composition_page_id = {}, ancilliary_page_id = {}",
+                                 &item.get_iso_639_language_code(),
+                                 &item.get_subtitling_type(),
+                                 &item.get_composition_page_id(),
+                                 &item.get_ancillary_page_id());
+                        }
+                    },
+                    x => println!("************  Got an unhandled descriptor type {:?}", x)
+                }
+                if PRINT_DATA {
+                    println!("                {:?}", descriptor.get_data());
+                }
+            }
+        }
+    }
 }
 
 fn build_sdt(sdt: &gst_mpegts::SDT) {
-    println!("======== Got a SDT section: original_network_id = {:?}, transport_stream_id ={:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id());
-    for service in sdt.get_services().iter() {
-        println!("    SDTService  service_id = {}, \
+    if PRINT_SDT {
+        println!("========  Got a SDT section: original_network_id = {:?}, transport_stream_id ={:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id());
+        for service in sdt.get_services().iter() {
+            println!("    SDTService:  service_id = {}, \
 eit_schedule_flag = {}, \
 eit_present_following = {}, \
 running_status = {:?}, \
 free_ca_mode = {}",
-                 service.get_service_id(),
-                 service.get_eit_schedule_flag(),
-                 service.get_eit_present_following_flag(),
-                 service.get_running_status(),
-                 service.get_free_ca_mode(),
-        );
-        for descriptor in service.get_descriptors().iter() {
-            match descriptor.get_tag() {
-                gst_mpegts::DVBDescriptorType::DefaultAuthority => {
-                    // It seems that the default authority is a name structures as a URI.
-                    let data = &descriptor.get_data()[2..];
-                    let (encoding, count) = gst_mpegts::select_encoding(data[0..3].to_vec());
-                    // TODO Better error handling required here.
-                    println!("        DefaultAuthority  {}", encoding.decode(&data[count..]).0.to_string());
-                },
-                // TODO Process Extension descriptors.
-                gst_mpegts::DVBDescriptorType::FtaContentManagement => {
-                    println!("        FtaContentManagement  {:?}", descriptor);
-                },
-                gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
-                    let private_data = descriptor.parse_dvb_private_data_specifier().unwrap();
-                    println!("        PrivateDataSpecifier: {}, {:?}", &private_data.0, &private_data.1);
-
-                },
-                gst_mpegts::DVBDescriptorType::Service => {
-                    let service = descriptor.parse_dvb_service();
-                    match service {
-                        Some((service_type, service_name, some_string_possibly_empty)) => {
-                            println!("        Service  {:?}, '{}', '{}'", service_type, service_name, some_string_possibly_empty);
-                        },
-                        None => {
-                            println!("************ Failed to parse as a service {:?}", descriptor);
-                        },
-                    }
-                },
-                x => println!("Got an unhandled descriptor of type {:?}", x)
+                     service.get_service_id(),
+                     service.get_eit_schedule_flag(),
+                     service.get_eit_present_following_flag(),
+                     service.get_running_status(),
+                     service.get_free_ca_mode(),
+            );
+            for descriptor in service.get_descriptors().iter() {
+                match descriptor.get_tag() {
+                    gst_mpegts::DVBDescriptorType::DefaultAuthority => {
+                        let authority = descriptor.parse_dvb_default_authority_descriptor();
+                        println!("        DefaultAuthority:  {:?}", authority);
+                    },
+                    // TODO Process Extension descriptors.
+                    gst_mpegts::DVBDescriptorType::Extension => {
+                        match descriptor.get_tag_extension().unwrap() {
+                            gst_mpegts::DVBExtendedDescriptorType::ServiceRelocated => {
+                                let (old_original_network_id, old_transport_stream_id, old_service_id) =
+                                    descriptor.parse_dvb_service_relocated_extended_descriptor().unwrap();
+                                println!("        Extension:  ServiceRelocated:  old_original_network_id = {}, old_transport_stream_id = {}, old_service_id = {}",
+                                         old_original_network_id,
+                                         old_transport_stream_id,
+                                         old_service_id);
+                            },
+                            x => println!("************  Got an extended descriptor type {:?}", x),
+                        }
+                    },
+                    gst_mpegts::DVBDescriptorType::FtaContentManagement => {
+                        match descriptor.parse_fta_content_management_descriptor() {
+                            Some(d) =>
+                                println!("        FtaContentManagement:  user_defined = {}, do_not_scramble {}, control_remote_access_over_internet {:?}, do_not_apply_revocation = {}",
+                                         d.get_user_defined(),
+                                         d.get_do_not_scramble(),
+                                         d.get_control_remote_access_over_internet(),
+                                         d.get_do_not_apply_revocation(),
+                                ),
+                            None => println!("        FtaContentManagement:  None"),
+                        };
+                    },
+                    gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
+                        let private_data = descriptor.parse_dvb_private_data_specifier().unwrap();
+                        println!("        PrivateDataSpecifier: {}, {:?}", &private_data.0, &private_data.1);
+                    },
+                    gst_mpegts::DVBDescriptorType::Service => {
+                        let service = descriptor.parse_dvb_service();
+                        match service {
+                            Some((service_type, service_name, some_string_possibly_empty)) => {
+                                println!("        Service:  {:?}, '{}', '{}'", service_type, service_name, some_string_possibly_empty);
+                            },
+                            None => {
+                                println!("************  Failed to parse as a service {:?}", descriptor);
+                            },
+                        }
+                    },
+                    x => println!("************  Got an unhandled descriptor of type {:?}", x)
+                }
+                if PRINT_DATA {
+                    println!("            {:?}", descriptor.get_data());
+                }
             }
-            println!("            {:?}", descriptor.get_data());
         }
     }
 }
 
 fn build_tdt(tdt: &gst_mpegts::Section) {
-    //println!("======== Got a TDT section {:?}", &tdt);
+    if PRINT_TDT {
+        println!("======== Got a TDT section {:?}", &tdt);
+    }
 }
 
 fn build_tsdt(tsdt: &Vec<gst_mpegts::Descriptor>) {
-    //println!("======== Got a TSDT section {:?}", &tsdt);
+    if PRINT_TSDT {
+        println!("======== Got a TSDT section {:?}", &tsdt);
+    }
 }
 
 fn build_tot(tot: &gst_mpegts::TOT) {
-    //println!("======== Got a TOT section {:?}, {:?}", &tot.get_utc_time(), &tot.get_descriptors());
+    if PRINT_TOT {
+        println!("======== Got a TOT section {:?}, {:?}", &tot.get_utc_time(), &tot.get_descriptors());
+    }
 }
 
 /// The main dæmon for EPG management.
