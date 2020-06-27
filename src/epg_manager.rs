@@ -34,7 +34,7 @@ static PRINT_CAT:bool = false;
 static PRINT_EIT:bool = false;
 static PRINT_NIT:bool = false;
 static PRINT_PAT:bool = false;
-static PRINT_PMT:bool = true;
+static PRINT_PMT:bool = false;
 static PRINT_SDT:bool = false;
 static PRINT_TDT:bool = false;
 static PRINT_TSDT:bool = false;
@@ -45,7 +45,7 @@ static PRINT_DATA: bool = true;
 fn build_bat(bat: &gst_mpegts::BAT) {
     // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
     if PRINT_BAT {
-        println!("========  Got a BAT section.");
+        println!("========  BAT section.");
         for descriptor in bat.get_descriptors().iter() {
             println!("         {:?}", descriptor);
         }
@@ -58,15 +58,13 @@ fn build_bat(bat: &gst_mpegts::BAT) {
 fn build_cat(cat: &Vec<gst_mpegts::Descriptor>) {
     // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
     if PRINT_CAT {
-        if cat.len() > 0 {
-            println!("========  Got a non-empty CAT section {:?}", &cat);
-        }
+        println!("========   CAT section:  {:?}", &cat);
     }
 }
 
 fn build_eit(eit: &gst_mpegts::EIT) {
     if PRINT_EIT {
-        println!("========  Got an EIT section");
+        println!("========  EIT section.");
         for event in eit.get_events().iter() {
             println!("    event_id = {:?}", event.get_event_id());
             for d in event.get_descriptors().iter() {
@@ -118,7 +116,7 @@ fn build_eit(eit: &gst_mpegts::EIT) {
 
 fn build_nit(nit: &gst_mpegts::NIT) {
     if PRINT_NIT {
-        println!("======== NIT section: actual_network = {}, network_id = {}", nit.get_actual_network(), nit.get_network_id());
+        println!("========  NIT section: actual_network = {}, network_id = {}", nit.get_actual_network(), nit.get_network_id());
         for descriptor in nit.get_descriptors().iter() {
             // EN 300 468 Table 12 states which descriptors are allowed.
             match descriptor.get_tag() {
@@ -266,7 +264,7 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
 fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
     // Only seem to get a couple of these on BBC News on Freeview from Crystal Palace.
     if PRINT_PAT {
-        println!("========  Got a PAT Section");
+        println!("========   PAT Section.");
         for p in pat.iter() {
             println!("    PatProgram:  {}, {}", &p.get_program_number(), &p.get_network_or_program_map_pid());
         }
@@ -275,7 +273,7 @@ fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
 
 fn build_pmt(pmt: &gst_mpegts::PMT) {
     if PRINT_PMT {
-        println!("========  Got a PMT section {:?}", &pmt.get_program_number());
+        println!("========   PMT section {:?}", &pmt.get_program_number());
         for descriptor in pmt.get_descriptors().iter() {
             match descriptor.get_tag() {
                 x => println!("************  Got an unhandled descriptor type {:?}", x)
@@ -301,7 +299,8 @@ fn build_pmt(pmt: &gst_mpegts::PMT) {
                         println!("            StreamIdentifier:  {:?}", identifier);
                     },
                     gst_mpegts::DVBDescriptorType::Subtitling => {
-                        for item in descriptor.parse_dvb_subtitling_descriptor().unwrap().iter() {
+                        let subtitling_descriptor = descriptor.parse_dvb_subtitling_descriptor().unwrap();
+                        for item in subtitling_descriptor.get_items().iter() {
                             println!("            Subtitling:  iso_639_language_code = {}, subtitling_type = {}, composition_page_id = {}, ancilliary_page_id = {}",
                                  &item.get_iso_639_language_code(),
                                  &item.get_subtitling_type(),
@@ -321,7 +320,7 @@ fn build_pmt(pmt: &gst_mpegts::PMT) {
 
 fn build_sdt(sdt: &gst_mpegts::SDT) {
     if PRINT_SDT {
-        println!("========  Got a SDT section: original_network_id = {:?}, transport_stream_id ={:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id());
+        println!("========   SDT section:  original_network_id = {:?}, transport_stream_id ={:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id());
         for service in sdt.get_services().iter() {
             println!("    SDTService:  service_id = {}, \
 eit_schedule_flag = {}, \
@@ -391,21 +390,49 @@ free_ca_mode = {}",
     }
 }
 
-fn build_tdt(tdt: &gst_mpegts::Section) {
+fn build_tdt(tdt: &gst::DateTime) {
     if PRINT_TDT {
-        println!("======== Got a TDT section {:?}", &tdt);
+        println!("========  TDT section:  utc_time = {}", &tdt);
     }
 }
 
 fn build_tsdt(tsdt: &Vec<gst_mpegts::Descriptor>) {
     if PRINT_TSDT {
-        println!("======== Got a TSDT section {:?}", &tsdt);
+        println!("========  TSDT section:  {:?}", &tsdt);
     }
 }
 
 fn build_tot(tot: &gst_mpegts::TOT) {
     if PRINT_TOT {
-        println!("======== Got a TOT section {:?}, {:?}", &tot.get_utc_time(), &tot.get_descriptors());
+        println!("========  TOT section:  utc_time = {}", &tot.get_utc_time());
+        for descriptor in tot.get_descriptors().iter() {
+            match descriptor.get_tag() {
+                gst_mpegts::DVBDescriptorType::LocalTimeOffset => {
+                    let local_time_offset = descriptor.parse_local_time_offset_descriptor().unwrap();
+                    println!("    LocalTimeOffset:");
+                    for item in local_time_offset.get_items().iter() {
+                        println!("        LocalTimeOffsetItem:  \
+                        country_code = {}, \
+                        country_region_id = {}, \
+                        local_time_offset_polarity = {}, \
+                        local_time_offset = {}, \
+                        time_of_change = {}, \
+                        next_time_offset = {}",
+                                 &item.get_country_code(),
+                                 &item.get_country_region_id(),
+                                 &item.get_local_time_offset_polarity(),
+                                 &item.get_local_time_offset(),
+                                 &item.get_time_of_change(),
+                                 &item.get_next_time_offset(),
+                        );
+                    }
+                },
+                x => println!("************  Got an unhandled descriptor of type {:?}", x)
+            }
+            if PRINT_DATA {
+                println!("        {:?}", &descriptor.get_data());
+            }
+        }
     }
 }
 
@@ -470,7 +497,11 @@ pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Re
                         }
                     },
                     gst_mpegts::SectionType::Tdt => {
-                        build_tdt(&section);
+                        if let Some(tdt) = section.get_tdt() {
+                            build_tdt(&tdt);
+                        }else {
+                            println!("******** Got a TDT that wasn't a TDT {:?}", &section);
+                        }
                     },
                     gst_mpegts::SectionType::Tsdt => {
                         build_tsdt(&section.get_tsdt());
