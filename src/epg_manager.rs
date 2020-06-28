@@ -37,8 +37,8 @@ static PRINT_PAT:bool = false;
 static PRINT_PMT:bool = false;
 static PRINT_SDT:bool = false;
 static PRINT_TDT:bool = false;
-static PRINT_TSDT:bool = false;
-static PRINT_TOT:bool = false;
+static PRINT_TSDT:bool = true;
+static PRINT_TOT:bool = true;
 
 static PRINT_DATA: bool = true;
 
@@ -397,6 +397,7 @@ fn build_tdt(tdt: &gst::DateTime) {
 }
 
 fn build_tsdt(tsdt: &Vec<gst_mpegts::Descriptor>) {
+    // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
     if PRINT_TSDT {
         println!("========  TSDT section:  {:?}", &tsdt);
     }
