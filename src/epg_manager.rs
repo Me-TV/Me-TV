@@ -333,10 +333,17 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
                     if x == gst_mpegts::DVBDescriptorType::__Unknown(131) {
                         let tag: gst_mpegts::MiscDescriptorType = from_glib(x.to_glib());
                         assert_eq!(tag, gst_mpegts::MiscDescriptorType::DtgLogicalChannel);
-                        let dtg_logical_channel_descriptor = descriptor.parse_logical_channel();
-                        //if PRINT_NIT {
-                            println!("    LogicalChannelDescriptor:  {:?}", &dtg_logical_channel_descriptor);
-                        //}
+                        let dtg_logical_channel_descriptor = descriptor.parse_logical_channel().unwrap();
+                        if PRINT_NIT {
+                            println!("    LogicalChannelDescriptor:");
+                            for item in dtg_logical_channel_descriptor.get_channels().iter() {
+                                println!("        LogicalChannel:  service_id = {}, visible_service = {}, logical_channel_number = {}",
+                                    &item.get_service_id(),
+                                    &item.get_visible_service(),
+                                    &item.get_logical_channel_number(),
+                                );
+                            }
+                        }
                     } else {
                         println!("************  Got an unknown stream type {:?}", x)
                     }
