@@ -51,10 +51,12 @@ pub struct ChannelData {
 
 lazy_static! {
     static ref CHANNELS_DATA: RwLock<Option<Vec<ChannelData>>> =
-        RwLock::new(match ini::Ini::load_from_file(channels_file_path()) {
-            Ok(ini) => Some(process_ini(&ini)),
-            Err(_) => None,
-        });
+        RwLock::new(
+            match ini::Ini::load_from_file(channels_file_path()) {
+                Ok(ini) => Some(process_ini(&ini)),
+                Err(_) => None,
+            }
+        );
 }
 
 /// Process an `Ini` to give the `Vec<ChannelData>`
