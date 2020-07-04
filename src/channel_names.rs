@@ -19,11 +19,15 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+use std::cell::Cell;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::path::PathBuf;
+use std::sync::RwLock;
 
+use ini;
+use lazy_static::lazy_static;
 use percent_encoding;
 use xdg;
 
@@ -32,16 +36,76 @@ const FRAGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS.add(b'
 /// https://url.spec.whatwg.org/#path-percent-encode-set
 const PATH: &percent_encoding::AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
 
-/// An internal function that can be tested.
-fn get_names_from_file(file: &File) -> Vec<String> {
-    let buf_reader = BufReader::new(file);
-    buf_reader
-        .lines()
-        .filter(|i|{ i.is_ok() })
-        .map(|i|{ String::from(i.unwrap().trim()) })
-        .filter(|i|{ i.starts_with('[') && i.ends_with(']') })
-        .map(|i|{ String::from(&i[1..(i.len() - 1)]) })
-        .collect()
+/// Struct for the data of each channel.
+///
+/// It is assumed that these are the data pointed to by various indexes so as to
+/// create lookups between for example logical_channel_number and name.
+///
+/// Fields of the struct that can be filled in from the initial read of the channel data file
+/// are immutable. Other fields must be filled in by analysing the SI table data so are mutable.
+pub struct ChannelData {
+    name: String,
+    service_id: u16,
+    logical_channel_number: u16, // Channel 0 is not used so 0 can be used as "not yet known".
+}
+
+lazy_static! {
+    static ref CHANNELS_DATA: RwLock<Option<Vec<ChannelData>>> =
+        RwLock::new(match ini::Ini::load_from_file(channels_file_path()) {
+            Ok(ini) => Some(process_ini(&ini)),
+            Err(_) => None,
+        });
+}
+
+/// Process an `Ini` to give the `Vec<ChannelData>`
+fn process_ini(ini: &ini::Ini) -> Vec<ChannelData> {
+    let mut rv = vec![];
+    for section in ini.sections() {
+        match section {
+            Some(name) => {
+                match ini.section(Some(name)) {
+                    Some(properties) => {
+                        rv.push(ChannelData{
+                            name: name.to_string(),
+                            service_id: properties.get("SERVICE_ID").unwrap().parse::<u16>().unwrap(),
+                            logical_channel_number: 0,
+                        })
+                    },
+                    None => {},
+                }
+            },
+            None => {},
+        }
+    }
+    rv
+}
+
+/// Read channels data from the channels file.
+pub fn read_channels_file(path: &PathBuf) -> bool {
+    match ini::Ini::load_from_file(path) {
+        Ok(ini) => {
+            let data = process_ini(&ini);
+            let mut channels_data = CHANNELS_DATA.write().unwrap();
+            *channels_data = Some(data);
+            true
+        },
+        Err(_) => {
+            let mut channels_data = CHANNELS_DATA.write().unwrap();
+            *channels_data = None;
+            false
+        },
+    }
+}
+
+/// Extract the names of the channels from the channels file.
+///
+/// GStreamer uses the XDG directory structure with, currently, gstreamer-1.0 as its
+/// name. The dvbsrc plugin assumes the name dvb-channels.conf. The DVBv5 file format
+/// is INI style: a sequence of blocks, one for each channel, starting with a channel
+/// name surrounded by brackets and then a sequence of binding of keys to values each
+/// one indented.
+fn get_names_from_channels_data(channels_data: &Vec<ChannelData>) -> Vec<String> {
+    channels_data.iter().map(|x| x.name.clone() ).collect()
 }
 
 /// Return a `PathBuf` to the GStreamer dvbsrc plugin channels file using the XDG directory structure.
@@ -52,17 +116,18 @@ pub fn channels_file_path() -> PathBuf {
     path_buf
 }
 
-/// Read the file that the GStreamer dvbsrc plugin uses and extract a list of the channels.
+/// Returns the names of the channels.
 ///
 /// GStreamer uses the XDG directory structure with, currently, gstreamer-1.0 as its
 /// name. The dvbsrc plugin assumes the name dvb-channels.conf. The DVBv5 file format
-/// is INI/TOML style: a sequence of blocks, one for each channel, starting with a channel
+/// is INI style: a sequence of blocks, one for each channel, starting with a channel
 /// name surrounded by brackets and then a sequence of binding of keys to values each
 /// one indented.
-pub fn get_names() -> Option<Vec<String>> {
-    match File::open(channels_file_path()) {
-        Ok(file) => Some(get_names_from_file(&file)),
-        Err(_) => None,
+pub fn get_channel_names() -> Option<Vec<String>> {
+    let channels_data = CHANNELS_DATA.read().unwrap();
+    match &*channels_data {
+        Some(c_d) => Some(get_names_from_channels_data(c_d)),
+        None => None,
     }
 }
 
@@ -73,44 +138,16 @@ pub fn encode_to_mrl(channel_name: &String) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Write, Seek, SeekFrom};
 
-    use tempfile;
+    use ini;
 
-    use super::{get_names_from_file,encode_to_mrl};
+    use super::{channels_file_path, encode_to_mrl, process_ini, get_names_from_channels_data, read_channels_file, ChannelData, CHANNELS_DATA};
 
     #[test]
-    fn empty_file() {
-        let tmpfile = tempfile::tempfile().unwrap();
-        let empty_vector: Vec<String> = vec![];
-        assert_eq!(get_names_from_file(&tmpfile), empty_vector);
-    }
-
-    fn some_channel_blocks() {
-        let mut tmpfile = tempfile::tempfile().unwrap();
-        let result = vec!["one two", "three four", "five six", "seven eight "];
-        for item in result.iter() {
-            tmpfile.write_all(format!("\n[{}]\n", item).as_bytes()).unwrap();
-            tmpfile.write_all("\
-	SERVICE_ID = 4164
-	VIDEO_PID = 101
-	AUDIO_PID = 102 106
-	PID_0b = 7219 7201
-	PID_06 = 152 105
-	PID_05 = 7105 7103
-	FREQUENCY = 490000000
-	MODULATION = QAM/64
-	BANDWIDTH_HZ = 8000000
-	INVERSION = AUTO
-	CODE_RATE_HP = 2/3
-	CODE_RATE_LP = AUTO
-	GUARD_INTERVAL = 1/32
-	TRANSMISSION_MODE = 8K
-	HIERARCHY = NONE
-	DELIVERY_SYSTEM = DVBT".as_bytes()).unwrap();
-        }
-        tmpfile.seek(SeekFrom::Start(0)).unwrap();
-        assert_eq!(get_names_from_file(&tmpfile), result);
+    fn get_names_from_empty_file() {
+        let empty_input: Vec<ChannelData> = vec![];
+        let empty_output: Vec<String> = vec![];
+        assert_eq!(get_names_from_channels_data(&empty_input), empty_output);
     }
 
     #[test]
@@ -129,8 +166,78 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_to_mrl_with_hash() {
+    fn encode_to_mrl_with_hash() {
         assert_eq!(encode_to_mrl(&"Channel #1".to_owned()), "dvb://Channel%20%231");
+    }
+
+    #[test]
+    fn process_ini_with_two_entries() {
+        let data = "
+[BBC ONE Lon]
+        SERVICE_ID = 4164
+        NETWORK_ID = 9018
+        TRANSPORT_ID = 4164
+        VIDEO_PID = 101
+        AUDIO_PID = 102 106
+        PID_0b = 7219 7201
+        PID_06 = 152 105
+        PID_05 = 7105 7103
+        FREQUENCY = 490000000
+        MODULATION = QAM/64
+        BANDWIDTH_HZ = 8000000
+        INVERSION = AUTO
+        CODE_RATE_HP = 2/3
+        CODE_RATE_LP = AUTO
+        GUARD_INTERVAL = 1/32
+        TRANSMISSION_MODE = 8K
+        HIERARCHY = NONE
+        DELIVERY_SYSTEM = DVBT
+
+[BBC TWO]
+        SERVICE_ID = 4287
+        NETWORK_ID = 9018
+        TRANSPORT_ID = 4164
+        VIDEO_PID = 201
+        AUDIO_PID = 202 206
+        PID_0b = 7219 7201
+        PID_06 = 205
+        PID_05 = 7105 7103
+        FREQUENCY = 490000000
+        MODULATION = QAM/64
+        BANDWIDTH_HZ = 8000000
+        INVERSION = AUTO
+        CODE_RATE_HP = 2/3
+        CODE_RATE_LP = AUTO
+        GUARD_INTERVAL = 1/32
+        TRANSMISSION_MODE = 8K
+        HIERARCHY = NONE
+        DELIVERY_SYSTEM = DVBT
+";
+        let ini = ini::Ini::load_from_str(data).unwrap();
+        let result = process_ini(&ini);
+        assert_eq!(result.len(), 2);
+        let bbc_1 = &result[0];
+        assert_eq!(bbc_1.name,  "BBC ONE Lon");
+        assert_eq!(bbc_1.service_id,  4164);
+        assert_eq!(bbc_1.logical_channel_number,  0);
+        let bbc_2 = &result[1];
+        assert_eq!(bbc_2.name,  "BBC TWO");
+        assert_eq!(bbc_2.service_id,  4287);
+        assert_eq!(bbc_2.logical_channel_number,  0);
+    }
+
+    #[test]
+    fn process_channels_data_file() {
+        let read_file = read_channels_file(&channels_file_path());
+        let channels_data = CHANNELS_DATA.read().unwrap();
+        match &*channels_data {
+            Some(c_d) => if read_file {
+                assert_ne!(c_d.len(), 0);
+            } else {
+                assert_eq!(c_d.len(), 0);
+            },
+            None => {},
+        };
     }
 
 }

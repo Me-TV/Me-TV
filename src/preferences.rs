@@ -44,6 +44,7 @@ struct Preferences {
     gl_deinterlace_method: String,
 }
 
+// TODO Replace the Mutex with a RwLock.
 lazy_static! {
     static ref PREFERENCES: Mutex<RefCell<Preferences>> = Mutex::new(RefCell::new(Preferences{
         delivery_system: dvb::DeliverySystem::DVBT,

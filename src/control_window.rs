@@ -37,7 +37,7 @@ use tempfile;
 use gst_mpegts;
 
 use crate::about;
-use crate::channel_names::{channels_file_path, get_names};
+use crate::channel_names::{get_channel_names, channels_file_path, read_channels_file};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
 use crate::frontend_manager::FrontendId;
@@ -167,7 +167,7 @@ impl ControlWindow {
     /// Transfer the list of channel names held by the control window into the selector box and set the default.
     pub fn update_channels_store(&self) {
         self.channel_names_store.clear();
-        match get_names() {
+        match get_channel_names() {
             Some(mut channel_names) => {
                 channel_names.sort();
                 for name in channel_names {
@@ -249,6 +249,9 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                                 let mut buffer = String::new();
                                 temporary_file.read_to_string(&mut buffer).expect("Could not read temporary channels file.");
                                 destination.write(&buffer.as_bytes()).expect("Could not write channels file.");
+                                if !read_channels_file(&channels_file_path()) {
+                                    panic!("Could not read the file that was just written.");
+                                }
                                 sender.send(true).expect("Could not send result for some reason.")
                             },
                             Err(error) => sender.send(false).expect(&format!("Could not send result of error:{}", error)),

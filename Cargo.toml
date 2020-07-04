@@ -40,6 +40,7 @@ nix = "*"
 notify = "*"
 percent-encoding = "*"
 regex= "*"
+rust-ini= "*"
 serde = "*" # Not use-d explicitly but must be listed explicitly.
 serde_derive = "*"
 serde_yaml = "*"
