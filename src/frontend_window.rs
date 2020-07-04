@@ -29,7 +29,7 @@ use gdk::prelude::*;
 use gtk;
 use gtk::prelude::*;
 
-use crate::channel_names::encode_to_mrl;
+use crate::channels_data::encode_to_mrl;
 use crate::control_window_button::ControlWindowButton;
 use crate::gstreamer_engine::GStreamerEngine;
 use crate::metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};

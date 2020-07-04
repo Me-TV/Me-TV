@@ -37,7 +37,7 @@ use tempfile;
 use gst_mpegts;
 
 use crate::about;
-use crate::channel_names::{get_channel_names, channels_file_path, read_channels_file};
+use crate::channels_data::{get_channel_names, channels_file_path, read_channels_file};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
 use crate::frontend_manager::FrontendId;

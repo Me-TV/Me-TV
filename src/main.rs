@@ -37,7 +37,7 @@ use gst;
 use gst_mpegts;
 
 mod about;
-mod channel_names;
+mod channels_data;
 mod control_window;
 mod control_window_button;
 mod dialogs;
