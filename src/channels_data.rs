@@ -43,6 +43,7 @@ const PATH: &percent_encoding::AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{'
 ///
 /// Fields of the struct that can be filled in from the initial read of the channel data file
 /// are immutable. Other fields must be filled in by analysing the SI table data so are mutable.
+#[derive(Clone, Eq, PartialEq)]
 pub struct ChannelData {
     name: String,
     service_id: u16,
@@ -138,12 +139,70 @@ pub fn encode_to_mrl(channel_name: &String) -> String {
     "dvb://".to_owned() + &percent_encoding::utf8_percent_encode(channel_name, PATH).to_string()
 }
 
+/// Update the channels file data.
+///
+/// Return `true` if a change was made to the channels data, `false` otherwise.
+pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channel_number: u16) -> bool {
+    // TODO This does a full copy of the data structure, should a more efficient way
+    //   of doing the update be found?
+    let mut channels_data = CHANNELS_DATA.write().unwrap();
+    match &*channels_data {
+        Some(c_d) => {
+            let mut rv = false;
+            *channels_data = Some(c_d.iter().map(
+                |x| {
+                    if x.service_id == service_id {
+                        rv = true;
+                        //println!("****  Found the channel with service_id {}, named {}.", x.service_id, x.name.clone());
+                        ChannelData{
+                            name: x.name.clone(),
+                            service_id: x.service_id,
+                            logical_channel_number,
+                        }
+                    } else { x.clone() }
+                }
+            ).collect());
+            rv
+        },
+        None => {
+            //println!("**** Channels data is None.");
+            false
+        },
+    }
+}
+
+/// Return the channel name for a given channel number.
+///
+/// Return is actually an `Option`, `None` is returned if the logical_channel_number was
+/// not found in the channel data.
+pub fn get_channel_name_of_logical_channel_number(logical_channel_number: u16) -> Option<String> {
+    let channel_data = CHANNELS_DATA.read().unwrap();
+    match &*channel_data {
+        Some(c_d) => {
+            // TODO Can we do better than linnear search, or does it not matter?
+            let result: Vec<&ChannelData> = c_d.iter().filter(|x| x.logical_channel_number == logical_channel_number).collect();
+            match result.len() {
+                0 => None,
+                1 => Some(result[0].name.clone()),
+                _ => panic!("Got more than one channel with the same logical number."),
+            }
+        },
+        None => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
     use ini;
 
-    use super::{channels_file_path, encode_to_mrl, process_ini, get_names_from_channels_data, read_channels_file, ChannelData, CHANNELS_DATA};
+    use super::{
+        add_logical_channel_number_for_service_id,
+        channels_file_path, encode_to_mrl, process_ini,
+        get_names_from_channels_data, read_channels_file,
+        ChannelData, CHANNELS_DATA
+    };
+    use crate::channels_data::get_channel_name_of_logical_channel_number;
 
     #[test]
     fn get_names_from_empty_file() {
@@ -172,9 +231,8 @@ mod tests {
         assert_eq!(encode_to_mrl(&"Channel #1".to_owned()), "dvb://Channel%20%231");
     }
 
-    #[test]
-    fn process_ini_with_two_entries() {
-        let data = "
+    fn create_small_data_set() -> Vec<ChannelData> {
+               let data = "
 [BBC ONE Lon]
         SERVICE_ID = 4164
         NETWORK_ID = 9018
@@ -216,7 +274,12 @@ mod tests {
         DELIVERY_SYSTEM = DVBT
 ";
         let ini = ini::Ini::load_from_str(data).unwrap();
-        let result = process_ini(&ini);
+        process_ini(&ini)
+    }
+
+    #[test]
+    fn process_ini_with_two_entries() {
+        let result = create_small_data_set();
         assert_eq!(result.len(), 2);
         let bbc_1 = &result[0];
         assert_eq!(bbc_1.name,  "BBC ONE Lon");
@@ -240,6 +303,47 @@ mod tests {
             },
             None => {},
         };
+    }
+
+    #[test]
+    fn update_channels_data() {
+        let data = create_small_data_set();
+        {
+            let mut channels_data = CHANNELS_DATA.write().unwrap();
+            *channels_data = Some(data);
+        }
+        {
+            let channel_data = CHANNELS_DATA.read().unwrap();
+            let data: &Vec<ChannelData> = (*channel_data).as_ref().unwrap();
+            let bbc_1 = &data[0];
+            assert_eq!(bbc_1.name, "BBC ONE Lon");
+            assert_eq!(bbc_1.service_id, 4164);
+            assert_eq!(bbc_1.logical_channel_number, 0);
+            let bbc_2 = &data[1];
+            assert_eq!(bbc_2.name, "BBC TWO");
+            assert_eq!(bbc_2.service_id, 4287);
+            assert_eq!(bbc_2.logical_channel_number, 0);
+        }
+        let rc = add_logical_channel_number_for_service_id(4164, 1);
+        assert!(rc);
+        let rc = add_logical_channel_number_for_service_id(4287, 2);
+        assert!(rc);
+        let rc = add_logical_channel_number_for_service_id(3000, 76);
+        assert!(!rc);
+        let channel_data = CHANNELS_DATA.read().unwrap();
+        let data: &Vec<ChannelData> = (*channel_data).as_ref().unwrap();
+        let bbc_1 = &data[0];
+        assert_eq!(bbc_1.name, "BBC ONE Lon");
+        assert_eq!(bbc_1.service_id, 4164);
+        assert_eq!(bbc_1.logical_channel_number, 1);
+        let bbc_2 = &data[1];
+        assert_eq!(bbc_2.name, "BBC TWO");
+        assert_eq!(bbc_2.service_id, 4287);
+        assert_eq!(bbc_2.logical_channel_number, 2);
+
+        assert_eq!(get_channel_name_of_logical_channel_number(1).unwrap(), "BBC ONE Lon");
+        assert_eq!(get_channel_name_of_logical_channel_number(2).unwrap(), "BBC TWO");
+        assert_eq!(get_channel_name_of_logical_channel_number(10), None);
     }
 
 }

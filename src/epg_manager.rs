@@ -28,6 +28,7 @@ use gst;
 use gst_mpegts;
 
 use crate::control_window::Message;
+use crate::channels_data::add_logical_channel_number_for_service_id;
 
 static PRINT_BAT:bool = false;
 static PRINT_CAT:bool = false;
@@ -336,7 +337,12 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
                         let dtg_logical_channel_descriptor = descriptor.parse_logical_channel().unwrap();
                         if PRINT_NIT {
                             println!("    LogicalChannelDescriptor:");
-                            for item in dtg_logical_channel_descriptor.get_channels().iter() {
+                        }
+                        for item in dtg_logical_channel_descriptor.get_channels().iter() {
+                            if ! add_logical_channel_number_for_service_id(item.get_service_id(), item.get_logical_channel_number()) {
+                                println!("Failed to add logical_channel_number {} to service_id {}.", &item.get_logical_channel_number(), &item.get_service_id());
+                            }
+                            if PRINT_NIT {
                                 println!("        LogicalChannel:  service_id = {}, visible_service = {}, logical_channel_number = {}",
                                     &item.get_service_id(),
                                     &item.get_visible_service(),
