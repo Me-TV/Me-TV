@@ -2,9 +2,14 @@
 
 ## [Unreleased]
 ### Added
- - Add processing of MPEG-TS messages on GStreamer bus to create EPG. [WiP]
+ - Add processing of MPEG-TS messages to get logical channel numbers that allow
+   channels numbers to be used as well as channel names. Remote control channel
+   change by number added.
 ### Changed
  - Require GStreamer 1.16 so as to use MPEG-TS library.
+
+## [3.0.10] - 2020-06-31
+### Changed
  - Use Rust 2018 Edition and amend the way Cargo is used for crate names.
  - Amend the installation paths to correct places.
  - Switch from old style applications menu to new style applications menu.
