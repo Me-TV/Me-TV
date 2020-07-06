@@ -195,7 +195,7 @@ A channel name and a duration must be provided.
                 Some(pipeline) => pipeline,
                 None => panic!("no access to the pipeline"),
             };
-            pipeline.send_event(gst::Event::new_eos().build());
+            pipeline.send_event(gst::event::Eos::new());
         }
     });
     ctrlc::set_handler({
@@ -205,7 +205,7 @@ A channel name and a duration must be provided.
                 Some(pipeline) => pipeline,
                 None => panic!("no access to the pipeline"),
             };
-            pipeline.send_event(gst::Event::new_eos().build());
+            pipeline.send_event(gst::event::Eos::new());
         }
     }).expect("Error setting ctrl-c handler.");
     let bus = pipeline.get_bus().expect("Pipeline without bus. Shouldn't happen!");
