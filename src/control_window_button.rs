@@ -239,7 +239,12 @@ impl ControlWindowButton {
                     }
                 }
             },
-            _ => {},
+            input_event_codes::KEY_NUMERIC_0 ..= input_event_codes::KEY_NUMERIC_9 => {
+                println!("Got an unprocessed numeric keystroke {}, {}", tk.keystroke, tk.value);
+                // Remember there is a key down and key up event;
+                // tk.value == 1 -> down, tk.value == 0 -> up.
+            },
+            x => println!("Got an unprocessed keystroke {}", x),
         }
     }
 
