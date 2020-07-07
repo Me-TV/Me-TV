@@ -415,7 +415,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#7107aebb54e67d2358bdc537b77fca83def594f1"
+source = "git+https://github.com/gtk-rs/glib#5dfc0b5a986caaf687b5cc1648432fe4c73d0ad1"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-channel 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -433,7 +433,7 @@ dependencies = [
 [[package]]
 name = "glib-macros"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#7107aebb54e67d2358bdc537b77fca83def594f1"
+source = "git+https://github.com/gtk-rs/glib#5dfc0b5a986caaf687b5cc1648432fe4c73d0ad1"
 dependencies = [
  "anyhow 1.0.31 (registry+https://github.com/rust-lang/crates.io-index)",
  "heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
