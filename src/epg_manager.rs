@@ -143,7 +143,7 @@ fn build_eit(eit: &gst_mpegts::EIT) {
                             let is_second_byte = data[i] == 1;
                             i += 1;
                             if is_second_byte {
-                                let second_byte = data[i];
+                                let _second_byte = data[i];
                                 i += 1;
                             }
                             let language_code = String::from_utf8_lossy(&data[i..(i+3)]).to_string();
@@ -340,7 +340,9 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
                         }
                         for item in dtg_logical_channel_descriptor.get_channels().iter() {
                             if ! add_logical_channel_number_for_service_id(item.get_service_id(), item.get_logical_channel_number()) {
-                                println!("Failed to add logical_channel_number {} to service_id {}.", &item.get_logical_channel_number(), &item.get_service_id());
+                                if PRINT_NIT {
+                                    println!("Failed to add logical_channel_number {} to service_id {}.", &item.get_logical_channel_number(), &item.get_service_id());
+                                }
                             }
                             if PRINT_NIT {
                                 println!("        LogicalChannel:  service_id = {}, visible_service = {}, logical_channel_number = {}",
@@ -436,7 +438,7 @@ fn build_pmt(pmt: &gst_mpegts::PMT) {
                                 // TODO Sort this out.
                                 println!("    DsmccCarouselIdentifier: {:?}", &descriptor);
                             },
-                            y => println!("************  Got an unhandled PMTStream descriptor type {:?}", &x)
+                            y => println!("************  Got an unhandled PMTStream descriptor type {:?}, {:?}", &x, &y)
                         }
                     }
                 }

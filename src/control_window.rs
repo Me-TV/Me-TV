@@ -37,7 +37,7 @@ use tempfile;
 use gst_mpegts;
 
 use crate::about;
-use crate::channels_data::{get_channel_names, channels_file_path, read_channels_file};
+use crate::channels_data::{get_channel_names, channels_file_path, read_channels_data};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
 use crate::frontend_manager::FrontendId;
@@ -249,7 +249,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                                 let mut buffer = String::new();
                                 temporary_file.read_to_string(&mut buffer).expect("Could not read temporary channels file.");
                                 destination.write(&buffer.as_bytes()).expect("Could not write channels file.");
-                                if !read_channels_file(&channels_file_path()) {
+                                if !read_channels_data() {
                                     panic!("Could not read the file that was just written.");
                                 }
                                 sender.send(true).expect("Could not send result for some reason.")

@@ -23,7 +23,6 @@ use std::fs;
 use std::os::unix::fs::FileTypeExt;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
-use std::thread;
 
 use glib;
 //use glib::prelude::*;
@@ -32,7 +31,6 @@ use notify::{Watcher, RecursiveMode, RawEvent, op, raw_watcher};
 use regex::Regex;
 
 use crate::control_window::Message;
-use crate::remote_control;
 
 /// A struct to represent the identity of a specific frontend currently
 /// available on the system.

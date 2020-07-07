@@ -39,7 +39,6 @@ use fragile::Fragile;
 
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
-use crate::epg_manager;
 use crate::preferences;
 
 /// Is nouveau the device driver?

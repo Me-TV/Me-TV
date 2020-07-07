@@ -19,11 +19,10 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-use std::cell::Cell;
-use std::fs::File;
-use std::io::BufReader;
-use std::io::prelude::*;
-use std::path::PathBuf;
+use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
 use ini;
@@ -38,7 +37,7 @@ const FRAGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS.add(b'
 /// https://url.spec.whatwg.org/#path-percent-encode-set
 const PATH: &percent_encoding::AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
 
-/// Struct for the data of each channel.
+/// Struct for the data of each channel stored for various lookups.
 ///
 /// It is assumed that instances are the data pointed to by various indexes so as to
 /// create lookups between for example logical_channel_number and name.
@@ -49,18 +48,48 @@ pub struct ChannelData {
     logical_channel_number: u16, // Channel 0 is not used so 0 can be used as "not yet known".
 }
 
+// A singleton of the channels data currently known.
+//
+// This is initialised from the GStreamer channels data file, then augmented from the
+// Me TV data cache file, and then updated as `LogicalChannelDescriptor` are received.
+// The data is written to the cache file as and when.
 lazy_static! {
-    static ref CHANNELS_DATA: RwLock<Option<Vec<ChannelData>>> =
-        RwLock::new(
-            match ini::Ini::load_from_file(channels_file_path()) {
-                // TODO Need to process the cache and add logical_channel_number as needed.
-                Ok(ini) => Some(process_ini(&ini)),
-                Err(_) => None,
-            }
-        );
+    static ref CHANNELS_DATA: RwLock<Option<Vec<ChannelData>>> = RwLock::new(initialise_channels_data());
 }
 
-/// Process an `Ini` to give the `Vec<ChannelData>`
+/// Construct the value to be used to initialise `CHANNELS_DATA`.
+///
+/// First read the data from the GStreamer channels data file (if it exists) and then
+/// augment using the Me TV data cache file (if it exists).
+fn initialise_channels_data() -> Option<Vec<ChannelData>> {
+    match ini::Ini::load_from_file(channels_file_path()) {
+        Ok(ini) => {
+            let mut channel_data = process_ini(&ini);
+            if let Some(cache) = read_channels_data_cache(&channels_data_cache_path()) {
+                let table = cache
+                    .iter()
+                    .map(|x|(x.service_id, x.logical_channel_number))
+                    .collect::<HashMap<u16, u16>>();
+                channel_data = channel_data
+                    .iter()
+                    .map(|x| if x.logical_channel_number == 0 {
+                        ChannelData {
+                            name: x.name.clone(),
+                            service_id: x.service_id,
+                            logical_channel_number: *table.get(&x.service_id).unwrap(),
+                        }
+                    } else {
+                        x.clone()
+                    })
+                    .collect();
+            }
+            Some(channel_data)
+        },
+        Err(_) => None,
+    }
+}
+
+/// Process an `Ini` to create a `Vec<ChannelData>`
 fn process_ini(ini: &ini::Ini) -> Vec<ChannelData> {
     ini.iter()
         .map(|(name, properties)| ChannelData{
@@ -71,16 +100,17 @@ fn process_ini(ini: &ini::Ini) -> Vec<ChannelData> {
         .collect()
 }
 
-/// Read channels data from the channels file.
-pub fn read_channels_file(path: &PathBuf) -> bool {
-    match ini::Ini::load_from_file(path) {
-        Ok(ini) => {
-            let data = process_ini(&ini);
+/// Read channels data from the channels file, if it exists, augmented by the cache data, if it exists.
+///
+/// Return value specifies whether the data was set to `Some`thing (`true`) or `None` (`false`).
+pub fn read_channels_data() -> bool {
+    match initialise_channels_data() {
+        Some(data) => {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = Some(data);
             true
         },
-        Err(_) => {
+        None => {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = None;
             false
@@ -88,13 +118,16 @@ pub fn read_channels_file(path: &PathBuf) -> bool {
     }
 }
 
-/// Extract the names of the channels from the channels file.
+/// Extract the names of the channels from the channels data.
 ///
 /// GStreamer uses the XDG directory structure with, currently, gstreamer-1.0 as its
 /// name. The dvbsrc plugin assumes the name dvb-channels.conf. The DVBv5 file format
-/// is INI style: a sequence of blocks, one for each channel, starting with a channel
-/// name surrounded by brackets and then a sequence of binding of keys to values each
-/// one indented.
+/// is INI style: a sequence of sections, one for each channel, starting with a channel
+/// name surrounded by brackets ([, ]) followed by a sequence of binding of keys to values
+/// each one indented. This returns the sections heads which are the name sof the channels.
+///
+/// In fact the data is returned from the channel data cache kept internally based on the
+/// above structure of the channel config file.
 fn get_names_from_channels_data(channels_data: &Vec<ChannelData>) -> Vec<String> {
     channels_data.iter().map(|x| x.name.clone() ).collect()
 }
@@ -111,7 +144,7 @@ pub fn channels_file_path() -> PathBuf {
 pub fn channels_data_cache_path() -> PathBuf {
     let xdg_dirs = xdg::BaseDirectories::with_prefix("me-tv").expect("Cannot set XDG prefix.");
     let mut path_buf = xdg_dirs.get_cache_home();
-    path_buf.push("channels_data.txt");
+    path_buf.push("channels_data.yml");
     path_buf
 }
 
@@ -141,12 +174,14 @@ pub fn encode_to_mrl(channel_name: &String) -> String {
 pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channel_number: u16) -> bool {
     // TODO This does a full (albeit shallow) copy of the data structure, should a more
     //   efficient way of doing the update be found?
+    //   Freeview from Crystal Palace has a maximum 182 channels as at 2020-07-07.
     let mut channels_data = CHANNELS_DATA.write().unwrap();
     match &*channels_data {
         Some(c_d) => {
             let mut rv = false;
             *channels_data = Some(
-                c_d.iter()
+                c_d
+                    .iter()
                     .map(|x| {
                         if x.service_id == service_id && x.logical_channel_number != logical_channel_number {
                             rv = true;
@@ -176,6 +211,7 @@ pub fn get_channel_name_of_logical_channel_number(logical_channel_number: u16) -
     match &*channel_data {
         Some(c_d) => {
             // TODO Can we do better than linear search, or does it not matter?
+            //    Freeview from Crystal Palace has a maximum 182 channels as at 2020-07-07.
             let result: Vec<&ChannelData> = c_d.iter().filter(|x| x.logical_channel_number == logical_channel_number).collect();
             match result.len() {
                 0 => None,
@@ -188,44 +224,68 @@ pub fn get_channel_name_of_logical_channel_number(logical_channel_number: u16) -
 }
 
 /// Write the channels data to a cache file.
-pub fn write_channels_data_cache(file: &mut File) {
-    let channels_data_ptr = CHANNELS_DATA.read().unwrap();
-    let channels_data: &Vec<ChannelData> = (*channels_data_ptr).as_ref().unwrap();
-    let s = serde_yaml::to_string(&channels_data).unwrap();
-    match file.write(s.as_ref()) {
-        Ok(count) => { assert_eq!(count, s.len()); file.flush().unwrap(); },
-        Err(e) => println!("Error writing file {:?} – {}", file, e),
-    }
+pub fn write_channels_data_cache(path: &Path) {
+    match OpenOptions::new().write(true).open(path) {
+        Ok(mut f) => {
+            let channels_data_ptr = CHANNELS_DATA.read().unwrap();
+            let channels_data: &Vec<ChannelData> = (*channels_data_ptr).as_ref().unwrap();
+            let s = serde_yaml::to_string(&channels_data).unwrap();
+            match f.write(s.as_ref()) {
+                Ok(count) => {
+                    assert_eq!(count, s.len());
+                    f.flush().unwrap();
+                },
+                Err(e) => println!("Error writing {:?}, {:?} – {}", path.to_str().unwrap(), f, e),
+            };
+        },
+        Err(e) => println!("Failed to open {} – {}", path.to_str().unwrap(), e),
+    };
 }
 
-/// Read the channels data and return the result.
-pub fn read_channels_data_cache(file: &mut File) -> Option<Vec<ChannelData>>{
-    let mut buffer = [0u8; 20000];
-    match file.read(&mut buffer) {
-        Ok(count) => {
-            let s = String::from_utf8_lossy(&buffer[..count]).to_string();
-            match serde_yaml::from_str::<Vec<ChannelData>>(&s) {
-                Ok(x) => Some(x),
-                Err(e) => None,
+/// Read the channels data given a path and return the result.
+pub fn read_channels_data_cache(path: &Path) -> Option<Vec<ChannelData>> {
+    match File::open(path) {
+        Ok(mut f) => {
+            let mut buffer = [0u8; 20000];
+            match f.read(&mut buffer) {
+                Ok(count) => {
+                    let s = String::from_utf8_lossy(&buffer[..count]).to_string();
+                    match serde_yaml::from_str::<Vec<ChannelData>>(&s) {
+                        Ok(x) => Some(x),
+                        Err(e) => {
+                            println!("Failed to deserialise {} – {}", path.to_str().unwrap(), e);
+                            None
+                        },
+                    }
+                },
+                Err(e) => {
+                    println!("Failed to read {} – {}", path.to_str().unwrap(), e);
+                    None
+                },
             }
         },
-        Err(e) => None,
+        Err(e) => {
+            println!("Failed to open {} – {}", path.to_str().unwrap(), e);
+            None
+        },
     }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use std::io::{Read, SeekFrom, Seek};
+    use std::io::Read; // {Read, Seek, SeekFrom};
+    use std::sync::Mutex;
 
     use ini;
+    use lazy_static::lazy_static;
     use tempfile;
 
     use super::{
         add_logical_channel_number_for_service_id,
         channels_file_path, encode_to_mrl, process_ini,
         get_names_from_channels_data, get_channel_name_of_logical_channel_number,
-        read_channels_file,
+        read_channels_data,
         write_channels_data_cache, read_channels_data_cache,
         ChannelData, CHANNELS_DATA
     };
@@ -317,9 +377,23 @@ mod tests {
         assert_eq!(bbc_2.logical_channel_number,  0);
     }
 
+    // Tests need to be able to set specific values to CHANNELS_DATA rather than just
+    // load the files. Although access to CHANNELS_DATA is controlled, there is an
+    // assumption the value is that of reading the files. By default, tests are run
+    // multi-threaded, but this is only a useful test if the value of CHANNEL_DATA is
+    // not test dependent. Single threaded test execution of these tests must be enforced.
+    // Rather than get the developer to remember to use "cargo test -- --test-threads=1"
+    // which has all tests run single threaded, we use this Mutex so that only tests that
+    // must be single threaded are single-threaded.
+
+    lazy_static! {
+        static ref TEST_LOCK: Mutex<bool> = Mutex::new(false);
+    }
+
     #[test]
     fn process_channels_data_file() {
-        let read_file = read_channels_file(&channels_file_path());
+        let test_lock = TEST_LOCK.lock().unwrap();
+        let read_file = read_channels_data();
         let channels_data = CHANNELS_DATA.read().unwrap();
         match &*channels_data {
             Some(c_d) => if read_file {
@@ -333,14 +407,15 @@ mod tests {
 
     #[test]
     fn update_channels_data() {
+        let test_lock = TEST_LOCK.lock().unwrap();
         let data = create_small_data_set();
         {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = Some(data);
         }
         {
-            let channel_data = CHANNELS_DATA.read().unwrap();
-            let data: &Vec<ChannelData> = (*channel_data).as_ref().unwrap();
+            let channels_data = CHANNELS_DATA.read().unwrap();
+            let data: &Vec<ChannelData> = (*channels_data).as_ref().unwrap();
             let bbc_1 = &data[0];
             assert_eq!(bbc_1.name, "BBC ONE Lon");
             assert_eq!(bbc_1.service_id, 4164);
@@ -366,7 +441,20 @@ mod tests {
         assert_eq!(bbc_2.name, "BBC TWO");
         assert_eq!(bbc_2.service_id, 4287);
         assert_eq!(bbc_2.logical_channel_number, 2);
+    }
 
+    #[test]
+    fn ensure_channel_name_accessible_from_channel_number() {
+        let test_lock = TEST_LOCK.lock().unwrap();
+        let data = create_small_data_set();
+        {
+            let mut channels_data = CHANNELS_DATA.write().unwrap();
+            *channels_data = Some(data);
+        }
+        let rc = add_logical_channel_number_for_service_id(4164, 1);
+        assert!(rc);
+        let rc = add_logical_channel_number_for_service_id(4287, 2);
+        assert!(rc);
         assert_eq!(get_channel_name_of_logical_channel_number(1).unwrap(), "BBC ONE Lon");
         assert_eq!(get_channel_name_of_logical_channel_number(2).unwrap(), "BBC TWO");
         assert_eq!(get_channel_name_of_logical_channel_number(10), None);
@@ -374,6 +462,7 @@ mod tests {
 
     #[test]
     fn write_and_read_channels_data() {
+        let test_lock = TEST_LOCK.lock().unwrap();
         let data = create_small_data_set();
         {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
@@ -384,9 +473,10 @@ mod tests {
         let rc = add_logical_channel_number_for_service_id(4287, 2);
         assert!(rc);
         let mut file_path = tempfile::NamedTempFile::new().unwrap();
+        write_channels_data_cache(file_path.path());
         let mut file = file_path.as_file_mut();
-        write_channels_data_cache(file);
-        file.seek(SeekFrom::Start(0)).unwrap();
+        // TODO Should not need this but it seems needed.
+        //file.seek(SeekFrom::Start(0)).unwrap();
         let mut buffer = [0u8; 4096];
         match file.read(&mut buffer) {
             Ok(count) => {
@@ -402,8 +492,7 @@ mod tests {
             },
             Err(e) => assert!(false, "Failed to read file {:?} – {}", file_path, e),
         }
-        file.seek(SeekFrom::Start(0)).unwrap();
-        let result = read_channels_data_cache(file);
+        let result = read_channels_data_cache(file_path.path());
         let channel_data = CHANNELS_DATA.read().unwrap();
         assert_eq!(&result.unwrap(), (*channel_data).as_ref().unwrap());
     }
