@@ -22,7 +22,7 @@
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::RwLock;
 
 use ini;
@@ -132,20 +132,20 @@ fn get_names_from_channels_data(channels_data: &Vec<ChannelData>) -> Vec<String>
     channels_data.iter().map(|x| x.name.clone() ).collect()
 }
 
-/// Return a `PathBuf` to the GStreamer dvbsrc plugin channels file using the XDG directory structure.
-pub fn channels_file_path() -> PathBuf {
+/// Return a `Box<Path>` to the GStreamer dvbsrc plugin channels file using the XDG directory structure.
+pub fn channels_file_path() -> Box<Path> {
     let xdg_dirs = xdg::BaseDirectories::with_prefix("gstreamer-1.0").expect("Cannot set XDG prefix.");
     let mut path_buf = xdg_dirs.get_config_home();
     path_buf.push("dvb-channels.conf");
-    path_buf
+    path_buf.into_boxed_path()
 }
 
-/// Return a `PathBuf` to the Me TV channels data cache file using the XDG directory structure.
-pub fn channels_data_cache_path() -> PathBuf {
+/// Return a `Box<Path>` to the Me TV channels data cache file using the XDG directory structure.
+pub fn channels_data_cache_path() -> Box<Path> {
     let xdg_dirs = xdg::BaseDirectories::with_prefix("me-tv").expect("Cannot set XDG prefix.");
     let mut path_buf = xdg_dirs.get_cache_home();
     path_buf.push("channels_data.yml");
-    path_buf
+    path_buf.into_boxed_path()
 }
 
 /// Returns the names of the channels from the GStreamer channels file.

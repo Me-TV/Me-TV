@@ -237,7 +237,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
                         match process::Command::new("dvbv5-scan")
                             .arg("-o")
                             .arg(&temporary_file.path())
-                            .arg(&p_t_t_f)
+                            .arg(&*p_t_t_f)
                             .output() {
                             Ok(_) => {
                                 let mut destination = OpenOptions::new()

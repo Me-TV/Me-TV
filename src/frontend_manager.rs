@@ -21,7 +21,7 @@
 
 use std::fs;
 use std::os::unix::fs::FileTypeExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 
 use glib;
@@ -41,31 +41,31 @@ pub struct FrontendId {
 }
 
 /// The path in the filesystem to the DVB related special files.
-pub fn dvb_base_path() -> PathBuf { PathBuf::from("/dev/dvb") }
+fn dvb_base_path() -> PathBuf { PathBuf::from("/dev/dvb") }
 
 /// Return the path to the adapter director for a given adapter.
-pub fn adapter_path(id: u8) -> PathBuf {
+fn adapter_path(id: u8) -> PathBuf {
     let mut result = dvb_base_path();
     result.push("adapter".to_string() + &id.to_string());
     result
 }
 
 /// Return the path to the special file for a given frontend.
-pub fn frontend_path(fei: &FrontendId) -> PathBuf {
+fn frontend_path(fei: &FrontendId) -> PathBuf {
     let mut result = adapter_path(fei.adapter);
     result.push("frontend".to_string() + &fei.frontend.to_string());
     result
 }
 
 /// Return the path to the special file of the demux for a given frontend.
-pub fn demux_path(fei: &FrontendId) -> PathBuf {
+fn demux_path(fei: &FrontendId) -> PathBuf {
     let mut result = adapter_path(fei.adapter);
     result.push("demux".to_string() + &fei.frontend.to_string());
     result
 }
 
 /// Return the path to the special file of the data for a given frontend.
-pub fn dvr_path(fei: &FrontendId) -> PathBuf {
+fn dvr_path(fei: &FrontendId) -> PathBuf {
     let mut result = adapter_path(fei.adapter);
     result.push("dvr".to_string() + &fei.frontend.to_string());
     result

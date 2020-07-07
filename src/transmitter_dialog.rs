@@ -97,7 +97,7 @@ fn create(parent: Option<&gtk::ApplicationWindow>, transmitter_files_directory_p
 ///
 /// If there are problems finding a transmitter file, tell the user via message dialog
 /// and return `None`.
-pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<path::PathBuf> {
+pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<Box<path::Path>> {
     match dvbt_transmitter_files_directory_path() {
         Some(transmitter_files_directory_path) =>  match create(parent, transmitter_files_directory_path.as_path()) {
             Some(dialog) => {
@@ -105,7 +105,7 @@ pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<path::PathBuf>
                 let mut path = transmitter_files_directory_path;
                 path.push(dialog.transmitter.get_active_text().unwrap().as_str());
                 unsafe { dialog.dialog.destroy(); }
-                Some(path)
+                Some(path.into_boxed_path())
             },
             None => {
                 display_an_error_dialog(parent, "There appear to be no transmitter files,\nperhaps the dtv-scan-tables package is not correctly installed.");
