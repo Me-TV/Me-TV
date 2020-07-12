@@ -47,7 +47,7 @@ mod frontend_manager;
 mod frontend_window;
 mod gstreamer_engine;
 pub mod input_event_codes; // Make this module public to avoid all the unused warnings.
-mod metvcomboboxtext;
+mod metvcombobox;
 mod preferences;
 mod preferences_dialog;
 mod remote_control;

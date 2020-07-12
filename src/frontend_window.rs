@@ -32,7 +32,7 @@ use gtk::prelude::*;
 use crate::channels_data::encode_to_mrl;
 use crate::control_window_button::ControlWindowButton;
 use crate::gstreamer_engine::GStreamerEngine;
-use crate::metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
+use crate::metvcombobox::{MeTVComboBox, MeTVComboBoxExt};
 use crate::preferences;
 
 /// In fullscreen mode this holds the last time there was mouse movement
@@ -51,11 +51,11 @@ pub struct FrontendWindow {
     fullscreen_button: gtk::Button,
     volume_adjustment: gtk::Adjustment,
     pub volume_button: gtk::VolumeButton,  // ControlWindowButton instance uses this.
-    pub channel_selector: MeTVComboBoxText, // ControlWindowButton instance needs access to this.
+    pub channel_selector: MeTVComboBox, // ControlWindowButton instance needs access to this.
     fullscreen_toolbar: gtk::Toolbar,
     fullscreen_unfullscreen_button: gtk::Button,
     fullscreen_volume_button: gtk::VolumeButton,
-    pub fullscreen_channel_selector: MeTVComboBoxText, // ControlWindowButton instance needs access to this.
+    pub fullscreen_channel_selector: MeTVComboBox, // ControlWindowButton instance needs access to this.
     inhibitor: u32,
     pub engine: GStreamerEngine, // ControlWindowButton instance needs access to this.
 }
@@ -99,7 +99,7 @@ impl FrontendWindow {
         // to be able to define the action associated with the volume_adjustment.
         let volume_button = gtk::VolumeButton::new();
         let channel_selector = {
-            let c_s = MeTVComboBoxText::new_and_set_model(&control_window_button.control_window.channel_names_store);
+            let c_s = MeTVComboBox::new_and_set_model(&control_window_button.control_window.channels_data_store);
             c_s.set_active(control_window_button.channel_selector.get_active());
             c_s.connect_changed({
                 let c_w_b = control_window_button.clone();
@@ -182,8 +182,8 @@ impl FrontendWindow {
             f_v_b
         };
         let fullscreen_channel_selector = {
-            let mut f_c_s = fullscreen_toolbar_builder.get_object::<MeTVComboBoxText>("fullscreen_channel_selector").unwrap();
-            f_c_s.set_new_model(&control_window_button.control_window.channel_names_store);
+            let mut f_c_s = fullscreen_toolbar_builder.get_object::<MeTVComboBox>("fullscreen_channel_selector").unwrap();
+            f_c_s.set_new_model(&control_window_button.control_window.channels_data_store);
             f_c_s.set_active(control_window_button.channel_selector.get_active());
             f_c_s.connect_changed({
                 let c_w_b = control_window_button.clone();

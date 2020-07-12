@@ -31,7 +31,7 @@ use crate::dialogs::display_an_error_dialog;
 use crate::frontend_manager::FrontendId;
 use crate::frontend_window::FrontendWindow;
 use crate::input_event_codes;
-use crate::metvcomboboxtext::{MeTVComboBoxText, MeTVComboBoxTextExt};
+use crate::metvcombobox::{MeTVComboBox, MeTVComboBoxExt};
 use crate::preferences;
 use crate::remote_control::TargettedKeystroke;
 
@@ -43,7 +43,7 @@ pub struct ControlWindowButton {
     pub frontend_id: FrontendId, // ControlWindow instance needs access to this for searching.
     pub widget: gtk::Box, // ControlWindow instance needs access to this for packing.
     pub frontend_button: gtk::ToggleButton, // FrontendWindow needs access to this.
-    pub channel_selector: MeTVComboBoxText, // FrontendWindow needs read access to this.
+    pub channel_selector: MeTVComboBox, // FrontendWindow needs read access to this.
     frontend_window: RefCell<Option<Rc<FrontendWindow>>>,
 }
 
@@ -60,7 +60,7 @@ impl ControlWindowButton {
         let frontend_button = gtk::ToggleButton::with_label(
             format!("adaptor{}\nfrontend{}", frontend_id.adapter, frontend_id.frontend).as_ref()
         );
-        let channel_selector = MeTVComboBoxText::new_and_set_model(&control_window.channel_names_store);
+        let channel_selector = MeTVComboBox::new_and_set_model(&control_window.channels_data_store);
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);

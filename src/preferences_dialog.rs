@@ -29,8 +29,8 @@ use gtk::prelude::*;
 
 use crate::control_window::ControlWindow;
 use crate::dvb;
-use crate::metvcomboboxtext::MeTVComboBoxText;
-use crate::metvcomboboxtext::MeTVComboBoxTextExt;
+use crate::metvcombobox::MeTVComboBox;
+use crate::metvcombobox::MeTVComboBoxExt;
 use crate::preferences;
 
 lazy_static! {
@@ -81,8 +81,8 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
         move |_| preferences::set_use_last_channel(false, true)
     );
     let _default_channel_selector = {
-        let mut combobox = menu_builder.get_object::<MeTVComboBoxText>("channel_name").unwrap();
-        combobox.set_new_model(&control_window.channel_names_store);
+        let mut combobox = menu_builder.get_object::<MeTVComboBox>("channel_name").unwrap();
+        combobox.set_new_model(&control_window.channels_data_store);
         if let Some(channel_name) = preferences::get_default_channel() {
             if channel_name != "" {
                 if ! combobox.set_active_text(channel_name.clone()) {
@@ -91,7 +91,7 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
             }
         }
         combobox.connect_changed(
-            move |selector: &MeTVComboBoxText| preferences::set_default_channel(selector.get_active_text().unwrap(), true)
+            move |selector: &MeTVComboBox| preferences::set_default_channel(selector.get_active_text().unwrap(), true)
         );
         combobox
     };

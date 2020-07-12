@@ -54,8 +54,8 @@ pub struct ControlWindow {
     main_box: gtk::Box,
     frontends_box: gtk::Box,
     label: gtk::Label,
-    pub channel_names_store: gtk::ListStore, // Used by ControlWindowButton and FrontendWindow.
-    channel_names_loaded: Cell<bool>,
+    pub channels_data_store: gtk::ListStore, // Used by ControlWindowButton and FrontendWindow.
+    channels_data_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
     pub to_epg_manager: std::sync::mpsc::Sender<gst_mpegts::Section>, // Used by ControlWindowButton.
 }
@@ -116,8 +116,8 @@ impl ControlWindow {
             main_box,
             frontends_box,
             label,
-            channel_names_store: gtk::ListStore::new(&[String::static_type()]),
-            channel_names_loaded: Cell::new(false),
+            channels_data_store: gtk::ListStore::new(&[u32::static_type(), String::static_type()]),
+            channels_data_loaded: Cell::new(false),
             control_window_buttons: RefCell::new(Vec::new()),
             to_epg_manager,
         });
@@ -166,18 +166,18 @@ impl ControlWindow {
 
     /// Transfer the list of channel names held by the control window into the selector box and set the default.
     pub fn update_channels_store(&self) {
-        self.channel_names_store.clear();
+        self.channels_data_store.clear();
         match get_channel_names() {
             Some(mut channel_names) => {
                 channel_names.sort();
                 for name in channel_names {
-                    self.channel_names_store.insert_with_values(None, &[0], &[&name]);
+                    self.channels_data_store.insert_with_values(None, &[0, 1], &[&0, &name]);
                 };
-                self.channel_names_loaded.set(true);
+                self.channels_data_loaded.set(true);
             },
             None => {
-                self.channel_names_store.insert_with_values(None, &[0], &[&"No channels file."]);
-                self.channel_names_loaded.set(false);
+                self.channels_data_store.insert_with_values(None, &[1], &[&"No channels file."]);
+                self.channels_data_loaded.set(false);
             }
         }
         for button in self.control_window_buttons.borrow().iter() {
@@ -185,7 +185,7 @@ impl ControlWindow {
         }
     }
 
-    pub fn is_channels_store_loaded(&self) -> bool { self.channel_names_loaded.get() }
+    pub fn is_channels_store_loaded(&self) -> bool { self.channels_data_loaded.get() }
 
 }
 
@@ -286,11 +286,11 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                             display_an_error_dialog(Some(&c_w_b.control_window.window), "The channel is the empty string and cannot be tuned to.");
                         } else {
                             // TODO What to do if None is returned?
-                            if let Some(iterator) = control_window.channel_names_store.get_iter_first() {
+                            if let Some(iterator) = control_window.channels_data_store.get_iter_first() {
                                 loop {
-                                    if let Some(channel_name) = control_window.channel_names_store.get_value(&iterator, 0).get::<String>().unwrap() {
+                                    if let Some(channel_name) = control_window.channels_data_store.get_value(&iterator, 1).get::<String>().unwrap() {
                                         if target_channel_name == channel_name {
-                                            match control_window.channel_names_store.get_path(&iterator) {
+                                            match control_window.channels_data_store.get_path(&iterator) {
                                                 Some(mut tree_path) => {
                                                     let index = tree_path.get_indices_with_depth()[0];
                                                     if index < 0 { panic!("index cannot be a negative integer"); }
@@ -302,7 +302,7 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                                             break;
                                         }
                                     }
-                                    if !control_window.channel_names_store.iter_next(&iterator) {
+                                    if !control_window.channels_data_store.iter_next(&iterator) {
                                         display_an_error_dialog(Some(&c_w_b.control_window.window), &format!("The channel {} could not be found for immediate TV display.", target_channel_name));
                                         break;
                                     }

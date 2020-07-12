@@ -53,6 +53,10 @@ pub struct ChannelData {
 // This is initialised from the GStreamer channels data file, then augmented from the
 // Me TV data cache file, and then updated as `LogicalChannelDescriptor` are received.
 // The data is written to the cache file as and when.
+//
+// TODO need to find a way of updating the ListStore in the ControlWindow instance
+//   whenever a change is made here.
+//
 lazy_static! {
     static ref CHANNELS_DATA: RwLock<Option<Vec<ChannelData>>> = RwLock::new(initialise_channels_data());
 }
@@ -159,6 +163,27 @@ pub fn get_channel_names() -> Option<Vec<String>> {
     let channels_data = CHANNELS_DATA.read().unwrap();
     match &*channels_data {
         Some(c_d) => Some(get_names_from_channels_data(c_d)),
+        None => None,
+    }
+}
+
+/// Return a `Vec<(u16, String)>` where the `(u16, String)` is the logical number
+/// and name of a named channel as found in the GStreamer channels file.
+///
+/// GStreamer uses the XDG directory structure with, currently, gstreamer-1.0 as its
+/// name. The dvbsrc plugin assumes the name dvb-channels.conf. The DVBv5 file format
+/// is INI style: a sequence of blocks, one for each channel, starting with a channel
+/// name surrounded by brackets and then a sequence of binding of keys to values each
+/// one indented.
+///
+/// Logical channel numbers are found by searching the SI packets and caching them.
+pub fn get_channels_data() -> Option<Vec<(u16, String)>> {
+    let channels_data = CHANNELS_DATA.read().unwrap();
+    match &*channels_data {
+        Some(c_d) => {
+            let rv = c_d.iter().map(|x| (x.logical_channel_number, x.name.clone())).collect();
+            Some(rv)
+        },
         None => None,
     }
 }

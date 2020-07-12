@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2018, 2019  Russel Winder
+ *  Copyright © 2018–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,42 +22,49 @@
 use gtk;
 use gtk::prelude::*;
 
-/// An application specific version of a `ComboBoxText`.
-///
-/// `ComboBoxText` does not seem to allow for using a ready-made model.
-/// Since the idea in this application is to have many rendering of the same model,
-/// the list of available channels, `ComboBox` has to be used. However make it as
-/// much like a ComboBoxText as possible by providing this abstraction.
-pub type MeTVComboBoxText = gtk::ComboBox;
+/// An application specific version of a `ComboBox`.
+pub type MeTVComboBox = gtk::ComboBox;
 
-pub trait MeTVComboBoxTextExt {
-    fn new_and_set_model(model: &gtk::ListStore) -> MeTVComboBoxText;
+pub trait MeTVComboBoxExt {
+    // Can't use any names from `gtk::ComboBox`
+    fn new_and_set_model(model: &gtk::ListStore) -> MeTVComboBox;
     fn set_new_model(&mut self, model: &gtk::ListStore);
     fn get_active_text(&self) -> Option<String>;
     fn set_active_text(&mut self, name: String) -> bool;
 }
 
-impl MeTVComboBoxTextExt for MeTVComboBoxText {
+impl MeTVComboBoxExt for MeTVComboBox {
 
-    fn new_and_set_model(model: &gtk::ListStore) -> MeTVComboBoxText {
+    /// Create a new `MeTVComboBox` and set the data model.
+    ///
+    /// It is assumed that the List store has two columns (u32, String) being
+    /// the channel number and the channel name.
+    fn new_and_set_model(model: &gtk::ListStore) -> MeTVComboBox {
         let mut combobox = gtk::ComboBox::new();
         combobox.set_new_model(model);
         combobox
     }
 
+    /// Set the data model of a `MeTVComboBox`.
+    ///
+    /// It is assumed that the List store has two columns (u32, String) being
+    /// the channel number and the channel name.
     fn set_new_model(&mut self, model: &gtk::ListStore) {
         self.set_model(Some(model));
-        let renderer = gtk::CellRendererText::new();
-        self.pack_start(&renderer, true);
-        self.add_attribute(&renderer, "text", 0);
-    }
+        let number_renderer = gtk::CellRendererText::new();
+        self.pack_start(&number_renderer, true);
+        self.add_attribute(&number_renderer, "text", 0);
+        let name_renderer = gtk::CellRendererText::new();
+        self.pack_start(&name_renderer, true);
+        self.add_attribute(&name_renderer, "text", 1);
+   }
 
     fn get_active_text(&self) -> Option<String> {
         match self.get_model() {
             Some(model) => {
                 match self.get_active_iter() {
                     Some(iterator) => {
-                        let x = model.get_value(&iterator, 0).get::<String>().unwrap().unwrap();
+                        let x = model.get_value(&iterator, 1).get::<String>().unwrap().unwrap();
                         Some(x)
                     },
                     None => None,
@@ -73,7 +80,7 @@ impl MeTVComboBoxTextExt for MeTVComboBoxText {
                 match model.get_iter_first() {
                     Some(iterator) => {
                         loop {
-                            if let Some(name) = model.get_value(&iterator, 0).get::<String>().unwrap() {
+                            if let Some(name) = model.get_value(&iterator, 1).get::<String>().unwrap() {
                                 if target_name == name {
                                     self.set_active_iter(Some(&iterator));
                                     return true;
@@ -101,11 +108,11 @@ mod tests {
     use super::*;
 
     fn create_test_model() -> gtk::ListStore {
-        let store = gtk::ListStore::new(&[String::static_type()]);
-        store.insert_with_values(None, &[0], &[&"fred"]);
-        store.insert_with_values(None, &[0], &[&"jane"]);
-        store.insert_with_values(None, &[0], &[&"jo"]);
-        store.insert_with_values(None, &[0], &[&"bert"]);
+        let store = gtk::ListStore::new(&[u32::static_type(), String::static_type()]);
+        store.insert_with_values(None, &[0, 1], &[&4, &"fred"]);
+        store.insert_with_values(None, &[0, 1], &[&3, &"jane"]);
+        store.insert_with_values(None, &[0, 1], &[&2, &"jo"]);
+        store.insert_with_values(None, &[0, 1], &[&1, &"bert"]);
         store
     }
 
@@ -115,8 +122,8 @@ mod tests {
             Ok(_) => (),
             Err(_) => panic!("Could not initialise GTK"),
         }
-        let store = gtk::ListStore::new(&[String::static_type()]);
-        let mut thingy = MeTVComboBoxText::new_and_set_model(&store);
+        let store = gtk::ListStore::new(&[u32::static_type(), String::static_type()]);
+        let mut thingy = MeTVComboBox::new_and_set_model(&store);
         thingy.set_active(Some(1)); // TODO Should this fail in some way?
         assert_eq!(thingy.get_active_text(), None);
 
@@ -131,7 +138,7 @@ mod tests {
         thingy.set_active(Some(1));
         assert_eq!(thingy.get_active_text().unwrap(), "jane");
 
-        let mut another_thingy = MeTVComboBoxText::new_and_set_model(&store);
+        let mut another_thingy = MeTVComboBox::new_and_set_model(&store);
 
         let target = "jo".to_string();
         assert_eq!(another_thingy.set_active_text(target.clone()), true);
