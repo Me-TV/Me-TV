@@ -45,7 +45,7 @@ serde = "*" # Not use-d explicitly but must be listed explicitly.
 serde_derive = "*"
 serde_yaml = "*"
 tempfile = "*"
-time = "0.1.*"  # chrono 0.4.11 requires time 0.1.39, not 0.2.*
+time = "0.1"  # chrono 0.4.11 requires time 0.1.39, not 0.2.*
 xdg = "*"
 
 [dev-dependencies]
