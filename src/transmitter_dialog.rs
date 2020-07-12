@@ -93,10 +93,8 @@ fn create(parent: Option<&gtk::ApplicationWindow>, transmitter_files_directory_p
 /// Present a dialog to the user to allow them to select the transmitter file to
 /// use to scan to create a channels file.
 ///
-/// Returns an `Option` with the path on success.
-///
-/// If there are problems finding a transmitter file, tell the user via message dialog
-/// and return `None`.
+/// Returns an `Option` with a `Box<Path>` on success. If there are problems finding a
+/// transmitter file, tells the user via a message dialog and returns `None`.
 pub fn present(parent: Option<&gtk::ApplicationWindow>) -> Option<Box<path::Path>> {
     match dvbt_transmitter_files_directory_path() {
         Some(transmitter_files_directory_path) =>  match create(parent, transmitter_files_directory_path.as_path()) {
