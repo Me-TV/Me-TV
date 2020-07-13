@@ -46,7 +46,7 @@ static mut LAST_ACTIVITY_TIME: Option<Instant> = None;
 #[derive(Debug)]
 pub struct FrontendWindow {
     control_window_button: Rc<ControlWindowButton>,
-    window: gtk::Window,
+    pub window: gtk::Window,  // ControlWindowButton instance needs access to this.
     pub close_button: gtk::Button, // ControlWindowButton instance needs access to this.
     fullscreen_button: gtk::Button,
     volume_adjustment: gtk::Adjustment,
@@ -109,7 +109,7 @@ impl FrontendWindow {
         };
         let header_bar = {
             let h_b = gtk::HeaderBar::new();
-            h_b.set_title(Some(("Me TV – ".to_string() + &control_window_button.channel_selector.get_active_text().unwrap()).as_str()));
+            h_b.set_title(Some(&("Me TV – ".to_string() + &control_window_button.channel_selector.get_active_text().unwrap())));
             h_b.set_show_close_button(false);  // TODO Why have a special close button instead of the standard one?
             h_b.pack_end(&close_button);
             h_b.pack_end(&fullscreen_button);

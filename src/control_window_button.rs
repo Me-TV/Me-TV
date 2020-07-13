@@ -152,6 +152,11 @@ impl ControlWindowButton {
             if status {
                 // Do not stop the frontend completely just change what is being displayed on it.
                 frontend_window.engine.stop();
+                let window_title = "Me TV – ".to_string() + &control_window_button.channel_selector.get_active_text().unwrap();
+                let f_w = &frontend_window.window;
+                f_w.set_title(&window_title);
+                let h_b = f_w.get_titlebar().unwrap().downcast::<gtk::HeaderBar>().unwrap();
+                h_b.set_title(Some(&window_title));
                 // TODO Need to clear the area in the gtk::DrawingArea or a gtk::GLArea
                 //   to avoid keeping the last video frame when it is a switch to radio.
                 //   See https://github.com/Me-TV/Me-TV/issues/29
