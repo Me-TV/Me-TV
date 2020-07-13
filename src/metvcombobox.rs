@@ -37,7 +37,7 @@ impl MeTVComboBoxExt for MeTVComboBox {
 
     /// Create a new `MeTVComboBox` and set the data model.
     ///
-    /// It is assumed that the List store has two columns (u32, String) being
+    /// It is assumed that the List store has two columns (String, String) being
     /// the channel number and the channel name.
     fn new_and_set_model(model: &gtk::ListStore) -> MeTVComboBox {
         let mut combobox = gtk::ComboBox::new();
@@ -108,11 +108,11 @@ mod tests {
     use super::*;
 
     fn create_test_model() -> gtk::ListStore {
-        let store = gtk::ListStore::new(&[u32::static_type(), String::static_type()]);
-        store.insert_with_values(None, &[0, 1], &[&4, &"fred"]);
-        store.insert_with_values(None, &[0, 1], &[&3, &"jane"]);
-        store.insert_with_values(None, &[0, 1], &[&2, &"jo"]);
-        store.insert_with_values(None, &[0, 1], &[&1, &"bert"]);
+        let store = gtk::ListStore::new(&[String::static_type(), String::static_type()]);
+        store.insert_with_values(None, &[0, 1], &[&"4", &"fred"]);
+        store.insert_with_values(None, &[0, 1], &[&"3", &"jane"]);
+        store.insert_with_values(None, &[0, 1], &[&"2", &"jo"]);
+        store.insert_with_values(None, &[0, 1], &[&"1", &"bert"]);
         store
     }
 
@@ -122,7 +122,7 @@ mod tests {
             Ok(_) => (),
             Err(_) => panic!("Could not initialise GTK"),
         }
-        let store = gtk::ListStore::new(&[u32::static_type(), String::static_type()]);
+        let store = gtk::ListStore::new(&[String::static_type(), String::static_type()]);
         let mut thingy = MeTVComboBox::new_and_set_model(&store);
         thingy.set_active(Some(1)); // TODO Should this fail in some way?
         assert_eq!(thingy.get_active_text(), None);

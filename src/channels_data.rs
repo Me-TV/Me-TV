@@ -55,7 +55,7 @@ pub struct ChannelData {
 // The data is written to the cache file as and when.
 //
 // TODO need to find a way of updating the ListStore in the ControlWindow instance
-//   whenever a change is made here.
+//   whenever a change is made here. Should this be replaced with the ListStore?
 //
 lazy_static! {
     static ref CHANNELS_DATA: RwLock<Option<Vec<ChannelData>>> = RwLock::new(initialise_channels_data());

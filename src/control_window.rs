@@ -116,7 +116,7 @@ impl ControlWindow {
             main_box,
             frontends_box,
             label,
-            channels_data_store: gtk::ListStore::new(&[u32::static_type(), String::static_type()]),
+            channels_data_store: gtk::ListStore::new(&[String::static_type(), String::static_type()]),
             channels_data_loaded: Cell::new(false),
             control_window_buttons: RefCell::new(Vec::new()),
             to_epg_manager,
@@ -171,12 +171,12 @@ impl ControlWindow {
             Some(mut channel_names) => {
                 channel_names.sort();
                 for name in channel_names {
-                    self.channels_data_store.insert_with_values(None, &[0, 1], &[&0, &name]);
+                    self.channels_data_store.insert_with_values(None, &[0, 1], &[&"", &name]);
                 };
                 self.channels_data_loaded.set(true);
             },
             None => {
-                self.channels_data_store.insert_with_values(None, &[1], &[&"No channels file."]);
+                self.channels_data_store.insert_with_values(None, &[0, 1], &[&"", &"No channels file."]);
                 self.channels_data_loaded.set(false);
             }
         }
