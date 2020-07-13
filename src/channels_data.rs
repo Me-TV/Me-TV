@@ -37,6 +37,11 @@ const FRAGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS.add(b'
 /// https://url.spec.whatwg.org/#path-percent-encode-set
 const PATH: &percent_encoding::AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
 
+/// Encode a string as used for display to one suitable to be an MRL.
+pub fn encode_to_mrl(channel_name: &String) -> String {
+    "dvb://".to_owned() + &percent_encoding::utf8_percent_encode(channel_name, PATH).to_string()
+}
+
 /// Struct for the data of each channel stored for various lookups.
 ///
 /// It is assumed that instances are the data pointed to by various indexes so as to
@@ -54,8 +59,8 @@ pub struct ChannelData {
 // Me TV data cache file, and then updated as `LogicalChannelDescriptor` are received.
 // The data is written to the cache file as and when.
 //
-// TODO need to find a way of updating the ListStore in the ControlWindow instance
-//   whenever a change is made here. Should this be replaced with the ListStore?
+// TODO need to update the ListStore in the ControlWindow instance
+//   whenever a change is made here.
 //
 lazy_static! {
     static ref CHANNELS_DATA: RwLock<Option<Vec<ChannelData>>> = RwLock::new(initialise_channels_data());
@@ -106,8 +111,8 @@ fn process_ini(ini: &ini::Ini) -> Vec<ChannelData> {
 
 /// Read channels data from the channels file, if it exists, augmented by the cache data, if it exists.
 ///
-/// Return value specifies whether the data was set to `Some`thing (`true`) or `None` (`false`).
-pub fn read_channels_data() -> bool {
+/// Return Boolean specifies whether the data was set to `Some`thing (`true`) or `None` (`false`).
+pub fn read_channels_data() -> bool { // Used in control_window.rs after a channel search from the UI.
     match initialise_channels_data() {
         Some(data) => {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
@@ -122,18 +127,14 @@ pub fn read_channels_data() -> bool {
     }
 }
 
-/// Extract the names of the channels from the channels data.
-///
-/// GStreamer uses the XDG directory structure with, currently, gstreamer-1.0 as its
-/// name. The dvbsrc plugin assumes the name dvb-channels.conf. The DVBv5 file format
-/// is INI style: a sequence of sections, one for each channel, starting with a channel
-/// name surrounded by brackets ([, ]) followed by a sequence of binding of keys to values
-/// each one indented. This returns the sections heads which are the name sof the channels.
-///
-/// In fact the data is returned from the channel data cache kept internally based on the
-/// above structure of the channel config file.
+/// Return a `Vec` containing the names of the channels from the channels data.
 fn get_names_from_channels_data(channels_data: &Vec<ChannelData>) -> Vec<String> {
     channels_data.iter().map(|x| x.name.clone() ).collect()
+}
+
+/// Return a `Vec` containing the (logical number, name) pairs of the channels from the channels data.
+fn get_numbers_and_names_from_channels_data(channels_data: &Vec<ChannelData>) -> Vec<(u16, String)> {
+    channels_data.iter().map(|x| (x.logical_channel_number, x.name.clone()) ).collect()
 }
 
 /// Return a `Box<Path>` to the GStreamer dvbsrc plugin channels file using the XDG directory structure.
@@ -180,20 +181,14 @@ pub fn get_channel_names() -> Option<Vec<String>> {
 pub fn get_channels_data() -> Option<Vec<(u16, String)>> {
     let channels_data = CHANNELS_DATA.read().unwrap();
     match &*channels_data {
-        Some(c_d) => {
-            let rv = c_d.iter().map(|x| (x.logical_channel_number, x.name.clone())).collect();
-            Some(rv)
-        },
+        Some(c_d) => Some(get_numbers_and_names_from_channels_data(c_d)),
         None => None,
     }
 }
 
-/// Encode a string as used for display to one suitable to be an MRL.
-pub fn encode_to_mrl(channel_name: &String) -> String {
-    "dvb://".to_owned() + &percent_encoding::utf8_percent_encode(channel_name, PATH).to_string()
-}
-
 /// Update the channels file data.
+///
+/// For use when getting SI packets that build the Logical Channel Table.
 ///
 /// Return `true` if a change was made to the channels data, `false` otherwise.
 pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channel_number: u16) -> bool {
@@ -249,7 +244,7 @@ pub fn get_channel_name_of_logical_channel_number(logical_channel_number: u16) -
 }
 
 /// Write the channels data to a cache file.
-pub fn write_channels_data_cache(path: &Path) {
+fn write_channels_data_cache(path: &Path) {
     match OpenOptions::new().write(true).open(path) {
         Ok(mut f) => {
             let channels_data_ptr = CHANNELS_DATA.read().unwrap();
@@ -268,7 +263,7 @@ pub fn write_channels_data_cache(path: &Path) {
 }
 
 /// Read the channels data given a path and return the result.
-pub fn read_channels_data_cache(path: &Path) -> Option<Vec<ChannelData>> {
+fn read_channels_data_cache(path: &Path) -> Option<Vec<ChannelData>> {
     match File::open(path) {
         Ok(mut f) => {
             let mut buffer = [0u8; 20000];
@@ -299,7 +294,7 @@ pub fn read_channels_data_cache(path: &Path) -> Option<Vec<ChannelData>> {
 #[cfg(test)]
 mod tests {
 
-    use std::io::Read; // {Read, Seek, SeekFrom};
+    use std::io::Read;
     use std::sync::Mutex;
 
     use ini;
@@ -308,19 +303,16 @@ mod tests {
 
     use super::{
         add_logical_channel_number_for_service_id,
-        channels_file_path, encode_to_mrl, process_ini,
-        get_names_from_channels_data, get_channel_name_of_logical_channel_number,
+        channels_file_path,
+        encode_to_mrl, process_ini,
+        get_names_from_channels_data,
+        get_numbers_and_names_from_channels_data,
+        get_channel_name_of_logical_channel_number,
         read_channels_data,
-        write_channels_data_cache, read_channels_data_cache,
+        write_channels_data_cache,
+        read_channels_data_cache,
         ChannelData, CHANNELS_DATA
     };
-
-    #[test]
-    fn get_names_from_empty_file() {
-        let empty_input: Vec<ChannelData> = vec![];
-        let empty_output: Vec<String> = vec![];
-        assert_eq!(get_names_from_channels_data(&empty_input), empty_output);
-    }
 
     #[test]
     fn encode_to_mrl_with_no_spaces() {
@@ -342,7 +334,21 @@ mod tests {
         assert_eq!(encode_to_mrl(&"Channel #1".to_owned()), "dvb://Channel%20%231");
     }
 
-    fn create_small_data_set() -> Vec<ChannelData> {
+    #[test]
+    fn get_names_from_empty_channel_data_vec() {
+        let empty_input = vec![];
+        let empty_output: Vec<String> = vec![];
+        assert_eq!(get_names_from_channels_data(&empty_input), empty_output);
+    }
+
+    #[test]
+    fn get_numbers_and_names_from_empty_channel_data_vec() {
+        let empty_input = vec![];
+        let empty_output: Vec<(u16, String)> = vec![];
+        assert_eq!(get_numbers_and_names_from_channels_data(&empty_input), empty_output);
+    }
+
+    fn create_two_entry_channel_data_vec() -> Vec<ChannelData> {
                let data = "
 [BBC ONE Lon]
         SERVICE_ID = 4164
@@ -390,7 +396,7 @@ mod tests {
 
     #[test]
     fn process_ini_with_two_entries() {
-        let result = create_small_data_set();
+        let result = create_two_entry_channel_data_vec();
         assert_eq!(result.len(), 2);
         let bbc_1 = &result[0];
         assert_eq!(bbc_1.name,  "BBC ONE Lon");
@@ -433,7 +439,7 @@ mod tests {
     #[test]
     fn update_channels_data() {
         let test_lock = TEST_LOCK.lock().unwrap();
-        let data = create_small_data_set();
+        let data = create_two_entry_channel_data_vec();
         {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = Some(data);
@@ -471,7 +477,7 @@ mod tests {
     #[test]
     fn ensure_channel_name_accessible_from_channel_number() {
         let test_lock = TEST_LOCK.lock().unwrap();
-        let data = create_small_data_set();
+        let data = create_two_entry_channel_data_vec();
         {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = Some(data);
@@ -486,9 +492,9 @@ mod tests {
     }
 
     #[test]
-    fn write_and_read_channels_data() {
+    fn write_and_read_channels_data_cache() {
         let test_lock = TEST_LOCK.lock().unwrap();
-        let data = create_small_data_set();
+        let data = create_two_entry_channel_data_vec();
         {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = Some(data);
@@ -521,5 +527,4 @@ mod tests {
         let channel_data = CHANNELS_DATA.read().unwrap();
         assert_eq!(&result.unwrap(), (*channel_data).as_ref().unwrap());
     }
-
 }
