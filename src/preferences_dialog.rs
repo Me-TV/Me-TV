@@ -29,8 +29,7 @@ use gtk::prelude::*;
 
 use crate::control_window::ControlWindow;
 use crate::dvb;
-use crate::metvcombobox::MeTVComboBox;
-use crate::metvcombobox::MeTVComboBoxExt;
+use crate::metvcombobox::{MeTVComboBox, MeTVComboBoxExt};
 use crate::preferences;
 
 lazy_static! {
