@@ -32,6 +32,8 @@ use serde_derive::{Serialize, Deserialize};
 use serde_yaml;
 use xdg;
 
+use crate::control_window::Message;
+
 /// https://url.spec.whatwg.org/#fragment-percent-encode-set
 const FRAGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
 /// https://url.spec.whatwg.org/#path-percent-encode-set
@@ -48,9 +50,10 @@ pub fn encode_to_mrl(channel_name: &String) -> String {
 /// create lookups between for example logical_channel_number and name.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ChannelData {
-    name: String,
+    pub name: String,  // Used in control_window.rs
     service_id: u16,
-    logical_channel_number: u16, // Channel 0 is not used so 0 can be used as "not yet known".
+    // Channel 0 is not used so 0 can be used as "not yet known".
+    pub logical_channel_number: u16,  // Used in control_window.rs.
 }
 
 // A singleton of the channels data currently known.
@@ -191,10 +194,10 @@ pub fn get_channels_data() -> Option<Vec<(u16, String)>> {
 /// For use when getting SI packets that build the Logical Channel Table.
 ///
 /// Return `true` if a change was made to the channels data, `false` otherwise.
-pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channel_number: u16) -> bool {
+pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channel_number: u16, to_cw: Option<&glib::Sender<Message>>) -> bool {
     // TODO This does a full (albeit shallow) copy of the data structure, should a more
     //   efficient way of doing the update be found?
-    //   Freeview from Crystal Palace has a maximum 182 channels as at 2020-07-07.
+    //   Freeview from Crystal Palace has a maximum 184 channels as at 2020-07-07.
     let mut channels_data = CHANNELS_DATA.write().unwrap();
     match &*channels_data {
         Some(c_d) => {
@@ -205,11 +208,15 @@ pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channe
                     .map(|x| {
                         if x.service_id == service_id && x.logical_channel_number != logical_channel_number {
                             rv = true;
-                            ChannelData {
+                            let cd = ChannelData {
                                 name: x.name.clone(),
                                 service_id: x.service_id,
                                 logical_channel_number,
+                            };
+                            if to_cw.is_some() {
+                                to_cw.unwrap().send(Message::UpdatedLogicalChannelNumber { cd: cd.clone() }).unwrap();
                             }
+                            cd
                         } else {
                             x.clone()
                         }
@@ -456,11 +463,11 @@ mod tests {
             assert_eq!(bbc_2.service_id, 4287);
             assert_eq!(bbc_2.logical_channel_number, 0);
         }
-        let rc = add_logical_channel_number_for_service_id(4164, 1);
+        let rc = add_logical_channel_number_for_service_id(4164, 1, None);
         assert!(rc);
-        let rc = add_logical_channel_number_for_service_id(4287, 2);
+        let rc = add_logical_channel_number_for_service_id(4287, 2, None);
         assert!(rc);
-        let rc = add_logical_channel_number_for_service_id(3000, 76);
+        let rc = add_logical_channel_number_for_service_id(3000, 76, None);
         assert!(!rc);
         let channel_data = CHANNELS_DATA.read().unwrap();
         let data: &Vec<ChannelData> = (*channel_data).as_ref().unwrap();
@@ -482,9 +489,9 @@ mod tests {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = Some(data);
         }
-        let rc = add_logical_channel_number_for_service_id(4164, 1);
+        let rc = add_logical_channel_number_for_service_id(4164, 1, None);
         assert!(rc);
-        let rc = add_logical_channel_number_for_service_id(4287, 2);
+        let rc = add_logical_channel_number_for_service_id(4287, 2, None);
         assert!(rc);
         assert_eq!(get_channel_name_of_logical_channel_number(1).unwrap(), "BBC ONE Lon");
         assert_eq!(get_channel_name_of_logical_channel_number(2).unwrap(), "BBC TWO");
@@ -499,9 +506,9 @@ mod tests {
             let mut channels_data = CHANNELS_DATA.write().unwrap();
             *channels_data = Some(data);
         }
-        let rc = add_logical_channel_number_for_service_id(4164, 1);
+        let rc = add_logical_channel_number_for_service_id(4164, 1, None);
         assert!(rc);
-        let rc = add_logical_channel_number_for_service_id(4287, 2);
+        let rc = add_logical_channel_number_for_service_id(4287, 2, None);
         assert!(rc);
         let mut file_path = tempfile::NamedTempFile::new().unwrap();
         write_channels_data_cache(file_path.path());

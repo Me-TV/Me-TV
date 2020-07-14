@@ -37,7 +37,7 @@ use tempfile;
 use gst_mpegts;
 
 use crate::about;
-use crate::channels_data::{get_channel_names, channels_file_path, read_channels_data};
+use crate::channels_data::{get_channel_names, channels_file_path, read_channels_data, ChannelData};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
 use crate::frontend_manager::FrontendId;
@@ -54,7 +54,8 @@ pub struct ControlWindow {
     main_box: gtk::Box,
     frontends_box: gtk::Box,
     label: gtk::Label,
-    pub channels_data_store: gtk::ListStore, // Used by ControlWindowButton and FrontendWindow.
+    channels_data_store: gtk::ListStore,
+    pub channels_data_sorter: gtk::TreeModelSort, // Used by ControlWindowButton and FrontendWindow.
     channels_data_loaded: Cell<bool>,
     control_window_buttons: RefCell<Vec<Rc<ControlWindowButton>>>,
     pub to_epg_manager: std::sync::mpsc::Sender<gst_mpegts::Section>, // Used by ControlWindowButton.
@@ -66,6 +67,7 @@ pub enum Message {
     FrontendAppeared{fei: FrontendId},
     FrontendDisappeared{fei: FrontendId},
     TargettedKeystrokeReceived{tk: TargettedKeystroke},
+    UpdatedLogicalChannelNumber{cd: ChannelData},
 }
 
 impl ControlWindow {
@@ -111,12 +113,42 @@ impl ControlWindow {
         main_box.pack_start(&label, true, true, 0);
         window.add(&main_box);
         window.show_all();
+        //
+        let channels_data_store = gtk::ListStore::new(&[String::static_type(), String::static_type()]);
+        let channels_data_sorter = gtk::TreeModelSort::new(&channels_data_store);
+        channels_data_sorter.set_default_sort_func(|model, iter_a, iter_b| {
+            // Order by channel number.
+            let a = model.get_value(&iter_a, 0).get::<String>().unwrap().unwrap();
+            let a = a.parse::<u16>().unwrap_or(0);
+            let b = model.get_value(&iter_b, 0).get::<String>().unwrap().unwrap();
+            let b = b.parse::<u16>().unwrap_or(0);
+            a.cmp(&b)
+        });
+        //
+        // TODO How to trigger the per-column sorting rather than default sorting.
+        //
+        channels_data_sorter.set_sort_func(gtk::SortColumn::Index(0), |model, iter_a, iter_b| {
+            // Sort by channel number
+            let a = model.get_value(&iter_a, 0).get::<String>().unwrap().unwrap();
+            let a = a.parse::<u16>().unwrap_or(0);
+            let b = model.get_value(&iter_b, 0).get::<String>().unwrap().unwrap();
+            let b = b.parse::<u16>().unwrap_or(0);
+            a.cmp(&b)
+        });
+        channels_data_sorter.set_sort_func(gtk::SortColumn::Index(1), |model, iter_a, iter_b| {
+            // Sort by channel name
+            let a = model.get_value(&iter_a, 1).get::<String>().unwrap().unwrap();
+            let b = model.get_value(&iter_b, 1).get::<String>().unwrap().unwrap();
+            a.cmp(&b)
+        });
+        //
         let control_window = Rc::new(ControlWindow {
             window,
             main_box,
             frontends_box,
             label,
-            channels_data_store: gtk::ListStore::new(&[String::static_type(), String::static_type()]),
+            channels_data_store,
+            channels_data_sorter,
             channels_data_loaded: Cell::new(false),
             control_window_buttons: RefCell::new(Vec::new()),
             to_epg_manager,
@@ -157,6 +189,7 @@ impl ControlWindow {
                     Message::FrontendAppeared{fei} => add_frontend(&c_w, &fei),
                     Message::FrontendDisappeared{fei} => remove_frontend(&c_w, &fei),
                     Message::TargettedKeystrokeReceived{tk} => process_targetted_keystroke(&c_w, &tk),
+                    Message::UpdatedLogicalChannelNumber {cd} => add_logical_channel_number(&c_w, &cd),
                 }
                 Continue(true)
             });
@@ -341,5 +374,25 @@ fn process_targetted_keystroke(control_window: &Rc<ControlWindow>, tk: &Targette
     for c_w_b in control_window.control_window_buttons.borrow().iter()
         .filter(|cwb| cwb.frontend_id == tk.frontend_id) {
         c_w_b.process_targetted_keystroke(&tk);
+    }
+}
+
+/// Process getting a new logical channel number message.
+fn add_logical_channel_number(control_window: &Rc<ControlWindow>, cd: &ChannelData) {
+    let list_store = &control_window.channels_data_store;
+    let mut iterator = list_store.get_iter_first().unwrap();
+    loop {
+        let current_number: String = list_store.get_value(&iterator, 0).get::<String>().unwrap().unwrap(); // CLion mistypes this.
+        let current_number = current_number.parse::<u16>().unwrap_or(0);
+        let current_name: String = list_store.get_value(&iterator, 1).get::<String>().unwrap().unwrap(); // CLion mistypes this.
+        if cd.name == current_name {
+            if cd.logical_channel_number != current_number {
+                list_store.set_value(&iterator, 0, &cd.logical_channel_number.to_string().to_value());
+                break
+            }
+        }
+        if ! list_store.iter_next(&iterator) {
+            break;
+        }
     }
 }

@@ -43,7 +43,7 @@ static PRINT_TOT:bool = false;
 
 static PRINT_DATA: bool = false;
 
-fn build_bat(bat: &gst_mpegts::BAT) {
+fn build_bat(bat: &gst_mpegts::BAT, to_cw: &glib::Sender<Message>) {
     // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
     if PRINT_BAT {
         println!("========  BAT section.");
@@ -60,14 +60,14 @@ fn build_bat(bat: &gst_mpegts::BAT) {
     }
 }
 
-fn build_cat(cat: &Vec<gst_mpegts::Descriptor>) {
+fn build_cat(cat: &Vec<gst_mpegts::Descriptor>, to_cw: &glib::Sender<Message>) {
     // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
     if PRINT_CAT {
         println!("========  CAT section:  {:?}", &cat);
     }
 }
 
-fn build_eit(eit: &gst_mpegts::EIT) {
+fn build_eit(eit: &gst_mpegts::EIT, to_cw: &glib::Sender<Message>) {
     if PRINT_EIT {
         println!("========  EIT section.");
     }
@@ -170,7 +170,7 @@ fn build_eit(eit: &gst_mpegts::EIT) {
     }
 }
 
-fn build_nit(nit: &gst_mpegts::NIT) {
+fn build_nit(nit: &gst_mpegts::NIT, to_cw: &glib::Sender<Message>) {
     if PRINT_NIT {
         println!("========  NIT section: actual_network = {}, network_id = {}", nit.get_actual_network(), nit.get_network_id());
     }
@@ -339,7 +339,7 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
                             println!("    LogicalChannelDescriptor:");
                         }
                         for item in dtg_logical_channel_descriptor.get_channels().iter() {
-                            if ! add_logical_channel_number_for_service_id(item.get_service_id(), item.get_logical_channel_number()) {
+                            if ! add_logical_channel_number_for_service_id(item.get_service_id(), item.get_logical_channel_number(), Some(&to_cw)) {
                                 if PRINT_NIT {
                                     println!("Failed to add logical_channel_number {} to service_id {}.", &item.get_logical_channel_number(), &item.get_service_id());
                                 }
@@ -364,7 +364,7 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
     }
 }
 
-fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
+fn build_pat(pat: &Vec<gst_mpegts::PatProgram>, to_cw: &glib::Sender<Message>) {
     // Only seem to get a couple of these on BBC News on Freeview from Crystal Palace.
     if PRINT_PAT {
         println!("========  PAT Section.");
@@ -376,7 +376,7 @@ fn build_pat(pat: &Vec<gst_mpegts::PatProgram>) {
     }
 }
 
-fn build_pmt(pmt: &gst_mpegts::PMT) {
+fn build_pmt(pmt: &gst_mpegts::PMT, to_cw: &glib::Sender<Message>) {
     if PRINT_PMT {
         println!("========  PMT section:  program_number = {}", &pmt.get_program_number());
         for descriptor in pmt.get_descriptors().iter() {
@@ -450,7 +450,7 @@ fn build_pmt(pmt: &gst_mpegts::PMT) {
     }
 }
 
-fn build_sdt(sdt: &gst_mpegts::SDT) {
+fn build_sdt(sdt: &gst_mpegts::SDT, to_cw: &glib::Sender<Message>) {
     if PRINT_SDT {
         println!("========  SDT section:  original_network_id = {:?}, transport_stream_id ={:?}", &sdt.get_original_network_id(), &sdt.get_transport_stream_id());
     }
@@ -527,20 +527,20 @@ free_ca_mode = {}",
     }
 }
 
-fn build_tdt(tdt: &gst::DateTime) {
+fn build_tdt(tdt: &gst::DateTime, to_cw: &glib::Sender<Message>) {
     if PRINT_TDT {
         println!("========  TDT section:  utc_time = {}", &tdt);
     }
 }
 
-fn build_tsdt(tsdt: &Vec<gst_mpegts::Descriptor>) {
+fn build_tsdt(tsdt: &Vec<gst_mpegts::Descriptor>, to_cw: &glib::Sender<Message>) {
     // Do not seem to get any of these on BBC News on Freeview from Crystal Palace.
     if PRINT_TSDT {
         println!("========  TSDT section:  {:?}", &tsdt);
     }
 }
 
-fn build_tot(tot: &gst_mpegts::TOT) {
+fn build_tot(tot: &gst_mpegts::TOT, to_cw: &glib::Sender<Message>) {
     if PRINT_TOT {
         println!("========  TOT section:  utc_time = {}", &tot.get_utc_time());
     }
@@ -597,17 +597,17 @@ pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Re
                     gst_mpegts::SectionType::AtscTvct => {},
                     gst_mpegts::SectionType::Bat => {
                         if let Some(bat) = section.get_bat() {
-                            build_bat(&bat);
+                            build_bat(&bat, &to_cw);
                         } else {
                             println!("******** Got a BAT that wasn't a BAT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Cat => {
-                        build_cat(&section.get_cat());
+                        build_cat(&section.get_cat(), &to_cw);
                     },
                     gst_mpegts::SectionType::Eit => {
                         if let Some(eit) = section.get_eit() {
-                            build_eit(&eit);
+                            build_eit(&eit, &to_cw);
                         } else {
                             println!("********  Got an EIT that wasn't an EIT {:?}", &section);
                             println!("********      Section type: {:?}", &section.get_section_type());
@@ -616,41 +616,41 @@ pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Re
                     },
                     gst_mpegts::SectionType::Nit => {
                         if let Some(nit) = section.get_nit() {
-                            build_nit(&nit);
+                            build_nit(&nit, &to_cw);
                         } else {
                             println!("******** Got a NIT that wasn't a NIT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Pat => {
-                        build_pat(&section.get_pat());
+                        build_pat(&section.get_pat(), &to_cw);
                     },
                     gst_mpegts::SectionType::Pmt => {
                         if let Some(pmt) = section.get_pmt() {
-                            build_pmt(&pmt);
+                            build_pmt(&pmt, &to_cw);
                         } else {
                             println!("******** Got a PMT that wasn't a PMT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Sdt => {
                         if let Some(sdt) = section.get_sdt() {
-                            build_sdt(&sdt);
+                            build_sdt(&sdt, &to_cw);
                         } else {
                             println!("******** Got a SDT that wasn't a SDT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Tdt => {
                         if let Some(tdt) = section.get_tdt() {
-                            build_tdt(&tdt);
+                            build_tdt(&tdt, &to_cw);
                         }else {
                             println!("******** Got a TDT that wasn't a TDT {:?}", &section);
                         }
                     },
                     gst_mpegts::SectionType::Tsdt => {
-                        build_tsdt(&section.get_tsdt());
+                        build_tsdt(&section.get_tsdt(), &to_cw);
                     },
                     gst_mpegts::SectionType::Tot => {
                         if let Some(tot) = section.get_tot() {
-                            build_tot(&tot);
+                            build_tot(&tot, &to_cw);
                         } else {
                             println!("******** Got a TOT that wasn't a TOT {:?}", &section);
                         }

@@ -99,7 +99,7 @@ impl FrontendWindow {
         // to be able to define the action associated with the volume_adjustment.
         let volume_button = gtk::VolumeButton::new();
         let channel_selector = {
-            let c_s = MeTVComboBox::new_and_set_model(&control_window_button.control_window.channels_data_store);
+            let c_s = MeTVComboBox::new_and_set_model(&control_window_button.control_window.channels_data_sorter);
             c_s.set_active(control_window_button.channel_selector.get_active());
             c_s.connect_changed({
                 let c_w_b = control_window_button.clone();
@@ -183,7 +183,7 @@ impl FrontendWindow {
         };
         let fullscreen_channel_selector = {
             let mut f_c_s = fullscreen_toolbar_builder.get_object::<MeTVComboBox>("fullscreen_channel_selector").unwrap();
-            f_c_s.set_new_model(&control_window_button.control_window.channels_data_store);
+            f_c_s.set_new_model(&control_window_button.control_window.channels_data_sorter);
             f_c_s.set_active(control_window_button.channel_selector.get_active());
             f_c_s.connect_changed({
                 let c_w_b = control_window_button.clone();
