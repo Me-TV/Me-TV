@@ -37,8 +37,10 @@ impl MeTVComboBoxExt for MeTVComboBox {
 
     /// Create a new `MeTVComboBox` and set the data model.
     ///
-    /// It is assumed that the List store has two columns (String, String) being
-    /// the channel number and the channel name.
+    /// It is assumed that the `TreeModel` is actually a `ListStore` or a
+    /// `TreeModelSort` backed by a `ListStore` with the `ListStore` having
+    /// two columns (`String`, `String`) being the channel number and
+    /// the channel name.
     fn new_and_set_model<T: IsA<gtk::TreeModel>>(model: &T) -> MeTVComboBox {
         let mut combobox = gtk::ComboBox::new();
         combobox.set_new_model(model);
@@ -47,8 +49,10 @@ impl MeTVComboBoxExt for MeTVComboBox {
 
     /// Set the data model of a `MeTVComboBox`.
     ///
-    /// It is assumed that the List store has two columns (u32, String) being
-    /// the channel number and the channel name.
+    /// It is assumed that the `TreeModel` is actually a `ListStore` or a
+    /// `TreeModelSort` backed by a `ListStore` with the `ListStore` having
+    /// two columns (`String`, `String`) being the channel number and
+    /// the channel name.
     fn set_new_model<T: IsA<gtk::TreeModel>>(&mut self, model: &T) {
         self.set_model(Some(model));
         let number_renderer = gtk::CellRendererText::new();
@@ -109,10 +113,10 @@ mod tests {
 
     fn create_test_model() -> gtk::ListStore {
         let store = gtk::ListStore::new(&[String::static_type(), String::static_type()]);
-        store.insert_with_values(None, &[0, 1], &[&"4", &"fred"]);
-        store.insert_with_values(None, &[0, 1], &[&"3", &"jane"]);
-        store.insert_with_values(None, &[0, 1], &[&"2", &"jo"]);
-        store.insert_with_values(None, &[0, 1], &[&"1", &"bert"]);
+        store.insert_with_values(None, &[0, 1], &[&4.to_string(), &"fred"]);
+        store.insert_with_values(None, &[0, 1], &[&3.to_string(), &"jane"]);
+        store.insert_with_values(None, &[0, 1], &[&2.to_string(), &"jo"]);
+        store.insert_with_values(None, &[0, 1], &[&1.to_string(), &"bert"]);
         store
     }
 
