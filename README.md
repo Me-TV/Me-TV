@@ -148,10 +148,11 @@ capability.
 
 Hopefully the UI is intuitive and gives a good UX. If not please feel free to submit an issue.
 
-Here is a screenshot of Me TV playing BBC NEWS. The USB device was a Hauppauge! WinTV-dualHD
-hence there appearing to be two tuners.
+Here is a screenshot of Me TV playing BBC NEWS in one window and AlJazeera Eng in another
+window. The USB device was a Hauppauge! WinTV-dualHD hence there are two separate tuners.
 
-![Main Me TV Window with a Channel Window showing BBC NEWS](data/screenshots/bbc_news.png)
+![Main Me TV window with one channel window showing BBC NEWS and another channel window showing
+AlJazeera Eng](data/screenshots/bbc_news_aljazeera.png)
 
 ## Recording
 
