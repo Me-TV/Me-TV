@@ -90,7 +90,7 @@ impl ControlWindowButton {
         control_window_button
     }
 
-    /// Set the active channel to 0.
+    /// Set the active channel to index 0.
     pub fn reset_active_channel(&self) {  // Used in control_window.rs
         self.channel_selector.set_active(Some(0));
         if let Some(ref frontend_window) = *self.frontend_window.borrow() {

@@ -20,7 +20,7 @@
  */
 
 use std::collections::HashMap;
-use std::fs::{File, OpenOptions};
+use std::fs::{File, OpenOptions, create_dir_all};
 use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::RwLock;
@@ -85,10 +85,14 @@ fn initialise_channels_data() -> Option<Vec<ChannelData>> {
                 channel_data = channel_data
                     .iter()
                     .map(|x| if x.logical_channel_number == 0 {
+                        let logical_channel_number = match table.get(&x.service_id) {
+                            Some(x) => *x,
+                            None => 0,
+                        };
                         ChannelData {
                             name: x.name.clone(),
                             service_id: x.service_id,
-                            logical_channel_number: *table.get(&x.service_id).unwrap(),
+                            logical_channel_number,
                         }
                     } else {
                         x.clone()
@@ -130,11 +134,6 @@ pub fn read_channels_data() -> bool { // Used in control_window.rs after a chann
     }
 }
 
-/// Return a `Vec` containing the names of the channels from the channels data.
-fn get_names_from_channels_data(channels_data: &Vec<ChannelData>) -> Vec<String> {
-    channels_data.iter().map(|x| x.name.clone() ).collect()
-}
-
 /// Return a `Vec` containing the (logical number, name) pairs of the channels from the channels data.
 fn get_numbers_and_names_from_channels_data(channels_data: &Vec<ChannelData>) -> Vec<(u16, String)> {
     channels_data.iter().map(|x| (x.logical_channel_number, x.name.clone()) ).collect()
@@ -154,21 +153,6 @@ pub fn channels_data_cache_path() -> Box<Path> {
     let mut path_buf = xdg_dirs.get_cache_home();
     path_buf.push("channels_data.yml");
     path_buf.into_boxed_path()
-}
-
-/// Returns the names of the channels from the GStreamer channels file.
-///
-/// GStreamer uses the XDG directory structure with, currently, gstreamer-1.0 as its
-/// name. The dvbsrc plugin assumes the name dvb-channels.conf. The DVBv5 file format
-/// is INI style: a sequence of blocks, one for each channel, starting with a channel
-/// name surrounded by brackets and then a sequence of binding of keys to values each
-/// one indented.
-pub fn get_channel_names() -> Option<Vec<String>> {
-    let channels_data = CHANNELS_DATA.read().unwrap();
-    match &*channels_data {
-        Some(c_d) => Some(get_names_from_channels_data(c_d)),
-        None => None,
-    }
 }
 
 /// Return a `Vec<(u16, String)>` where the `(u16, String)` is the logical number
@@ -223,6 +207,9 @@ pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channe
                     })
                     .collect()
             );
+            if rv {
+                write_channels_data_cache(&*channels_data_cache_path(), channels_data.as_ref().unwrap())
+            }
             rv
         },
         None => false,
@@ -251,11 +238,12 @@ pub fn get_channel_name_of_logical_channel_number(logical_channel_number: u16) -
 }
 
 /// Write the channels data to a cache file.
-fn write_channels_data_cache(path: &Path) {
-    match OpenOptions::new().write(true).open(path) {
+fn write_channels_data_cache(path: &Path, channels_data: &Vec<ChannelData>) {
+    if let Err(error) = create_dir_all(path.parent().unwrap()) {
+        panic!("create_dir_all({:?}) failed: {:?}", path.parent().unwrap(), error);
+    }
+    match OpenOptions::new().write(true).create(true).open(path) {
         Ok(mut f) => {
-            let channels_data_ptr = CHANNELS_DATA.read().unwrap();
-            let channels_data: &Vec<ChannelData> = (*channels_data_ptr).as_ref().unwrap();
             let s = serde_yaml::to_string(&channels_data).unwrap();
             match f.write(s.as_ref()) {
                 Ok(count) => {
@@ -312,7 +300,6 @@ mod tests {
         add_logical_channel_number_for_service_id,
         channels_file_path,
         encode_to_mrl, process_ini,
-        get_names_from_channels_data,
         get_numbers_and_names_from_channels_data,
         get_channel_name_of_logical_channel_number,
         read_channels_data,
@@ -339,13 +326,6 @@ mod tests {
     #[test]
     fn encode_to_mrl_with_hash() {
         assert_eq!(encode_to_mrl(&"Channel #1".to_owned()), "dvb://Channel%20%231");
-    }
-
-    #[test]
-    fn get_names_from_empty_channel_data_vec() {
-        let empty_input = vec![];
-        let empty_output: Vec<String> = vec![];
-        assert_eq!(get_names_from_channels_data(&empty_input), empty_output);
     }
 
     #[test]
@@ -511,7 +491,10 @@ mod tests {
         let rc = add_logical_channel_number_for_service_id(4287, 2, None);
         assert!(rc);
         let mut file_path = tempfile::NamedTempFile::new().unwrap();
-        write_channels_data_cache(file_path.path());
+        {
+            let mut channels_data = CHANNELS_DATA.write().unwrap();
+            write_channels_data_cache(file_path.path(), channels_data.as_ref().unwrap());
+        }
         let mut file = file_path.as_file_mut();
         // TODO Should not need this but it seems needed.
         //file.seek(SeekFrom::Start(0)).unwrap();
@@ -532,6 +515,6 @@ mod tests {
         }
         let result = read_channels_data_cache(file_path.path());
         let channel_data = CHANNELS_DATA.read().unwrap();
-        assert_eq!(&result.unwrap(), (*channel_data).as_ref().unwrap());
+        assert_eq!(&result.unwrap(), channel_data.as_ref().unwrap());
     }
 }

@@ -37,7 +37,7 @@ use tempfile;
 use gst_mpegts;
 
 use crate::about;
-use crate::channels_data::{get_channel_names, channels_file_path, read_channels_data, ChannelData};
+use crate::channels_data::{channels_file_path, read_channels_data, ChannelData, get_channels_data};
 use crate::control_window_button::ControlWindowButton;
 use crate::dialogs::display_an_error_dialog;
 use crate::frontend_manager::FrontendId;
@@ -200,11 +200,11 @@ impl ControlWindow {
     /// Transfer the list of channel names held by the control window into the selector box and set the default.
     pub fn update_channels_store(&self) {
         self.channels_data_store.clear();
-        match get_channel_names() {
-            Some(mut channel_names) => {
-                channel_names.sort();
-                for name in channel_names {
-                    self.channels_data_store.insert_with_values(None, &[0, 1], &[&"", &name]);
+        match get_channels_data() {
+            Some(mut channel_data) => {
+                for (number, name) in channel_data {
+                    let channel_number = if number == 0 { "".to_string() } else { number.to_string() };
+                    self.channels_data_store.insert_with_values(None, &[0, 1], &[&channel_number, &name]);
                 };
                 self.channels_data_loaded.set(true);
             },
@@ -319,11 +319,11 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                             display_an_error_dialog(Some(&c_w_b.control_window.window), "The channel is the empty string and cannot be tuned to.");
                         } else {
                             // TODO What to do if None is returned?
-                            if let Some(iterator) = control_window.channels_data_store.get_iter_first() {
+                            if let Some(iterator) = control_window.channels_data_sorter.get_iter_first() {
                                 loop {
-                                    if let Some(channel_name) = control_window.channels_data_store.get_value(&iterator, 1).get::<String>().unwrap() {
+                                    if let Some(channel_name) = control_window.channels_data_sorter.get_value(&iterator, 1).get::<String>().unwrap() {
                                         if target_channel_name == channel_name {
-                                            match control_window.channels_data_store.get_path(&iterator) {
+                                            match control_window.channels_data_sorter.get_path(&iterator) {
                                                 Some(mut tree_path) => {
                                                     let index = tree_path.get_indices_with_depth()[0];
                                                     if index < 0 { panic!("index cannot be a negative integer"); }
@@ -335,7 +335,7 @@ fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
                                             break;
                                         }
                                     }
-                                    if !control_window.channels_data_store.iter_next(&iterator) {
+                                    if !control_window.channels_data_sorter.iter_next(&iterator) {
                                         display_an_error_dialog(Some(&c_w_b.control_window.window), &format!("The channel {} could not be found for immediate TV display.", target_channel_name));
                                         break;
                                     }
