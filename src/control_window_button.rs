@@ -25,7 +25,7 @@ use std::rc::Rc;
 use gtk;
 use gtk::prelude::*;
 
-use crate::channels_data::encode_to_mrl;
+use crate::channels_data::{encode_to_mrl, get_channel_name_of_logical_channel_number};
 use crate::control_window::ControlWindow;
 use crate::dialogs::display_an_error_dialog;
 use crate::frontend_manager::FrontendId;
@@ -36,8 +36,8 @@ use crate::preferences;
 use crate::remote_control::TargettedKeystroke;
 
 /// A `ControlWindowButton` is a `gtk::Box` but there is no inheritance so use
-/// a bit of composition.
-#[derive(Debug)]
+/// composition.
+#[derive(Clone, Debug)]
 pub struct ControlWindowButton {
     pub control_window: Rc<ControlWindow>, // FrontendWindow instance needs access to this.
     pub frontend_id: FrontendId, // ControlWindow instance needs access to this for searching.
@@ -45,6 +45,8 @@ pub struct ControlWindowButton {
     pub frontend_button: gtk::ToggleButton, // FrontendWindow needs access to this.
     pub channel_selector: MeTVComboBox, // FrontendWindow needs read access to this.
     frontend_window: RefCell<Option<Rc<FrontendWindow>>>,
+    channel_number_dialog: gtk::Dialog,
+    channel_number_entry: gtk::Entry,
 }
 
 impl ControlWindowButton {
@@ -60,10 +62,20 @@ impl ControlWindowButton {
         let frontend_button = gtk::ToggleButton::with_label(
             format!("adaptor{}\nfrontend{}", frontend_id.adapter, frontend_id.frontend).as_ref()
         );
-        let channel_selector = MeTVComboBox::new_and_set_model(&control_window.channels_data_sorter);
+        let channel_selector = MeTVComboBox::new_with_model(&control_window.channels_data_sorter);
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         widget.pack_start(&frontend_button, true, true, 0);
         widget.pack_start(&channel_selector, true, true, 0);
+        let channel_number_dialog = gtk::Dialog::new();
+        let channel_number_entry = gtk::Entry::new();
+        let max_length = 3;
+        channel_number_entry.set_max_length(max_length);
+        channel_number_entry.set_max_width_chars(max_length);
+        channel_number_entry.set_alignment(1.0);
+        channel_number_entry.set_progress_fraction(1.0);
+        channel_number_entry.show();
+        channel_number_dialog.set_title("Channel Number");
+        channel_number_dialog.get_content_area().pack_start(&channel_number_entry, false, false, 10);
         let control_window_button = Rc::new(ControlWindowButton {
             control_window: control_window.clone(),
             frontend_id,
@@ -71,6 +83,8 @@ impl ControlWindowButton {
             frontend_button,
             channel_selector,
             frontend_window: RefCell::new(None),
+            channel_number_dialog,
+            channel_number_entry,
         });
         control_window_button.reset_active_channel();
         control_window_button.channel_selector.connect_changed({
@@ -244,13 +258,88 @@ impl ControlWindowButton {
                     }
                 }
             },
+            // These seem to be the keystrokes returned by the digit buttons on a remote control.
             input_event_codes::KEY_NUMERIC_0 ..= input_event_codes::KEY_NUMERIC_9 => {
-                println!("Got an unprocessed numeric keystroke {}, {}", tk.keystroke, tk.value);
-                // Remember there is a key down and key up event;
-                // tk.value == 1 -> down, tk.value == 0 -> up.
+                if tk.value == 1 {
+                    self.process_numeric_keystroke(tk);
+                }
             },
             x => println!("Got an unprocessed keystroke {}", x),
         }
     }
 
+    /// Change the channel to the one collected by the `Entry`.
+    fn change_channel_after_keystrokes(&self, channel_number: &str) {
+        let channel_number = channel_number.parse::<u16>().unwrap();
+        match get_channel_name_of_logical_channel_number(channel_number) {
+            Some(channel_name) => {
+                let index = {
+                    let model = &self.control_window.channels_data_sorter;
+                    let iterator = model.get_iter_first().unwrap();
+                    let mut index = 0u32;
+                    let mut success = false;
+                    loop {
+                        let name = model.get_value(&iterator, 1).get::<String>().unwrap().unwrap();
+                        if name == channel_name {
+                            success = true;
+                            break
+                        }
+                        if ! model.iter_next(&iterator) { break }
+                        index += 1;
+                    }
+                    if ! success { panic!("Failed to find {} in the data model", channel_name); }
+                    index
+                };
+                self.set_channel_index(index);
+            },
+            None => println!("Failed to find channel name from channel number."),
+        }
+        self.channel_number_entry.set_text("");
+        self.channel_number_entry.set_progress_fraction(1.0);
+        self.channel_number_dialog.hide();
+    }
+
+    /// Process a numeric keystroke, most likely from a remote.
+    ///
+    /// Displays a dialogue which displays the digits received so far. If there are
+    /// three digits present or there has been a delay of 3 seconds since the last digit
+    /// then the input is assumed to be the channel number the user wants to switch to.
+    fn process_numeric_keystroke(&self, tk: &TargettedKeystroke) {
+        let digit = match tk.keystroke {
+            input_event_codes::KEY_NUMERIC_0 => 0,
+            input_event_codes::KEY_NUMERIC_1 => 1,
+            input_event_codes::KEY_NUMERIC_2 => 2,
+            input_event_codes::KEY_NUMERIC_3 => 3,
+            input_event_codes::KEY_NUMERIC_4 => 4,
+            input_event_codes::KEY_NUMERIC_5 => 5,
+            input_event_codes::KEY_NUMERIC_6 => 6,
+            input_event_codes::KEY_NUMERIC_7 => 7,
+            input_event_codes::KEY_NUMERIC_8 => 8,
+            input_event_codes::KEY_NUMERIC_9 => 9,
+            x => panic!("Got a keystroke that it is impossible to get at this point: {}", x),
+        };
+        let dialog = &self.channel_number_dialog;
+        dialog.show_all();
+        let entry = &self.channel_number_entry;
+        let max_length = entry.get_max_length() as usize;
+        let fraction = |s: &str| -> f64 { 1.0 - (s.len() as f64) / (max_length as f64) };
+        let text = entry.get_text().to_string() + &digit.to_string();
+        entry.set_text(&text);
+        entry.set_progress_fraction(fraction(&text));
+        if text.len() >= max_length {
+            self.change_channel_after_keystrokes(&text)
+        } else {
+            glib::timeout_add_seconds_local(3, {
+                let s = self.clone();
+                let e = entry.clone();
+                let t = text.clone();
+                move || {
+                    if e.get_text() == t {
+                        s.change_channel_after_keystrokes(&t);
+                    }
+                    Continue(false)
+                }
+            });
+        }
+    }
 }

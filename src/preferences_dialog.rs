@@ -81,7 +81,7 @@ fn create(control_window: &ControlWindow) -> gtk::Window {
     );
     let _default_channel_selector = {
         let mut combobox = menu_builder.get_object::<MeTVComboBox>("channel_name").unwrap();
-        combobox.set_new_model(&control_window.channels_data_sorter);
+        combobox.init_with_model(&control_window.channels_data_sorter);
         if let Some(channel_name) = preferences::get_default_channel() {
             if channel_name != "" {
                 if ! combobox.set_active_text(channel_name.clone()) {

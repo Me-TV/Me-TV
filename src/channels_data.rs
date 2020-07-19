@@ -221,19 +221,24 @@ pub fn add_logical_channel_number_for_service_id(service_id: u16, logical_channe
 /// Return is actually an `Option`, `None` is returned if the logical_channel_number was
 /// not found in the channel data.
 pub fn get_channel_name_of_logical_channel_number(logical_channel_number: u16) -> Option<String> {
-    let channel_data = CHANNELS_DATA.read().unwrap();
-    match &*channel_data {
-        Some(c_d) => {
-            // TODO Can we do better than linear search, or does it not matter?
-            //    Freeview from Crystal Palace has a maximum 182 channels as at 2020-07-07.
-            let result: Vec<&ChannelData> = c_d.iter().filter(|x| x.logical_channel_number == logical_channel_number).collect();
-            match result.len() {
-                0 => None,
-                1 => Some(result[0].name.clone()),
-                _ => panic!("Got more than one channel with the same logical number."),
-            }
-        },
-        None => None,
+    // Zero is used to mean channel number not known.
+    if logical_channel_number == 0 {
+        None
+    } else {
+        let channel_data = CHANNELS_DATA.read().unwrap();
+        match &*channel_data {
+            Some(c_d) => {
+                // TODO Can we do better than linear search, or does it not matter?
+                //    Freeview from Crystal Palace has a maximum 182 channels as at 2020-07-07.
+                let result: Vec<&ChannelData> = c_d.iter().filter(|x| x.logical_channel_number == logical_channel_number).collect();
+                match result.len() {
+                    0 => None,
+                    1 => Some(result[0].name.clone()),
+                    _ => panic!("Got more than one channel with the same logical number."),
+                }
+            },
+            None => None,
+        }
     }
 }
 

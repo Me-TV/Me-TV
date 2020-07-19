@@ -27,8 +27,8 @@ pub type MeTVComboBox = gtk::ComboBox;
 
 pub trait MeTVComboBoxExt {
     // Can't use any names from `gtk::ComboBox`
-    fn new_and_set_model<T: IsA<gtk::TreeModel>>(model: &T) -> MeTVComboBox;
-    fn set_new_model<T: IsA<gtk::TreeModel>>(&mut self, model: &T);
+    fn new_with_model<T: IsA<gtk::TreeModel>>(model: &T) -> MeTVComboBox;
+    fn init_with_model<T: IsA<gtk::TreeModel>>(&mut self, model: &T);
     fn get_active_text(&self) -> Option<String>;
     fn set_active_text(&mut self, name: String) -> bool;
 }
@@ -41,19 +41,19 @@ impl MeTVComboBoxExt for MeTVComboBox {
     /// `TreeModelSort` backed by a `ListStore` with the `ListStore` having
     /// two columns (`String`, `String`) being the channel number and
     /// the channel name.
-    fn new_and_set_model<T: IsA<gtk::TreeModel>>(model: &T) -> MeTVComboBox {
+    fn new_with_model<T: IsA<gtk::TreeModel>>(model: &T) -> MeTVComboBox {
         let mut combobox = gtk::ComboBox::new();
-        combobox.set_new_model(model);
+        combobox.init_with_model(model);
         combobox
     }
 
-    /// Set the data model of a `MeTVComboBox`.
+    /// Initialise and set the data model of a `MeTVComboBox`.
     ///
     /// It is assumed that the `TreeModel` is actually a `ListStore` or a
     /// `TreeModelSort` backed by a `ListStore` with the `ListStore` having
     /// two columns (`String`, `String`) being the channel number and
     /// the channel name.
-    fn set_new_model<T: IsA<gtk::TreeModel>>(&mut self, model: &T) {
+    fn init_with_model<T: IsA<gtk::TreeModel>>(&mut self, model: &T) {
         self.set_model(Some(model));
         let number_renderer = gtk::CellRendererText::new();
         self.pack_start(&number_renderer, true);
@@ -127,12 +127,12 @@ mod tests {
             Err(_) => panic!("Could not initialise GTK"),
         }
         let store = gtk::ListStore::new(&[String::static_type(), String::static_type()]);
-        let mut thingy = MeTVComboBox::new_and_set_model(&store);
+        let mut thingy = MeTVComboBox::new_with_model(&store);
         thingy.set_active(Some(1)); // TODO Should this fail in some way?
         assert_eq!(thingy.get_active_text(), None);
 
         let store = create_test_model();
-        thingy.set_new_model(&store);
+        thingy.init_with_model(&store);
         thingy.set_active(Some(0));
         assert_eq!(thingy.get_active_text().unwrap(), "fred");
 
@@ -142,7 +142,7 @@ mod tests {
         thingy.set_active(Some(1));
         assert_eq!(thingy.get_active_text().unwrap(), "jane");
 
-        let mut another_thingy = MeTVComboBox::new_and_set_model(&store);
+        let mut another_thingy = MeTVComboBox::new_with_model(&store);
 
         let target = "jo".to_string();
         assert_eq!(another_thingy.set_active_text(target.clone()), true);
