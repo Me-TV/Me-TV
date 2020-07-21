@@ -3,8 +3,8 @@
 ## [Unreleased]
 ### Added
  - Add processing of MPEG-TS messages to get logical channel numbers that allow
-   channels numbers to be used as well as channel names. Remote control channel
-   change by number added.
+   channels numbers to be displayed as well as channel names.
+ - Remote control channel change by number added.
 ### Changed
  - Require GStreamer 1.16 so as to use MPEG-TS library.
 
