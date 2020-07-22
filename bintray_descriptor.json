@@ -18,9 +18,9 @@
     "version": {
         "name": "v3.1.0",
         "desc": "Version 3.1.0",
-        "released": "2019-05-10",
+        "released": "2020-07-22",
         "vcs_tag": "v3.1.0",
-        "gpgSign": true
+        "gpgSign": false
     },
 
     "files": [
