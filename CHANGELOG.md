@@ -1,6 +1,6 @@
 # ChangeLog
 
-## [Unreleased]
+## [3.1.0] - 2020-07-22
 ### Added
  - Add processing of MPEG-TS messages to get logical channel numbers that allow
    channels numbers to be displayed as well as channel names.
