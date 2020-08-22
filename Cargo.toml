@@ -1,6 +1,6 @@
 [package]
 name = "me-tv"
-version = "3.1.0"
+version = "3.1.1"
 authors = ["Russel Winder <russel@winder.org.uk>"]
 categories = ["desktop applications"]
 keywords = ["dvb", "video", "audio", "player", "atsc"]
@@ -30,8 +30,9 @@ gtk = {git="https://github.com/gtk-rs/gtk", features=["v3_22"]}
 #gst = {package="gstreamer", version = "*", features = ["v1_16"]}
 #gst-mpegts = {package="gstreamer-mpegts", version="*"}
 gst = {package="gstreamer", git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs", features=["v1_16"]}
-gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.com/Russel/gstreamer_mpegts.git"}
-#gst-mpegts = {package="gstreamer-mpegts", path="../../Masters/Public/GStreamer_MPEGTS"}
+#gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs"}
+gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.freedesktop.org/Russel/gstreamer-rs", branch="mpegts_addition"}
+#gst-mpegts = {package="gstreamer-mpegts", path="../GStreamer_Rs/gstreamer-mpegts"}
 #
 glob = "*"
 lazy_static = "*"
