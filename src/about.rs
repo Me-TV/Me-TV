@@ -3,7 +3,7 @@
  *
  *  A GTK+/GStreamer client for watching and recording DVB.
  *
- *  Copyright © 2017–2019  Russel Winder
+ *  Copyright © 2017–2020  Russel Winder
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ fn create() -> gtk::AboutDialog {
     let mut documentors = Vec::<&str>::new();
     about.set_authors(&authors);
     about.set_comments(Some("A digital television (DVB) viewer using GTK+3 and GStreamer."));
-    about.set_copyright(Some("Copyright © 2010–2011  Michael Lamothe <michael.lamothe@gmail.com>\nCopyright © 2014, 2016–2019  Russel Winder <russel@winder.org.uk>"));
+    about.set_copyright(Some("Copyright © 2010–2011  Michael Lamothe <michael.lamothe@gmail.com>\nCopyright © 2014, 2016–2020  Russel Winder <russel@winder.org.uk>"));
     about.set_documenters(&documentors);
     about.set_license(Some("This program is licenced under GNU General Public Licence (GPL) version 3."));
     let loader = PixbufLoader::new();

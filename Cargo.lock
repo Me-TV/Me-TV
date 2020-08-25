@@ -157,7 +157,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "encoding_rs"
-version = "0.8.23"
+version = "0.8.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -472,7 +472,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.17.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#23174629b673efcf074ed33e0047dc24b04727e1"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#42768a3159e1de5789f05ad0408fec226692ed99"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -507,9 +507,9 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts"
 version = "0.17.0"
-source = "git+https://gitlab.freedesktop.org/Russel/gstreamer-rs?branch=mpegts_addition#716ff61031afb7048663e13301514d9122ce602c"
+source = "git+https://gitlab.freedesktop.org/Russel/gstreamer-rs?branch=mpegts_addition#56594f730e7d0df0ca2d5462d21c92b9e7c406f1"
 dependencies = [
- "encoding_rs 0.8.23 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding_rs 0.8.24 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib 0.10.0 (git+https://github.com/gtk-rs/glib)",
  "glib-sys 0.10.0 (git+https://github.com/gtk-rs/sys)",
  "gobject-sys 0.10.0 (git+https://github.com/gtk-rs/sys)",
@@ -1383,7 +1383,7 @@ dependencies = [
 "checksum dlv-list 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1b391911b9a786312a10cb9d2b3d0735adfd5a8113eb3648de26a75e91b0826c"
 "checksum dtoa 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 "checksum either 1.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cd56b59865bce947ac5958779cfa508f6c3b9497cc762b7e24a12d11ccde2c4f"
-"checksum encoding_rs 0.8.23 (registry+https://github.com/rust-lang/crates.io-index)" = "e8ac63f94732332f44fe654443c46f6375d1939684c17b0afb6cb56b0456e171"
+"checksum encoding_rs 0.8.24 (registry+https://github.com/rust-lang/crates.io-index)" = "a51b8cf747471cb9499b6d59e59b0444f4c90eba8968c4e44874e92b5b64ace2"
 "checksum env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
 "checksum exitcode 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "de853764b47027c2e862a995c34978ffa63c1501f2e15f987ba11bd4f9bba193"
 "checksum filetime 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)" = "3ed85775dcc68644b5c950ac06a2b23768d3bc9390464151aaf27136998dcf9e"
