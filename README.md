@@ -175,6 +175,13 @@ broadcast in a DVB-T and DVB-T2 broadcast region. However, there is now at least
 using Me TV 3 in an ATSC area, and it works. Which is good. This still leaves no data on whether
 Me TV works with DVB-C, DVB-S, DVB-S2, and ISDB-T, reports of success are awaited.
 
+## Acknowledgements
+
+This project benefits from support by [JetBrains](https://www.jetbrains.com); JetBrains provide
+a licence for [CLion](https://www.jetbrains.com/clion/). Although CLion is ostensibly a C and
+C++ IDE, there is [IntelliJ Rust](https://intellij-rust.github.io/) which makes CLion an
+excellent IDE for [Rust](https://www.rust-lang.org/) code development.
+
 ## Licence
 
 This code is licenced under GPLv3.
