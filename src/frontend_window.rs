@@ -139,21 +139,19 @@ impl FrontendWindow {
                 }
                 hide_cursor(&w.clone().upcast::<gtk::Widget>());
                 w.fullscreen();
-                gtk::timeout_add_seconds(2, {
+                glib::timeout_add_seconds_local(2, {
                     let ww = w.clone();
                     let ft = f_t.clone();
                     move || {
-                        unsafe {
-                            match LAST_ACTIVITY_TIME {
-                                Some(last_activity_time) => {
-                                    if Instant::now().duration_since(last_activity_time) > Duration::from_secs(5) {
-                                        hide_cursor(&ww.clone().upcast::<gtk::Widget>());
-                                        ft.hide();
-                                    }
-                                    Continue(true)
-                                },
-                                None => Continue(false)
-                            }
+                        match unsafe { LAST_ACTIVITY_TIME } {
+                            Some(last_activity_time) => {
+                                if Instant::now().duration_since(last_activity_time) > Duration::from_secs(5) {
+                                    hide_cursor(&ww.clone().upcast::<gtk::Widget>());
+                                    ft.hide();
+                                }
+                                Continue(true)
+                            },
+                            None => Continue(false)
                         }
                     }
                 });
