@@ -201,7 +201,7 @@ impl ControlWindow {
     pub fn update_channels_store(&self) {
         self.channels_data_store.clear();
         match get_channels_data() {
-            Some(mut channel_data) => {
+            Some(channel_data) => {
                 for (number, name) in channel_data {
                     let channel_number = if number == 0 { "".to_string() } else { number.to_string() };
                     self.channels_data_store.insert_with_values(None, &[0, 1], &[&channel_number, &name]);
@@ -380,7 +380,7 @@ fn process_targetted_keystroke(control_window: &Rc<ControlWindow>, tk: &Targette
 /// Process getting a new logical channel number message.
 fn add_logical_channel_number(control_window: &Rc<ControlWindow>, cd: &ChannelData) {
     let list_store = &control_window.channels_data_store;
-    let mut iterator = list_store.get_iter_first().unwrap();
+    let iterator = list_store.get_iter_first().unwrap();
     loop {
         let current_number: String = list_store.get_value(&iterator, 0).get::<String>().unwrap().unwrap(); // CLion mistypes this.
         let current_number = current_number.parse::<u16>().unwrap_or(0);

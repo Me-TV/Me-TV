@@ -305,9 +305,9 @@ impl GStreamerEngine {
                                 Err(e) => {
                                     display_an_error_dialog(
                                         Some(&application_clone.get().get_windows()[0]),
-                                        "Could not create an OpenGL deinterlace element,\ncontinuing without deinterlacing."
+                                        &format!("Could not create an OpenGL deinterlace element,\ncontinuing without deinterlacing.\n{}", e),
                                     );
-                                    glsinkbin.set_property("sink", &gtkglsink.to_value()).expect("Could not set 'sink'property.");
+                                    glsinkbin.set_property("sink", &gtkglsink.to_value()).expect("Could not set 'sink' property.");
                                 },
                             };
                             let widget = gtkglsink.get_property("widget").expect("Could not get 'widget' property.");

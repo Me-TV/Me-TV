@@ -21,7 +21,7 @@
 
 use std::fs;
 use std::os::unix::fs::FileTypeExt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
 use glib;

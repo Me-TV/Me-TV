@@ -584,7 +584,7 @@ fn build_tot(tot: &gst_mpegts::TOT, to_cw: &glib::Sender<Message>) {
 ///
 /// This is a separate process executed by a thread other than the Glib event loop thread
 /// so as to avoid that thread having to do too much work.
-pub fn run(mut to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Receiver<gst_mpegts::Section>) {
+pub fn run(to_cw: glib::Sender<Message>, from_gstreamer: std::sync::mpsc::Receiver<gst_mpegts::Section>) {
     loop {
         match from_gstreamer.recv() {
             Ok(mut section) => {
