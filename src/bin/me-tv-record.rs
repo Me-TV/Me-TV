@@ -116,10 +116,10 @@ A channel name and a duration must be provided.
                             .expect("Could not get the i32 value from the frontend number Value")
                             .expect ("Option on u32 returned None") as u8;
                         if current_adapter_number != adapter_number {
-                            element.set_property("adapter", &(adapter_number as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
+                            element.set_property("adapter", &(adapter_number as i32)).expect("Could not set adapter number on dvbsrc element");
                         }
                         if current_frontend_number != adapter_number {
-                            element.set_property("frontend", &(frontend_number as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
+                            element.set_property("frontend", &(frontend_number as i32)).expect("Could not set frontend number of dvbsrc element");
                         }
                     }
                 }

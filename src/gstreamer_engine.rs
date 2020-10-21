@@ -88,10 +88,10 @@ impl GStreamerEngine {
                             .expect("Could not get the i32 value from the frontend number Value")
                             .expect("Got None rather than Some<u32>") as u8;
                         if adapter_number != fei.adapter {
-                            element.set_property("adapter", &(fei.adapter as i32).to_value()).expect("Could not set adapter number on dvbsrc element");
+                            element.set_property("adapter", &(fei.adapter as i32)).expect("Could not set adapter number on dvbsrc element");
                         }
                         if frontend_number != fei.frontend {
-                            element.set_property("frontend", &(fei.frontend as i32).to_value()).expect("Could not set frontend number of dvbsrc element");
+                            element.set_property("frontend", &(fei.frontend as i32)).expect("Could not set frontend number of dvbsrc element");
                         }
                     }
                     else if element_factory.get_name() == "deinterlace" {
@@ -104,7 +104,7 @@ impl GStreamerEngine {
                         let new_method_nick = preferences::get_nongl_deinterlace_method().expect("Failed to get nongl_deinterlace_method.");
                         if new_method_nick != "" && new_method_nick != method_nick {
                             let new_method = enum_class.get_value_by_nick(&new_method_nick).expect(&format!("Failed to get new method EnumValue for {}", &new_method_nick));
-                            element.set_property("method", &new_method.to_value()).expect("Failed to set method property.");
+                            element.set_property_generic("method", &(new_method.to_value())).expect("Failed to set method property.");
                         }
                     }
                 }
@@ -263,7 +263,7 @@ impl GStreamerEngine {
                                     let flags_class = glib::FlagsClass::new(flags.type_()).expect("Could not get the flags FlagClass.");
                                     let flags_builder = flags_class.builder_with_value(flags).expect("Could not get the flags FlagsBuilder.");
                                     let flags = flags_builder.unset_by_nick("deinterlace").build().expect("Could not remove 'deinterlace' from the set of elements playbin might use.");
-                                    playbin.set_property("flags", &flags).expect("Could not set the new 'flags' value on playbin.");
+                                    playbin.set_property_generic("flags", &flags).expect("Could not set the new 'flags' value on playbin.");
                                     // TODO A gst::Bin does not have the properties of a video
                                     //   sink and so when the pipeline diagram is drawn there
                                     //   are a lot of missing properties that are trying to be
@@ -298,16 +298,16 @@ impl GStreamerEngine {
                                     let new_method_nick = preferences::get_gl_deinterlace_method().expect("Failed to get gl_deinterlace_method.");
                                     if new_method_nick != "" && new_method_nick != method_nick {
                                         let new_method = enum_class.get_value_by_nick(&new_method_nick).expect(&format!("Failed to get new method EnumValue for {}", &new_method_nick));
-                                        gldeinterlace.set_property("method", &new_method.to_value()).expect("Failed to set method property.");
+                                        gldeinterlace.set_property_generic("method", &(new_method.to_value())).expect("Failed to set method property.");
                                     }
-                                    glsinkbin.set_property("sink", &the_bin.to_value()).expect("Could not set 'sink'property.");
+                                    glsinkbin.set_property("sink", &the_bin).expect("Could not set 'sink'property.");
                                 },
                                 Err(e) => {
                                     display_an_error_dialog(
                                         Some(&application_clone.get().get_windows()[0]),
                                         &format!("Could not create an OpenGL deinterlace element,\ncontinuing without deinterlacing.\n{}", e),
                                     );
-                                    glsinkbin.set_property("sink", &gtkglsink.to_value()).expect("Could not set 'sink' property.");
+                                    glsinkbin.set_property("sink", &gtkglsink).expect("Could not set 'sink' property.");
                                 },
                             };
                             let widget = gtkglsink.get_property("widget").expect("Could not get 'widget' property.");
@@ -343,8 +343,8 @@ impl GStreamerEngine {
                 video_element: video_element.expect("'video_element' is None, this cannot happen."),
                 video_widget: video_widget.expect("'video_widget is None, this cannot happen."),
             };
-            engine.video_element.set_property("force-aspect-ratio", &true.to_value()).expect("Could not set 'force-aspect-ration' property");
-            engine.playbin.set_property("video-sink", &engine.video_element.to_value()).expect("Could not set 'video-sink' property");
+            engine.video_element.set_property("force-aspect-ratio", &true).expect("Could not set 'force-aspect-ration' property");
+            engine.playbin.set_property("video-sink", &engine.video_element).expect("Could not set 'video-sink' property");
             engine.set_subtitles_showing(false);
             Ok(engine)
         }
@@ -373,17 +373,20 @@ impl GStreamerEngine {
          * Add writing out the GStreamer pipeline to the event queue, but leave long
          * enough for the pipeline to be formed.
          *
-         * Comment out for now.
-         * /
+         * Activate the dumping of the DOT file by setting the environment variable
+         * GST_DEBUG_DUMP_DOT_DIR to be the directory in which to write the file.
+         *
+         * Or can comment out the whole thing if need be.
+         */
         glib::timeout_add_seconds_local(8, {
             let the_bin = self.playbin.clone().downcast::<gst::Bin>().unwrap();
             move || {
                 gst::debug_bin_to_dot_file(&the_bin, gst::DebugGraphDetails::all(), "pipeline");
-                println!("££££££££  Pipeline diagram drawn.");
+                println!("££££££££  Pipeline diagram drawn if GST_DEBUG_DUMP_DOT_DIR has been set.");
                 Continue(false)
             }
         });
-        / * */
+        /* */
     }
 
     pub fn stop(&self) {
@@ -419,7 +422,7 @@ impl GStreamerEngine {
         }
             .build()
             .unwrap();
-        self.playbin.set_property("flags", &flags).unwrap();
+        self.playbin.set_property_generic("flags", &flags).unwrap();
     }
 
 }
