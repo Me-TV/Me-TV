@@ -80,10 +80,11 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 [[package]]
 name = "cairo-rs"
 version = "0.9.0"
-source = "git+https://github.com/gtk-rs/cairo#b70975728dfedeb62525672e8c42a57eee3fbc60"
+source = "git+https://github.com/gtk-rs/cairo#dd3cbdd07b046df9f1fc88ae3fe3ea998a92eaa1"
 dependencies = [
  "bitflags",
  "cairo-sys-rs",
+ "freetype",
  "glib",
  "glib-sys",
  "gobject-sys",
@@ -94,7 +95,7 @@ dependencies = [
 [[package]]
 name = "cairo-sys-rs"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/cairo#b70975728dfedeb62525672e8c42a57eee3fbc60"
+source = "git+https://github.com/gtk-rs/cairo#dd3cbdd07b046df9f1fc88ae3fe3ea998a92eaa1"
 dependencies = [
  "glib-sys",
  "libc",
@@ -145,6 +146,15 @@ dependencies = [
  "textwrap",
  "unicode-width",
  "vec_map",
+]
+
+[[package]]
+name = "cmake"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e56268c17a6248366d66d4a47a3381369d068cce8409bb1716ed77ea32163bb"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -220,6 +230,27 @@ name = "fragile"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69a039c3498dc930fe810151a34ba0c1c70b02b8625035592e74432f678591f2"
+
+[[package]]
+name = "freetype"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bee38378a9e3db1cc693b4f88d166ae375338a0ff75cb8263e1c601d51f35dc6"
+dependencies = [
+ "freetype-sys",
+ "libc",
+]
+
+[[package]]
+name = "freetype-sys"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a37d4011c0cc628dfa766fcc195454f4b068d7afdc2adfd28861191d866e731a"
+dependencies = [
+ "cmake",
+ "libc",
+ "pkg-config",
+]
 
 [[package]]
 name = "fsevent"
@@ -552,7 +583,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts"
 version = "0.17.0"
-source = "git+https://gitlab.freedesktop.org/Russel/gstreamer-rs?branch=mpegts_addition#6cc790994f50d7f4a70afb9d7eccacfe760603d1"
+source = "git+https://gitlab.freedesktop.org/Russel/gstreamer-rs?branch=mpegts_addition#804bb53928a038ec8e6939e961d52b0acecbbda8"
 dependencies = [
  "encoding_rs",
  "glib",
@@ -955,9 +986,9 @@ dependencies = [
 
 [[package]]
 name = "paste"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0520af26d4cf99643dbbe093a61507922b57232d9978d8491fdc8f7b44573c8c"
+checksum = "ba7ae1a2180ed02ddfdb5ab70c70d596a26dd642e097bb6fe78b1bde8588ed97"
 
 [[package]]
 name = "percent-encoding"
@@ -1281,9 +1312,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.45"
+version = "1.0.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea9c5432ff16d6152371f808fb5a871cd67368171b09bb21b43df8e4a47a3556"
+checksum = "5ad5de3220ea04da322618ded2c42233d02baca219d6f160a3e9c87cda16c942"
 dependencies = [
  "proc-macro2",
  "quote",

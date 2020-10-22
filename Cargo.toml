@@ -32,7 +32,6 @@ gtk = {git="https://github.com/gtk-rs/gtk", features=["v3_22"]}
 gst = {package="gstreamer", git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs", features=["v1_16"]}
 #gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs"}
 gst-mpegts = {package="gstreamer-mpegts", git="https://gitlab.freedesktop.org/Russel/gstreamer-rs", branch="mpegts_addition"}
-#gst-mpegts = {package="gstreamer-mpegts", path="../GStreamer_Rs/gstreamer-mpegts"}
 #
 glob = "*"
 lazy_static = "*"
@@ -42,7 +41,7 @@ notify = "*"
 percent-encoding = "*"
 regex= "*"
 rust-ini= "*"
-serde = "*" # Not use-d explicitly but must be listed explicitly.
+serde = "*"  # Not used explicitly yet must be listed explicitly.
 serde_derive = "*"
 serde_yaml = "*"
 tempfile = "*"
