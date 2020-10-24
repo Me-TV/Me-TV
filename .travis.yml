@@ -1,5 +1,5 @@
 sudo: true
-dist: focal # bionic
+dist: focal
 language: rust
 
 #  After discussion with the Travis-CI folk, this Rust build requires too big a cache for it to
@@ -8,17 +8,9 @@ language: rust
 
 #cache: cargo
 
-# Bionic has GStreamer 1.14.0 in packaging. Me TV 3.1.x requires GStreamer 1.16.x so
-# install it from Slomo's collection of pre-built GStreamer or can now use Focal.
-
-#before_install:
-#  - curl -L https://people.freedesktop.org/~slomo/gstreamer-1.16.1.tar.xz | tar -x --xz
-#  - sed -i "s;prefix=/root/gstreamer;prefix=$PWD/gstreamer;g" $PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig/*.pc
-#  - export PKG_CONFIG_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/pkgconfig
-#  - export LD_LIBRARY_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu
-#  - export GST_PLUGIN_SYSTEM_PATH=$PWD/gstreamer/lib/x86_64-linux-gnu/gstreamer-1.0
-#  - export PATH=$PATH:$PWD/gstreamer/bin
-#  - export RUST_BACKTRACE=1
+# Focal is now available on Travis-CI (2020-10-24) and has GStreamer 1.16.2 which is what is
+# required by Me TV 3.1.x, so use it rather than installing from Slomo's collection of
+# pre-built GStreamer.
 
 before_script:
   - sudo apt-get -qq update
