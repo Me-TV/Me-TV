@@ -18,7 +18,8 @@ before_script:
 
 test:cargo:
   script:
-  - rustc --version && cargo --version
-  - cargo build --verbose
-  - xvfb-run cargo test --verbose
-  - cargo build --verbose --release
+  - rustc --version
+  - cargo --version
+  - cargo build
+  - xvfb-run cargo test
+  - cargo build --release
