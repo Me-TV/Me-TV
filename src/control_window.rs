@@ -299,7 +299,7 @@ fn ensure_channel_file_present(control_window: &Rc<ControlWindow>) {
 
 /// Add a new frontend to this control window.
 fn add_frontend(control_window: &Rc<ControlWindow>, fei: &FrontendId) {
-    if control_window.main_box.get_children()[0] == control_window.label {
+    if control_window.main_box.get_children()[0] == control_window.label.clone().upcast::<gtk::Widget>() {
         control_window.main_box.remove(&control_window.label);
         control_window.main_box.pack_start(&control_window.frontends_box, true, true, 0);
     }
