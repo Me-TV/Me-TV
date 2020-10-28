@@ -80,7 +80,7 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 [[package]]
 name = "cairo-rs"
 version = "0.9.0"
-source = "git+https://github.com/gtk-rs/cairo#dd3cbdd07b046df9f1fc88ae3fe3ea998a92eaa1"
+source = "git+https://github.com/gtk-rs/cairo#7455304ba4c9ae76fecf9c70c94fa44f07f35de0"
 dependencies = [
  "bitflags",
  "cairo-sys-rs",
@@ -95,7 +95,7 @@ dependencies = [
 [[package]]
 name = "cairo-sys-rs"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/cairo#dd3cbdd07b046df9f1fc88ae3fe3ea998a92eaa1"
+source = "git+https://github.com/gtk-rs/cairo#7455304ba4c9ae76fecf9c70c94fa44f07f35de0"
 dependencies = [
  "glib-sys",
  "libc",
@@ -489,7 +489,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#6dac8d435b0d8f643c05df5128eff069497d3f69"
+source = "git+https://github.com/gtk-rs/glib#f53054c8d392d22dba55ac122dddfe9fc9b191ef"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -508,7 +508,7 @@ dependencies = [
 [[package]]
 name = "glib-macros"
 version = "0.10.0"
-source = "git+https://github.com/gtk-rs/glib#6dac8d435b0d8f643c05df5128eff069497d3f69"
+source = "git+https://github.com/gtk-rs/glib#f53054c8d392d22dba55ac122dddfe9fc9b191ef"
 dependencies = [
  "anyhow",
  "heck",
@@ -548,7 +548,7 @@ dependencies = [
 [[package]]
 name = "gstreamer"
 version = "0.17.0"
-source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#d815e85440e718229c52a4ecb7520ad105e9762c"
+source = "git+https://gitlab.freedesktop.org/gstreamer/gstreamer-rs#a7749b793358412cef4811d4f2dbf9f24e5a831a"
 dependencies = [
  "bitflags",
  "cfg-if 1.0.0",
@@ -583,7 +583,7 @@ dependencies = [
 [[package]]
 name = "gstreamer-mpegts"
 version = "0.17.0"
-source = "git+https://gitlab.freedesktop.org/Russel/gstreamer-rs?branch=mpegts_addition#804bb53928a038ec8e6939e961d52b0acecbbda8"
+source = "git+https://gitlab.freedesktop.org/Russel/gstreamer-rs?branch=mpegts_addition#92dedfb5fb4059bce78ff68d0ce5eb4366917ea9"
 dependencies = [
  "encoding_rs",
  "glib",
@@ -752,9 +752,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.79"
+version = "0.2.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2448f6066e80e3bfc792e9c98bf705b4b0fc6e8ef5b43e5889aff0eaa9c58743"
+checksum = "4d58d1b70b004888f764dfbf6a26a3b0342a1632d33968e4a179d8011c760614"
 
 [[package]]
 name = "linked-hash-map"
@@ -1075,9 +1075,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-hack"
-version = "0.5.18"
+version = "0.5.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99c605b9a0adc77b7211c6b1f722dcb613d68d66859a44f3d485a6da332b0598"
+checksum = "dbf0c48bc1d91375ae5c3cd81e3722dff1abcf81a30960240640d223f59fe0e5"
 
 [[package]]
 name = "proc-macro-nested"
@@ -1312,9 +1312,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.46"
+version = "1.0.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ad5de3220ea04da322618ded2c42233d02baca219d6f160a3e9c87cda16c942"
+checksum = "cc371affeffc477f42a221a1e4297aedcea33d47d19b61455588bd9d8f6b19ac"
 dependencies = [
  "proc-macro2",
  "quote",
