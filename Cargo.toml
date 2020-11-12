@@ -20,7 +20,7 @@ fragile = "*"
 #gdk-pixbuf = "*"
 #gio = version="*"
 #glib = version="*"
-#gtk = version="*"
+#gtk = {version="*", features=["v3_16"]}  # GLArea requires this version or later.
 gdk = {git="https://github.com/gtk-rs/gtk-rs"}
 gdk-pixbuf = {git="https://github.com/gtk-rs/gtk-rs"}
 gio = {git="https://github.com/gtk-rs/gtk-rs"}
