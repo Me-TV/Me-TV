@@ -8,15 +8,16 @@ language: rust
 
 #cache: cargo
 
-# Focal is now available on Travis-CI (2020-10-24) and has GStreamer 1.16.2 which is what is
-# required by Me TV 3.1.x, so use it rather than installing from Slomo's collection of
+# Focal is now available on Travis-CI (as of 2020-10-24) and has GStreamer 1.16.2 which is what
+# is required by Me TV 3.1.x, so use it rather than installing from Slomo's collection of
 # pre-built GStreamer.
 
 before_script:
   - sudo apt-get -qq update
-  - sudo apt-get install -y libgtk-3-dev xvfb libgstreamer-plugins-bad1.0-dev
+  - sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-bad1.0-dev xvfb
 
 script:
+  - cargo update
   - cargo build
   - xvfb-run cargo test
   - cargo build --release
