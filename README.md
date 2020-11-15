@@ -15,42 +15,58 @@ Licence: [![Licence](https://img.shields.io/badge/license-GPL_3-green.svg)](http
 Download precompiled executables from Bintray:
 [![Download](https://api.bintray.com/packages/me-tv/Downloads/Me-TV/images/download.svg)](https://bintray.com/me-tv/Downloads/Me-TV)
 
-*NB This is a rewrite of Me TV for GTK+3 and GStreamer using the Rust programming language and the gtk-rs
+*NB This is a rewrite of Me TV for GTK and GStreamer using the Rust programming language and the gtk-rs
 and gstreamer-rs bindings.*
 
-The home page for previous versions of Me TV is [Me TV Home Page on Launchpad](http://launchpad.net/me-tv).
+The home page for previous versions of Me TV is [Me TV Home Page on
+Launchpad](http://launchpad.net/me-tv).
 
 ## Dependencies
 
 To run Me TV, it is assumed you have the following installed:
 
-* GTK+ 3.18.0 or later.
+* GTK 3.18.0 or later.
 * GStreamer 1.12.0 or later for Me TV 3.0.x, or GStreamer 1.16.0 or later for Me TV 3.1.x or later.
-* The GStreamer plugins – currently the DVB plugin is in the bad package; it started there for
-historical reasons, and although it is not now bad, it is good, it has never migrated to the
-good package. Some of the other bits and pieces that might get used during use of Me TV are in
-the ugly package, so best to install that; the things in there aren't actually ugly, some are
-indeed very nice – long story. On Debian at least some plugins from the GStreamer are separated
-out for Debian repository package publishing: the libav, gl, and gtk3 plugins are in their own
-Debian packages rather than being in one of base, good, bad, ugly GStreamer packages – sorry the
-term package is a bit over-used in this context. So, using Debian, you probably want to make
-sure the following Debian packages are installed:
-    * gstreamer1.0-plugins-base
-    * gstreamer1.0-plugins-good
-    * gstreamer1.0-plugins-bad
-    * gstreamer1.0-plugins-ugly
-    * gstreamer1.0-libav
-    * gstreamer1.0-gtk3
-    * gstreamer1.0-gl
+* The needed GStreamer plugins – currently the DVB plugins are in the 'bad' package; they started there for
+historical reasons, and although they are not now bad, they are good, they has never migrated to the
+'good' package. Some of the other bits and pieces that might get used during use of Me TV are in
+the 'ugly' package, so best to install that; the things in there aren't actually ugly, some are
+indeed very nice – long story.
 
-This list of distribution packages should apply also to Ubuntu and Mint distributions. Fedora
-Rawhide probably doesn't have some of these last few, the Fedora packagers do not separate
-things as much as the Debian packagers do.
+For compiling Me TV from source code you need the development packages installed as well as the
+library packages.
 
-For building Me TV from source code you need the development packages installed, not just the
-library packages. So on Debian the libgtk-3-dev, libgstreamer1.0-dev, and
-libgstreamer-plugins-bad1.0-dev packages. But you will not need these to run Me TV if you get
-pre-compiled executables.
+| OS     | Execution Packages | Development Packages | Notes |
+| --- | --- | --- | --- |
+| Debian | libgtk-3-0 | libgtk-3-dev | _Ubuntu is based on regular snapshots of Debian Sid and_ |
+| (, Ubuntu, | libgstreamer1.0-0 | libgstreamer1.0-dev | _Mint based on regular snapshots of Ubuntu,_ |
+| and Mint) | gstreamer1.0-plugins-base | libgstreamer-plugins-base1.0-dev | _so ensuring packages are in_ Debian Sid_ |
+| | gstreamer1.0-plugins-good | libgstreamer-plugins-bad1.0-dev | _Debian Sid causes them to appear in_ |
+| | gstreamer1.0-plugins-bad | | _Ubuntu and Mint at the next snapshot._ |
+| | gstreamer1.0-plugins-ugly | | |
+| | gstreamer1.0-libav | | |
+| | gstreamer1.0-gtk3 | | |
+| | gstreamer1.0-gl | | |
+| | | | |
+| Fedora | gtk3 | gtk3-devel | |
+| | gstreamer1 | gstreamer1-devel | |
+| | gstreamer1-plugins-good| gstreamer1-plugins-base-devel | |
+| | gstreamer1-plugins-good-extras| gstreamer1-plugins-bad-free-devel | |
+| | gstreamer1-plugins-ugly| | |
+| | gstreamer1-plugins-bad-free | | |
+| | gstreamer1-plugins-bad-free-extras | | |
+| | gstreamer1-plugins-base-tools | | |
+| | | | |
+| OpenSUSE | gtk3 | gtk3-devel-64bit | |
+| | gstreamer1 | | |
+| | gstreamer1-plugins-good | | |
+| | gstreamer1-plugins-ugly| | |
+| | gstreamer1-plugins-bad-free | | |
+| | gstreamer1-plugins-base-tools | | |
+| | | | |
+
+You will *not* need the "development packages" to execute the compiled executables once compiled
+or run pre-compiled executables, only the library dependencies are needed for execution.
 
 ## Using Pre-compiled Executables
 
@@ -106,8 +122,8 @@ will install Me TV.
 
 Before being able to watch a television channel using Me TV, you must have a channels file for
 the transmitter you are getting DVB signal from. This channels file is
-$HOME/.config/gstreamer-1.0/dvb-channels.conf. It is assumed this file is in DVBv5 format, DVBv3
-format files will cause an error.
+_$HOME/.config/gstreamer-1.0/dvb-channels.conf_. It is assumed this file is in DVBv5 format,
+DVBv3 format files will cause an error.
 
 A way of creating this file from a running Me TV is available using the menu on the application
 window, currently it requires the executable _dvbv5-scan_ be installed. On Debian Sid this is in
@@ -115,8 +131,8 @@ package _dvb-tools_, whereas on Fedora Rawhide it is in the package _v4l-utils_ 
 reason Debian splits out the DVB tools from the V4L utils, whereas Fedora keeps them all
 together. To create the channels file you will not only need _dvbv5-scan_ installed but also the
 transmitter data files. These are in the package _dtv-scan-tables_ on both Debian and
-Fedora. However Debian installs them to /usr/share/dvb/dvb-t/ whereas Fedora installs them to
-/usr/share/dvbv5/dvb-t/. You will also need to set the correct delivery system for your
+Fedora. However Debian installs them to _/usr/share/dvb/dvb-t/_ whereas Fedora installs them to
+_/usr/share/dvbv5/dvb-t/_. You will also need to set the correct delivery system for your
 area. For example, Europe, Australia, and many other placed use DVB-T, North America uses ATSC.
 
 To have the channels file available before executing Me TV you can run _dvbv5-scan_
