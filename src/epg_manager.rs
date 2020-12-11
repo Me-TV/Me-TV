@@ -30,16 +30,16 @@ use gst_mpegts;
 use crate::control_window::Message;
 use crate::channels_data::add_logical_channel_number_for_service_id;
 
-static PRINT_BAT:bool = false;
-static PRINT_CAT:bool = false;
-static PRINT_EIT:bool = false;
-static PRINT_NIT:bool = false;
-static PRINT_PAT:bool = false;
-static PRINT_PMT:bool = false;
-static PRINT_SDT:bool = false;
-static PRINT_TDT:bool = false;
-static PRINT_TSDT:bool = false;
-static PRINT_TOT:bool = false;
+static PRINT_BAT: bool = false;
+static PRINT_CAT: bool = false;
+static PRINT_EIT: bool = false;
+static PRINT_NIT: bool = false;
+static PRINT_PAT: bool = false;
+static PRINT_PMT: bool = false;
+static PRINT_SDT: bool = false;
+static PRINT_TDT: bool = false;
+static PRINT_TSDT: bool = false;
+static PRINT_TOT: bool = false;
 
 static PRINT_DATA: bool = false;
 
@@ -111,11 +111,11 @@ fn build_eit(eit: &gst_mpegts::EIT, to_cw: &glib::Sender<Message>) {
                     match panic::catch_unwind(|| {
                         let (language_code, title, blurb) = d.parse_dvb_short_event().unwrap();
                         if PRINT_EIT {
-                            println!("            {}, {:?}, {:?}", &language_code, &title, &blurb);
+                            println!("            {}, {}, {}", &language_code, &title, &blurb);
                         }
                     }) {
                         Ok(_) => {},
-                        Err(_) => println!("************  parse_dvb_short_event paniced, assume there is a 0x1f encoding byte in the string."),
+                        Err(_) => println!("************  parse_dvb_short_event panicked, assume there is a 0x1f encoding byte in the string."),
                     }
                 },
                 gst_mpegts::DVBDescriptorType::PrivateDataSpecifier => {
@@ -332,7 +332,7 @@ code_rate_hp = {:?}, code_rate_lp = {:?}, guard_interval = {:?}, transmission_mo
                     // gst_mpegts::ATSCDescriptorType::Ac3 but it is seriously
                     // unlikely to be the latter on a DVB-T/DVB-T2 broadcast.
                     if x == gst_mpegts::DVBDescriptorType::__Unknown(131) {
-                        let tag: gst_mpegts::MiscDescriptorType = from_glib(x.to_glib());
+                        let tag: gst_mpegts::MiscDescriptorType = unsafe { from_glib(x.to_glib()) };
                         assert_eq!(tag, gst_mpegts::MiscDescriptorType::DtgLogicalChannel);
                         let dtg_logical_channel_descriptor = descriptor.parse_logical_channel().unwrap();
                         if PRINT_NIT {
@@ -428,7 +428,7 @@ fn build_pmt(pmt: &gst_mpegts::PMT, to_cw: &glib::Sender<Message>) {
                         println!("    ApplicationSignalling:  {:?}", &data);
                     },
                     x => {
-                        let tag: gst_mpegts::DescriptorType = from_glib(x.to_glib() as i32);
+                        let tag: gst_mpegts::DescriptorType = unsafe { from_glib(x.to_glib() as i32) };
                         match tag {
                             gst_mpegts::DescriptorType::Iso639Language => {
                                 let language_descriptor = descriptor.parse_iso_639_language().unwrap();
