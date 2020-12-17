@@ -33,7 +33,7 @@ checksum = "2c0df63cb2955042487fad3aefd2c6e3ae7389ac5dc1beb28921de0b69f779d4"
 [[package]]
 name = "atk"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "atk-sys",
  "bitflags",
@@ -44,7 +44,7 @@ dependencies = [
 [[package]]
 name = "atk-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "glib-sys",
  "gobject-sys",
@@ -78,7 +78,7 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 [[package]]
 name = "cairo-rs"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "bitflags",
  "cairo-sys-rs",
@@ -91,7 +91,7 @@ dependencies = [
 [[package]]
 name = "cairo-sys-rs"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "glib-sys",
  "libc",
@@ -391,7 +391,7 @@ dependencies = [
 [[package]]
 name = "gdk"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -406,7 +406,7 @@ dependencies = [
 [[package]]
 name = "gdk-pixbuf"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "gdk-pixbuf-sys",
  "gio",
@@ -417,7 +417,7 @@ dependencies = [
 [[package]]
 name = "gdk-pixbuf-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "gio-sys",
  "glib-sys",
@@ -429,7 +429,7 @@ dependencies = [
 [[package]]
 name = "gdk-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "cairo-sys-rs",
  "gdk-pixbuf-sys",
@@ -456,7 +456,7 @@ dependencies = [
 [[package]]
 name = "gio"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "bitflags",
  "futures",
@@ -474,7 +474,7 @@ dependencies = [
 [[package]]
 name = "gio-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "glib-sys",
  "gobject-sys",
@@ -486,7 +486,7 @@ dependencies = [
 [[package]]
 name = "glib"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -505,7 +505,7 @@ dependencies = [
 [[package]]
 name = "glib-macros"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "anyhow",
  "heck",
@@ -520,7 +520,7 @@ dependencies = [
 [[package]]
 name = "glib-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "libc",
  "system-deps",
@@ -535,7 +535,7 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 [[package]]
 name = "gobject-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "glib-sys",
  "libc",
@@ -616,7 +616,7 @@ dependencies = [
 [[package]]
 name = "gtk"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "atk",
  "bitflags",
@@ -638,7 +638,7 @@ dependencies = [
 [[package]]
 name = "gtk-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "atk-sys",
  "cairo-sys-rs",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "gtk3-macros"
 version = "0.1.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "anyhow",
  "heck",
@@ -975,7 +975,7 @@ dependencies = [
 [[package]]
 name = "pango"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "bitflags",
  "glib",
@@ -987,7 +987,7 @@ dependencies = [
 [[package]]
 name = "pango-sys"
 version = "0.13.0"
-source = "git+https://github.com/gtk-rs/gtk-rs#a0d092674c82ae119a7b341c71aedd0a6db428a4"
+source = "git+https://github.com/gtk-rs/gtk-rs#71fcbcddddc14f23c53e83e584afcbb8a075b64b"
 dependencies = [
  "glib-sys",
  "gobject-sys",
